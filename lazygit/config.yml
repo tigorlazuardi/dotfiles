@@ -1,6 +1,10 @@
 os:
   editCommand: "nvim"
 customCommands:
+  - key: "L"
+    command: "git-chglog -o CHANGELOG.md"
+    context: "global"
+    description: "generate changelog file"
   - key: "n"
     prompts:
       - type: "menu"
@@ -25,6 +29,8 @@ customCommands:
     prompts:
       - type: "input"
         title: "Insert new tag"
+      - type: "input"
+        title: "Tag message"
     description: "Create a new tag on latest commits on from current branch"
     context: "commits"
-    command: "git tag -a {{index .PromptResponses 0}}"
+    command: "git tag -a {{index .PromptResponses 0}} -m '{{index .PromptResponses 1}}'"
