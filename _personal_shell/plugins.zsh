@@ -12,7 +12,7 @@ if ! zgen saved; then
 	zgen oh-my-zsh plugins/npm
 	zgen oh-my-zsh plugins/git
 	zgen oh-my-zsh plugins/golang
-	zgen oh-my-zsh plugins/cargo
+	# zgen oh-my-zsh plugins/cargo
 
 	zgen load Aloxaf/fzf-tab
 	zgen load zsh-users/zsh-autosuggestions
