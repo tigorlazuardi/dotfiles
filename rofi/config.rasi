@@ -151,3 +151,4 @@ run-shell-command: "wezterm start -- {cmd}";
 }
 
 @import "/usr/share/rofi/themes/sidebar.rasi"
+@theme "/usr/share/rofi/themes/Arc-Dark.rasi"
