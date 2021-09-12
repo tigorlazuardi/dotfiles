@@ -1,0 +1,6 @@
+[Unit]
+Description=Read current hour
+
+[Service]
+Type=simple
+ExecStart=/bin/bash /home/tigor/.config/systemd/user/read-clock.sh

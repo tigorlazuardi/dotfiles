@@ -1,0 +1,8 @@
+[Unit]
+Description=Read current hour every hour
+
+[Timer]
+OnCalendar=hourly
+
+[Install]
+WantedBy=timers.target
