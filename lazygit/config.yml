@@ -1,3 +1,6 @@
+git:
+  merging:
+    args: "--no-ff"  
 os:
   editCommand: "nvim"
 customCommands:
