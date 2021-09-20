@@ -16,4 +16,7 @@ customCommands:
         title: "Tag message"
     description: "Create a new tag on latest commits on from current branch"
     context: "commits"
-    command: "git tag -a {{index .PromptResponses 0}} -m '{{index .PromptResponses 1}}'"
+    command: >
+      git-chglog --next-tag '{{index .PromptResponses 0}}' -o CHANGELOG.md &&
+      git commit -am "release {{index .PromptResponses 0}}" &&
+      git tag -a {{index .PromptResponses 0}} -m '{{index .PromptResponses 1}}'
