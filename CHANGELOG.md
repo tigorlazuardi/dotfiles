@@ -2,6 +2,21 @@
 ## [Unreleased]
 
 
+<a name="v1.0.4"></a>
+## [v1.0.4] - 2021-09-20
+### Clean
+- **imwheel:** removed newline at end of file
+
+### Config
+- **lazygit:** adding tags now also generate changelog
+- **lazygit:** mergin now --no-ff
+
+### Feature
+- **imwheel:** added service systemd file
+- **kitty:** disabled audio bell and modified layout to fat and tall by default
+- **lazygit:** removed gitflow from creating new branch
+
+
 <a name="v1.0.3"></a>
 ## [v1.0.3] - 2021-09-12
 ### Doc
@@ -43,7 +58,8 @@
 - **lazygit:** update lazygit configuration
 
 
-[Unreleased]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.3...HEAD
+[Unreleased]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.4...HEAD
+[v1.0.4]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.3...v1.0.4
 [v1.0.3]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.2...v1.0.3
 [v1.0.2]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.1...v1.0.2
 [v1.0.1]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.0...v1.0.1
