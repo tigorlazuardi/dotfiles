@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="v1.0.9"></a>
+## [v1.0.9] - 2021-09-22
+### Fix
+- `read-clock`: revert script
+
+
 <a name="v1.0.8"></a>
 ## [v1.0.8] - 2021-09-22
 ### Reverts
@@ -81,7 +87,8 @@
 - `lazygit`: update lazygit configuration
 
 
-[Unreleased]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.8...HEAD
+[Unreleased]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.9...HEAD
+[v1.0.9]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.8...v1.0.9
 [v1.0.8]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.7...v1.0.8
 [v1.0.7]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.6...v1.0.7
 [v1.0.6]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.5...v1.0.6
