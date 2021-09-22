@@ -26,13 +26,3 @@ options:
   notes:
     keywords:
       - BREAKING CHANGE
-jira:
-  info:
-    username: JIRA_USERNAME
-    token: JIRA_TOKEN
-    url: JIRA_URL
-  issue:
-    type_maps:
-      Task: fix
-      Story: feat
-    description_pattern: "<changelog>(.*)</changelog>"
