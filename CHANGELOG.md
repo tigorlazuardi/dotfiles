@@ -2,6 +2,13 @@
 ## [Unreleased]
 
 
+<a name="v1.0.6"></a>
+## [v1.0.6] - 2021-09-22
+### Config
+- `chglog`: added jira integration
+- `systemd`: read-clock now uses 24 hour format
+
+
 <a name="v1.0.5"></a>
 ## [v1.0.5] - 2021-09-20
 ### Config
@@ -65,7 +72,8 @@
 - `lazygit`: update lazygit configuration
 
 
-[Unreleased]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.5...HEAD
+[Unreleased]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.6...HEAD
+[v1.0.6]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.5...v1.0.6
 [v1.0.5]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.4...v1.0.5
 [v1.0.4]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.3...v1.0.4
 [v1.0.3]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.2...v1.0.3
