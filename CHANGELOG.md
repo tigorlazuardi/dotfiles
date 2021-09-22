@@ -2,8 +2,14 @@
 ## [Unreleased]
 
 
+<a name="v1.0.8"></a>
+## [v1.0.8] - 2021-09-22
+### Reverts
+- config(chglog): added jira integration
+
+
 <a name="v1.0.7"></a>
-## [v1.0.7] - 0001-01-01
+## [v1.0.7] - 2021-09-22
 
 <a name="v1.0.6"></a>
 ## [v1.0.6] - 2021-09-22
@@ -75,7 +81,8 @@
 - `lazygit`: update lazygit configuration
 
 
-[Unreleased]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.7...HEAD
+[Unreleased]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.8...HEAD
+[v1.0.8]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.7...v1.0.8
 [v1.0.7]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.6...v1.0.7
 [v1.0.6]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.5...v1.0.6
 [v1.0.5]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.4...v1.0.5

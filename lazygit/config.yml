@@ -8,7 +8,7 @@ customCommands:
     command: "git-chglog -o CHANGELOG.md"
     context: "global"
     description: "generate changelog file"
-  - key: "t"
+  - key: "T"
     prompts:
       - type: "input"
         title: "Insert new tag"
