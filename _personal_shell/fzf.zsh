@@ -1,0 +1,4 @@
+if command -v fzf > /dev/null; then
+	source /usr/share/fzf/key-bindings.zsh
+	source /usr/share/fzf/completion.zsh
+fi
