@@ -1,0 +1,540 @@
+focused_profile = 'mobile'
+timeout = 10
+port = 9876
+download_threads = 8
+path = '/home/tigor/Pictures/ridit'
+[settings.main.aspect_ratio]
+enable = true
+height = 9
+width = 16
+range = 0.3
+
+[settings.main.minimum_size]
+enable = true
+height = 1080
+width = 1920
+[settings.mobile.aspect_ratio]
+enable = true
+height = 20
+width = 9
+range = 0.3
+
+[settings.mobile.minimum_size]
+enable = true
+height = 1920
+width = 1080
+[subreddits.2booty]
+proper_name = '2Booty'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.animearmor]
+proper_name = 'animearmor'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.animebodysuits]
+proper_name = 'animebodysuits'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.animebooty]
+proper_name = 'AnimeBooty'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.animelandscapes]
+proper_name = 'animelandscapes'
+nsfw = true
+download_first = true
+sort = 'new'
+
+[subreddits.animelegs]
+proper_name = 'animelegs'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.animelegwear]
+proper_name = 'animelegwear'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.animemidriff]
+proper_name = 'animemidriff'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.animemilfs]
+proper_name = 'AnimeMILFS'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.animephonewallpapers]
+proper_name = 'AnimePhoneWallpapers'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.aquasama]
+proper_name = 'AquaSama'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.artknights]
+proper_name = 'artknights'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.awoo]
+proper_name = 'awoo'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.awwnime]
+proper_name = 'awwnime'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.azurelane]
+proper_name = 'AzureLane'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.azurlewd]
+proper_name = 'AzurLewd'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.biganimetiddies]
+proper_name = 'biganimetiddies'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.chinadress]
+proper_name = 'ChinaDress'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.chloe]
+proper_name = 'chloe'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.chris_ks]
+proper_name = 'Chris_KS'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.churchofbelly]
+proper_name = 'ChurchofBelly'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.churchofbooty]
+proper_name = 'ChurchofBooty'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.churchoffutaba]
+proper_name = 'churchoffutaba'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.churchofgrea]
+proper_name = 'churchofgrea'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.cosplaybabes]
+proper_name = 'cosplaybabes'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.cosplaybutts]
+proper_name = 'cosplaybutts'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.cultofmorganlefay]
+proper_name = 'CultofMorganLeFay'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.cultureimpact]
+proper_name = 'CultureImpact'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.cyberpunk]
+proper_name = 'Cyberpunk'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.darkmagiciangirlnsfw]
+proper_name = 'DarkMagicianGirlNSFW'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.darknessks]
+proper_name = 'DarknessKS'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.dekaihentai]
+proper_name = 'dekaihentai'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.earthporn]
+proper_name = 'EarthPorn'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.eris_ks]
+proper_name = 'Eris_KS'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.eroonigiri]
+proper_name = 'eroonigiri'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.eulansfw]
+proper_name = 'EulaNSFW'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.evilmoe]
+proper_name = 'evilmoe'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.fantasymoe]
+proper_name = 'fantasymoe'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.fateprismaillya]
+proper_name = 'FatePrismaIllya'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.ganyunsfw]
+proper_name = 'GanyuNSFW'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.ganyusimps]
+proper_name = 'GanyuSimps'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.gawrgura]
+proper_name = 'GawrGura'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.genshinimpacthentai]
+proper_name = 'GenshinImpactHentai'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.genshinimpactnsfw]
+proper_name = 'GenshinImpactNSFW'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.genshinlewds]
+proper_name = 'GenshinLewds'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.gf34]
+proper_name = 'GF34'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.grailwhores]
+proper_name = 'grailwhores'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.gunime]
+proper_name = 'Gunime'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.hentai]
+proper_name = 'hentai'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.hentaiblessing]
+proper_name = 'HentaiBlessing'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.jeanne]
+proper_name = 'Jeanne'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.joshi_kosei]
+proper_name = 'Joshi_Kosei'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.kemonomimi]
+proper_name = 'kemonomimi'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.lewd_not_hentai]
+proper_name = 'Lewd_Not_Hentai'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.lowlegsheaven]
+proper_name = 'lowlegsheaven'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.mashukyrielight]
+proper_name = 'MashuKyrielight'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.megumin]
+proper_name = 'Megumin'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.mobilewallpaper]
+proper_name = 'mobilewallpaper'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.moedred]
+proper_name = 'moedred'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.nekomimi]
+proper_name = 'Nekomimi'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.nobbu]
+proper_name = 'Nobbu'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.officialsenpaiheat]
+proper_name = 'OfficialSenpaiHeat'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.onetruetohsaka]
+proper_name = 'OneTrueTohsaka'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.pantsu]
+proper_name = 'pantsu'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.pawg]
+proper_name = 'pawg'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.polyyuri]
+proper_name = 'PolyYuri'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.reversebunnysuit]
+proper_name = 'reversebunnysuit'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.rule34]
+proper_name = 'rule34'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.rwby]
+proper_name = 'RWBY'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.rwbynsfw]
+proper_name = 'RWBYNSFW'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.ryumimi]
+proper_name = 'Ryumimi'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.saber]
+proper_name = 'Saber'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.scathach]
+proper_name = 'scathach'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.shorthairedwaifus]
+proper_name = 'shorthairedwaifus'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.streetmoe]
+proper_name = 'streetmoe'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.sukebei]
+proper_name = 'Sukebei'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.thick_hentai]
+proper_name = 'thick_hentai'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.thighdeology]
+proper_name = 'thighdeology'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.touhou]
+proper_name = 'touhou'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.wallpaper]
+proper_name = 'wallpaper'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.wallpapers]
+proper_name = 'wallpapers'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.wholesomeyuri]
+proper_name = 'wholesomeyuri'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.wizthelich]
+proper_name = 'WizTheLich'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.yugioh_nsfw]
+proper_name = 'yugioh_nsfw'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.yunyun]
+proper_name = 'yunyun'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.zettairyouiki]
+proper_name = 'ZettaiRyouiki'
+nsfw = true
+download_first = false
+sort = 'new'
