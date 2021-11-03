@@ -1,8 +1,13 @@
+confirmOnQuit: true
+quitOnTopLevelReturn: true
+gui:
+  showFileTree: false
 git:
   merging:
-    args: "--no-ff"  
+    args: "--no-ff"
 os:
   editCommand: "nvim"
+  editCommandTemplate: "{{editor}} +{{line}} {{filename}}"
 customCommands:
   - key: "L"
     command: "git-chglog -o CHANGELOG.md"
