@@ -416,6 +416,12 @@ nsfw = true
 download_first = false
 sort = 'new'
 
+[subreddits.kokkoronatsume]
+proper_name = 'KokkoroNatsume'
+nsfw = true
+download_first = false
+sort = 'new'
+
 [subreddits.lewd_not_hentai]
 proper_name = 'Lewd_Not_Hentai'
 nsfw = true
