@@ -23,5 +23,5 @@ customCommands:
     context: "commits"
     command: >
       git-chglog --next-tag '{{index .PromptResponses 0}}' -o CHANGELOG.md &&
-      git commit -am "release {{index .PromptResponses 0}}" &&
+      LEFTHOOK=0 git commit -am "release {{index .PromptResponses 0}}" &&
       git tag -a {{index .PromptResponses 0}} -m '{{index .PromptResponses 1}}'
