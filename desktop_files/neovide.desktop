@@ -1,11 +1,9 @@
 [Desktop Entry]
 Type=Application
-Version=0.8.0
-Encoding=UTF-8
+Exec=neovide --multigrid %F
+Icon=/home/tigor/.icons/neovide.svg
 Name=Neovide
-Comment=Neovim frontend GUI written in Rust
-GenericName=Text Editor
-Exec=neovide --multigrid
-Icon=/home/tigor/.icons/neovide.ico
-Terminal=False
-Categories=Development;Utility;
+Keywords=Text;Editor;
+Categories=Utility;TextEditor;
+Comment=No Nonsense Neovim Client in Rust
+MimeType=text/english;text/plain;text/x-makefile;text/x-c++hdr;text/x-c++src;text/x-chdr;text/x-csrc;text/x-java;text/x-moc;text/x-pascal;text/x-tcl;text/x-tex;application/x-shellscript;text/x-c;text/x-c++;
