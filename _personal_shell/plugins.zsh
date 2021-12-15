@@ -1,7 +1,7 @@
 #!/bin/zsh
 [ -f /usr/share/doc/pkgfile/command-not-found.zsh ] && source /usr/share/doc/pkgfile/command-not-found.zsh
 
-if [[ ! -f ~/.zgen/zgen.zsh ]]; then
+if [[ ! -f $HOME/.zgen/zgen.zsh ]]; then
 	git clone https://github.com/tarjoilija/zgen.git "${HOME}/.zgen"
 fi
 source "${HOME}/.zgen/zgen.zsh"

@@ -6,8 +6,8 @@ if ! command -v yay &>/dev/null; then
 		echo "To install Yay, root password is required"
 		read -sp "password: " YAY_SUDO_PASSWORD
 	fi
-	git clone https://aur.archlinux.org/yay.git ~/yay
-	cd ~/yay || exit
+	git clone https://aur.archlinux.org/yay.git "$HOME/yay"
+	cd "$HOME/yay" || exit
 	echo "$YAY_SUDO_PASSWORD" | sudo -S makepkg -si
 	[[ ! $? -ne 0 ]] && echo 'failed to install yay'
 	cd || exit
