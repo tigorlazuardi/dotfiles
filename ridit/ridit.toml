@@ -638,6 +638,12 @@ nsfw = true
 download_first = false
 sort = 'new'
 
+[subreddits.ventihentai]
+proper_name = 'VentiHentai'
+nsfw = true
+download_first = false
+sort = 'new'
+
 [subreddits.vshojo]
 proper_name = 'VShojo'
 nsfw = true
