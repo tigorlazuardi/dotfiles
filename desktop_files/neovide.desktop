@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=0.8.0
+Encoding=UTF-8
+Name=Neovide
+Comment=Neovim frontend GUI written in Rust
+GenericName=Text Editor
+Exec=neovide --multigrid
+Icon=/home/tigor/.icons/neovide.ico
+Terminal=False
+Categories=Development;Utility;
