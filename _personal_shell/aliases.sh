@@ -22,6 +22,7 @@ alias psp="sudo lsof -i"
 alias yt-mp3="youtube-dl --extract-audio --audio-format mp3"
 alias mirror="sudo reflector --verbose -c indonesia,singapore -a 6 --sort rate --threads 16 --save /etc/pacman.d/mirrorlist"
 alias lg="lazygit"
+alias nv="neovide --multigrid"
 
 function qc {
 	git add .
