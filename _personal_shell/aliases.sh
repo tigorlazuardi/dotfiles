@@ -23,6 +23,7 @@ alias yt-mp3="youtube-dl --extract-audio --audio-format mp3"
 alias mirror="sudo reflector --verbose -c indonesia,singapore -a 6 --sort rate --threads 16 --save /etc/pacman.d/mirrorlist"
 alias lg="lazygit"
 alias nv="neovide --multigrid"
+alias RSYNCPI="rsync -azvh -e 'ssh -p 5522' tigor@192.168.100.10:/home/tigor/Pictures/ridit/main \$HOME/Pictures/ridit/main"
 
 function qc {
 	git add .
