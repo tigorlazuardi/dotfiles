@@ -1,7 +1,7 @@
 focused_profile = 'mobile'
 timeout = 10
 download_threads = 8
-path = '/home/tigor/Pictures/ridit'
+path = '/home/tigor/raspberry_pi/ridit'
 
 [server]
 port = 9876
@@ -386,6 +386,12 @@ nsfw = true
 download_first = false
 sort = 'new'
 
+[subreddits.hentaislutmarks]
+proper_name = 'HentaiSlutMarks'
+nsfw = true
+download_first = false
+sort = 'new'
+
 [subreddits.hololewd]
 proper_name = 'Hololewd'
 nsfw = true
@@ -634,6 +640,12 @@ sort = 'new'
 
 [subreddits.underoppai]
 proper_name = 'UnderOppai'
+nsfw = true
+download_first = false
+sort = 'new'
+
+[subreddits.upskirthentai]
+proper_name = 'UpskirtHentai'
 nsfw = true
 download_first = false
 sort = 'new'
