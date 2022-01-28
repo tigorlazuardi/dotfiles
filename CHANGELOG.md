@@ -2,6 +2,29 @@
 ## [Unreleased]
 
 
+<a name="v1.1.1"></a>
+## [v1.1.1] - 2022-01-28
+### Conf
+- `ridit.toml`: updated ridit config
+
+### Feat
+- added more scripts
+- `alias`: added RSYNCPI alias
+- `desktop-files`: added neovide desktop file
+- `envs`: added more stuffs
+- `imwheel`: added microsoft edge
+- `lazygit`: added env to disabled lefthook on generating changelog
+- `personal_shell`: added prettierd default config location file
+- `ridit`: add more subreddits
+
+### Fix
+- `desktop-files`: icon now points to svg
+- `rofi`: fix columns not found error
+
+### Refactor
+- `personal-shell`: changed `~`s to `$HOME` for compability reasons
+
+
 <a name="v1.1.0"></a>
 ## [v1.1.0] - 2021-11-03
 ### Config
@@ -101,7 +124,8 @@
 - `lazygit`: update lazygit configuration
 
 
-[Unreleased]: https://github.com/tigorlazuardi/dotfiles/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/tigorlazuardi/dotfiles/compare/v1.1.1...HEAD
+[v1.1.1]: https://github.com/tigorlazuardi/dotfiles/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.9...v1.1.0
 [v1.0.9]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.8...v1.0.9
 [v1.0.8]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.7...v1.0.8
