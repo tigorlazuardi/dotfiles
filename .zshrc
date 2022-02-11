@@ -1,5 +1,6 @@
 #!/bin/zsh
 [ -f ~/.config/_personal_shell/zsh-completions.zsh ] && source ~/.config/_personal_shell/zsh-completions.zsh
+setopt share_history
 
 autoload -Uz compinit
 compinit
