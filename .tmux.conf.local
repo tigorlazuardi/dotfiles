@@ -320,8 +320,8 @@ tmux_conf_theme_clock_style="24"
 #   - false (default)
 # on macOS, this requires installing reattach-to-user-namespace, see README.md
 # on Linux, this requires xsel or xclip
-tmux_conf_copy_to_os_clipboard=false
-
+tmux_conf_copy_to_os_clipboard=true
+set -g set-clipboard on
 
 # -- user customizations -------------------------------------------------------
 # this is the place to override or undo settings
@@ -431,6 +431,7 @@ set -g @plugin 'tmux-plugins/tmux-yank'
 set -g @plugin 'tmux-plugins/tmux-resurrect'
 set -g @plugin 'tmux-plugins/tmux-continuum'
 set -g @continuum-restore 'on'
+set -g @continuum-save-interval '5'
 
 
 # -- custom variables ----------------------------------------------------------
