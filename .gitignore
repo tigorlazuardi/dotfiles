@@ -3,3 +3,5 @@ lazygit/state.yml
 lazygit/*/
 ranger/plugins/__pycache__/
 ranger/plugins/__init__.py
+*.wants/
+tmux.service
