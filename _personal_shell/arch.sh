@@ -1,4 +1,7 @@
 #!/bin/bash
+if [ ! -f "/etc/arch-release" ]; then
+	return 0
+fi
 YAY_SUDO_PASSWORD=""
 
 if ! command -v yay &>/dev/null; then
