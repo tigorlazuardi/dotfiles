@@ -22,4 +22,5 @@ alias givemes="yay -S --noconfirm --needed"
 alias del="yay -Rs"
 alias cleaninst="yay -R $(yay -Qdtq | tr '\r\n' ' ')"
 alias mirror="sudo reflector --verbose -c indonesia,singapore -a 6 --sort rate --threads 16 --save /etc/pacman.d/mirrorlist --connection-timeout 10 --download-timeout 10 && yay -Syy"
+alias update="yay -Syyu --noconfirm && yay -Sc --noconfirm"
 export EDITOR=/usr/bin/nvim
