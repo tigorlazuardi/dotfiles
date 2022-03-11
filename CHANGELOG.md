@@ -2,6 +2,42 @@
 ## [Unreleased]
 
 
+<a name="v1.1.2"></a>
+## [v1.1.2] - 2022-03-11
+### Chore
+- update submodules
+
+### Docs
+- update readme.md
+
+### Feat
+- up
+- `alacritty`: added alacritty config
+- `alias`: move mirror alias to arch.sh
+- `aliases`: added PI alias
+- `arch`: added alias to update packages globaly
+- `arch.sh`: if not archlinux don't run
+- `fzf.zsh`: only source if those file exists
+- `gitconfig`: added gitconfig
+- `kitty`: font changed to JetBrainsMono
+- `pulseaudio`: added pulse audio scripts
+- `tmux`: set clipboard settings
+- `tmux`: added tmux config
+- `tmux`: alacritty now by default starts a new tmux session
+- `tmux`: added vi like config
+- `tmux`: added mouse mode and disabled update plugins on start
+- `tmux`: now config to local
+- `tmux`: added tmux submodule
+- `tmux`: now added continuum
+- `tmux`: added tmux yank, resurrect, and continuum
+- `zsh`: now share history is enabled
+
+### Fix
+- `alacritty`: fix config file
+- `plugins.zsh`: plugins now aimed to correct git repo
+- `tmux`: removed deprecated configurations
+
+
 <a name="v1.1.1"></a>
 ## [v1.1.1] - 2022-01-28
 ### Conf
@@ -124,7 +160,8 @@
 - `lazygit`: update lazygit configuration
 
 
-[Unreleased]: https://github.com/tigorlazuardi/dotfiles/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/tigorlazuardi/dotfiles/compare/v1.1.2...HEAD
+[v1.1.2]: https://github.com/tigorlazuardi/dotfiles/compare/v1.1.1...v1.1.2
 [v1.1.1]: https://github.com/tigorlazuardi/dotfiles/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.9...v1.1.0
 [v1.0.9]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.8...v1.0.9
