@@ -1,0 +1,34 @@
+commit-msg:
+    parallel: true
+    commands:
+        commitlint:
+            run: bash commitlint.sh {1}
+            skip:
+                - merge
+                - rebase
+post-commit:
+    commands:
+        changelog:
+            run: lefthook run changelog
+        markdown-pp:
+            run: lefthook run markdown-pp
+
+changelog:
+    piped: true
+    commands:
+        1_create:
+            run: git-chglog -o CHANGELOG.md
+        2_add:
+            run: LEFTHOOK=0 git add CHANGELOG.md
+        3_commit:
+            run: LEFTHOOK=0 git commit --amend --no-edit
+
+markdown-pp:
+    piped: true
+    commands:
+        1_render:
+            run: markdown-pp README.mdpp -o README.md
+        2_add:
+            run: LEFTHOOK=0 git add README.md
+        3_commit:
+            run: LEFTHOOK=0 git commit --amend --no-edit

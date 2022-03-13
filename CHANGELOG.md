@@ -1,6 +1,9 @@
 <a name="unreleased"></a>
 ### [Unreleased]
 
+> Configuration
+- **lefthook:** added lefthook and triggers
+
 > Features
 - **rsync:** added alias for rsyncpi wsl
 
