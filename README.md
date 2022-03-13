@@ -28,12 +28,13 @@ Recommended shells to symlink to is:
 # Changelog
 
 <a name="unreleased"></a>
-### [Unreleased]
+## [Unreleased]
 
 > Configuration
 - **lefthook:** added lefthook and triggers
 
 > Documentation
+- Unreleased section also go to two headings
 - changelog template from 3 heading to 2 headings for tags
 
 > Features
