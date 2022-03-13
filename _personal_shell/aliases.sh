@@ -24,6 +24,7 @@ alias yt-mp3="youtube-dl --extract-audio --audio-format mp3"
 alias lg="lazygit"
 alias nv="neovide --multigrid"
 alias RSYNCPI="rsync -azvh -e 'ssh -p 5522' tigor@192.168.100.10:/home/tigor/Pictures/ridit/main \$HOME/Pictures/ridit/main"
+alias RSYNCPI-WIN="rsync -azvh -e 'ssh -p 5522' tigor@192.168.100.10:/home/tigor/Pictures/ridit/main /mnt/c/Users/tigor/Pictures/ridit"
 alias PI="ssh -t -p 5522 tigor@192.168.100.10"
 
 function qc {
