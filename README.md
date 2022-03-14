@@ -27,6 +27,9 @@ Recommended shells to symlink to is:
 
 # Changelog
 
+<details>
+<summary>Changelog</summary>
+
 <a name="unreleased"></a>
 ## [Unreleased]
 
@@ -34,6 +37,7 @@ Recommended shells to symlink to is:
 - **lefthook:** added lefthook and triggers
 
 > Documentation
+- changelog now hidden in spoiler tag
 - Unreleased section also go to two headings
 - changelog template from 3 heading to 2 headings for tags
 
@@ -46,22 +50,67 @@ Recommended shells to symlink to is:
 
 > Bug Fixes
 - **alacritty:** fix config file
-- **desktop-files:** icon now points to svg
 - **plugins.zsh:** plugins now aimed to correct git repo
-- **rofi:** fix columns not found error
 - **tmux:** removed deprecated configurations
+
+> Documentation
+- update readme.md
+
+> Features
+- up
+- **alacritty:** added alacritty config
+- **alias:** move mirror alias to arch.sh
+- **aliases:** added PI alias
+- **arch:** added alias to update packages globaly
+- **arch.sh:** if not archlinux don't run
+- **fzf.zsh:** only source if those file exists
+- **gitconfig:** added gitconfig
+- **kitty:** font changed to JetBrainsMono
+- **pulseaudio:** added pulse audio scripts
+- **tmux:** set clipboard settings
+- **tmux:** added tmux config
+- **tmux:** alacritty now by default starts a new tmux session
+- **tmux:** added vi like config
+- **tmux:** added mouse mode and disabled update plugins on start
+- **tmux:** now config to local
+- **tmux:** added tmux submodule
+- **tmux:** now added continuum
+- **tmux:** added tmux yank, resurrect, and continuum
+- **zsh:** now share history is enabled
+
+> Various Actions
+- update submodules
+
+
+<a name="v1.1.1"></a>
+## [v1.1.1] - 2022-01-28
+
+> Bug Fixes
+- **desktop-files:** icon now points to svg
+- **rofi:** fix columns not found error
 
 > Code Refactoring
 - **personal-shell:** changed `~`s to `$HOME` for compability reasons
 
-> Config
-- **lazygit:** now quits confirm first
-
 > Configuration
 - **ridit.toml:** updated ridit config
 
-> Documentation
-- update readme.md
+> Features
+- added more scripts
+- **alias:** added RSYNCPI alias
+- **desktop-files:** added neovide desktop file
+- **envs:** added more stuffs
+- **imwheel:** added microsoft edge
+- **lazygit:** added env to disabled lefthook on generating changelog
+- **personal_shell:** added prettierd default config location file
+- **ridit:** add more subreddits
+
+
+<a name="v1.1.0"></a>
+## [v1.1.0] - 2021-11-03
+
+> Config
+- **lazygit:** now quits confirm first
 
 > Feature
 - **fzf:** added fzf keybindings and completion
@@ -69,38 +118,7 @@ Recommended shells to symlink to is:
 - **riddit:** added ridit config
 
 > Features
-- added more scripts
-- up
-- **alacritty:** added alacritty config
-- **alias:** move mirror alias to arch.sh
-- **alias:** added RSYNCPI alias
-- **aliases:** added PI alias
-- **arch:** added alias to update packages globaly
-- **arch.sh:** if not archlinux don't run
-- **desktop-files:** added neovide desktop file
-- **envs:** added more stuffs
-- **fzf.zsh:** only source if those file exists
-- **gitconfig:** added gitconfig
-- **imwheel:** added microsoft edge
-- **kitty:** font changed to JetBrainsMono
-- **lazygit:** added env to disabled lefthook on generating changelog
-- **personal_shell:** added prettierd default config location file
-- **pulseaudio:** added pulse audio scripts
-- **ridit:** add more subreddits
 - **ridit:** update configuration
-- **tmux:** added tmux config
-- **tmux:** added tmux submodule
-- **tmux:** now config to local
-- **tmux:** added vi like config
-- **tmux:** alacritty now by default starts a new tmux session
-- **tmux:** added tmux yank, resurrect, and continuum
-- **tmux:** set clipboard settings
-- **tmux:** added mouse mode and disabled update plugins on start
-- **tmux:** now added continuum
-- **zsh:** now share history is enabled
-
-> Various Actions
-- update submodules
 
 
 <a name="v1.0.9"></a>
@@ -199,7 +217,9 @@ Recommended shells to symlink to is:
 
 
 [Unreleased]: https://github.com/tigorlazuardi/dotfiles/compare/v1.1.2...HEAD
-[v1.1.2]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.9...v1.1.2
+[v1.1.2]: https://github.com/tigorlazuardi/dotfiles/compare/v1.1.1...v1.1.2
+[v1.1.1]: https://github.com/tigorlazuardi/dotfiles/compare/v1.1.0...v1.1.1
+[v1.1.0]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.9...v1.1.0
 [v1.0.9]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.8...v1.0.9
 [v1.0.8]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.7...v1.0.8
 [v1.0.7]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.6...v1.0.7
@@ -209,3 +229,4 @@ Recommended shells to symlink to is:
 [v1.0.3]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.2...v1.0.3
 [v1.0.2]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.1...v1.0.2
 [v1.0.1]: https://github.com/tigorlazuardi/dotfiles/compare/v1.0.0...v1.0.1
+</details>
