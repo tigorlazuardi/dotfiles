@@ -33,6 +33,9 @@ Recommended shells to symlink to is:
 <a name="unreleased"></a>
 ## [Unreleased]
 
+> Bug Fixes
+- **tmux:** changed icon status bar to wezterm friendly icon on linux
+
 > Configuration
 - **lefthook:** added lefthook and triggers
 
