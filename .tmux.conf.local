@@ -365,6 +365,9 @@ bind -n M-Right select-pane -R
 bind -n M-Up select-pane -U
 bind -n M-Down select-pane -D
 
+bind f choose-tree
+bind 'C-f' choose-tree
+
 # resize the pane
 bind-key -r J resize-pane -D 3
 bind-key -r K resize-pane -U 3

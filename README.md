@@ -46,6 +46,7 @@ Recommended shells to symlink to is:
 
 > Features
 - **rsync:** added alias for rsyncpi wsl
+- **tmux:** f and c-f now used for choose-tree
 
 
 <a name="v1.1.2"></a>
