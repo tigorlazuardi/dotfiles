@@ -45,8 +45,10 @@ Recommended shells to symlink to is:
 - changelog template from 3 heading to 2 headings for tags
 
 > Features
+- **alias:** update alias for mirror
 - **rsync:** added alias for rsyncpi wsl
 - **tmux:** f and c-f now used for choose-tree
+- **ytmdl:** added ytmdl config
 
 
 <a name="v1.1.2"></a>
