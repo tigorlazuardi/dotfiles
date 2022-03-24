@@ -16,6 +16,7 @@
 - **alias:** update alias for mirror
 - **rsync:** added alias for rsyncpi wsl
 - **tmux:** f and c-f now used for choose-tree
+- **yank:** added copy on mouse select
 - **ytmdl:** added ytmdl config
 
 
