@@ -13,7 +13,7 @@ fi
 alias ls="exa -l"
 alias cat="bat -pp"
 alias dc="docker-compose"
-alias watch="watchexec -r -s SIGTERM"
+alias watch="watchexec -r -s SIGINT"
 alias grep="rg -i"
 alias -g G="| rg -i"
 alias -g CLIP="| xclip -selection clipboard -rmlastnl"
