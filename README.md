@@ -45,6 +45,7 @@ Recommended shells to symlink to is:
 - changelog template from 3 heading to 2 headings for tags
 
 > Features
+- **alias:** added dlo and dlm alias for ytmdl
 - **alias:** watchexec now default to SIGNINT signal
 - **alias:** update alias for mirror
 - **rsync:** added alias for rsyncpi wsl

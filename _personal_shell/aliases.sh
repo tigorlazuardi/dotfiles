@@ -26,8 +26,8 @@ alias nv="neovide --multigrid"
 alias RSYNCPI="rsync -azvh -e 'ssh -p 5522' tigor@192.168.100.10:/home/tigor/Pictures/ridit/main \$HOME/Pictures/ridit/main"
 alias RSYNCPI-WIN="rsync -azvh -e 'ssh -p 5522' tigor@192.168.100.10:/home/tigor/Pictures/ridit/main /mnt/c/Users/tigor/Pictures/ridit"
 alias PI="ssh -t -p 5522 tigor@192.168.100.10"
-alias dl="yt-dlp -N 4"
-alias dla="ytmdl"
+alias dlo="ytmdl --format=opus"
+alias dlm="ytmdl --format=mp3"
 
 function qc {
 	git add .
