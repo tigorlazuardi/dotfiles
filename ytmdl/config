@@ -30,7 +30,7 @@
 # ReleaseDate --> Song Release date
 #
 # Following is an example of the format
-#SONG_DIR = "/home/user/Music$Artist->Album->Title"
+SONG_DIR = "/home/tigor/Music$Artist->Album->Title"
 #
 #*****************************************#
 # The QUALITY is the quality of the song in kbps
@@ -40,7 +40,7 @@
 #
 # Supported values are 320 and 192
 #
-QUALITY = "192"
+#QUALITY = "192"
 #
 #*****************************************#
 # The METADATA_PROVIDERS value is a comma separated
