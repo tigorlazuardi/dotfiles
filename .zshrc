@@ -18,4 +18,4 @@ for f in ~/.config/_personal_shell/*; do
 	source $f
 done
 
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+[ -f /usr/share/doc/find-the-command/ftc.zsh ] && source /usr/share/doc/find-the-command/ftc.zsh

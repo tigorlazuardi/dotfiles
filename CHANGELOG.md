@@ -16,6 +16,7 @@
 - **alias:** update alias for mirror
 - **alias:** added dlo and dlm alias for ytmdl
 - **alias:** watchexec now default to SIGNINT signal
+- **find-the-command:** used find the command loader
 - **rsync:** added alias for rsyncpi wsl
 - **tmux:** f and c-f now used for choose-tree
 - **yank:** added copy on mouse select
