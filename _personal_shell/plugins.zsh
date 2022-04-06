@@ -1,24 +1,24 @@
 #!/bin/zsh
-[ -f /usr/share/doc/pkgfile/command-not-found.zsh ] && source /usr/share/doc/pkgfile/command-not-found.zsh
-
-if [[ ! -f $HOME/.zgen/zgen.zsh ]]; then
-	git clone https://github.com/tarjoilija/zgen.git "${HOME}/.zgen"
-fi
-source "${HOME}/.zgen/zgen.zsh"
-
-if ! zgen saved; then
-	zgen oh-my-zsh plugins/docker
-	zgen oh-my-zsh plugins/docker-compose
-	zgen oh-my-zsh plugins/npm
-	zgen oh-my-zsh plugins/git
-	zgen oh-my-zsh plugins/golang
-	# zgen oh-my-zsh plugins/cargo
-
-	zgen load Aloxaf/fzf-tab
-	zgen load zsh-users/zsh-autosuggestions
-	zgen load zdharma-continuum/fast-syntax-highlighting
-
-	zgen save
+if ! command -v cargo &> /dev/null; then
+	curl https://sh.rustup.rs -sSf | sh -s -- -y
 fi
 
-autoload -Uz compinit && compinit
+if ! command -v zr &> /dev/null; then
+    cargo install zr
+fi
+
+if [[ ! -f ~/.config/zr.zsh ]] || [[ ~/.config/_personal_shell/plugins.zsh -nt ~/.config/zr.zsh ]]; then
+  zr \
+    junegunn/fzf.git/shell/key-bindings.zsh \
+	greymd/docker-zsh-completion \
+	zfben/zsh-npm \
+	Aloxaf/fzf-tab.git/fzf-tab.plugin.zsh \
+	ohmyzsh/ohmyzsh.git/plugins/git/git.plugin.zsh \
+	ohmyzsh/ohmyzsh.git/plugins/golang/golang.plugin.zsh \
+	MenkeTechnologies/zsh-cargo-completion \
+	zsh-users/zsh-autosuggestions \
+	zdharma-continuum/fast-syntax-highlighting \
+    > ~/.config/zr.zsh
+fi
+
+source ~/.config/zr.zsh

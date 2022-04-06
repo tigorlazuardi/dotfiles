@@ -21,6 +21,7 @@
 - **yank:** added copy on mouse select
 - **ytmdl:** added ytmdl config
 - **ytmdl:** update config
+- **zr:** moved plugin manager to zr
 
 
 <a name="v1.1.2"></a>
