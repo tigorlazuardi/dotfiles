@@ -28,6 +28,7 @@ alias RSYNCPI-WIN="rsync -azvh -e 'ssh -p 5522' tigor@192.168.100.10:/home/tigor
 alias PI="ssh -t -p 5522 tigor@192.168.100.10"
 alias dlo="ytmdl --format=opus"
 alias dlm="ytmdl --format=mp3"
+alias pgh="psql -h localhost -U tigor"
 
 function qc {
 	git add .
