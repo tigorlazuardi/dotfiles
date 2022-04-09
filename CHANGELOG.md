@@ -13,17 +13,18 @@
 - changelog template from 3 heading to 2 headings for tags
 
 > Features
+- **alias:** added dlo and dlm alias for ytmdl
 - **alias:** added alias for psql "pgh"
 - **alias:** update alias for mirror
-- **alias:** added dlo and dlm alias for ytmdl
 - **alias:** watchexec now default to SIGNINT signal
 - **env:** added CARGO_TARGET_DIR
 - **find-the-command:** used find the command loader
 - **rsync:** added alias for rsyncpi wsl
 - **tmux:** f and c-f now used for choose-tree
+- **tmux:** removed <c-b> prefix
 - **yank:** added copy on mouse select
-- **ytmdl:** added ytmdl config
 - **ytmdl:** update config
+- **ytmdl:** added ytmdl config
 - **zr:** moved plugin manager to zr
 
 
