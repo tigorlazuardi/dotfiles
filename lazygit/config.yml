@@ -1,27 +1,38 @@
 confirmOnQuit: true
 quitOnTopLevelReturn: true
+keybinding:
+    universal:
+        return: '<c-\>'
 gui:
-  showFileTree: false
+    showFileTree: false
+    theme:
+        selectedLineBgColor:
+            - underline
+        selectedRangeBGColor:
+            - underline
 git:
-  merging:
-    args: "--no-ff"
+    merging:
+        args: '--no-ff'
+    paging:
+        colorArg: never
+        pager: delta -s --dark --paging=never
 os:
-  editCommand: "nvim"
-  editCommandTemplate: "{{editor}} +{{line}} {{filename}}"
+    editCommand: 'nvim'
+    editCommandTemplate: '{{editor}} +{{line}} {{filename}}'
 customCommands:
-  - key: "L"
-    command: "git-chglog -o CHANGELOG.md"
-    context: "global"
-    description: "generate changelog file"
-  - key: "T"
-    prompts:
-      - type: "input"
-        title: "Insert new tag"
-      - type: "input"
-        title: "Tag message"
-    description: "Create a new tag on latest commits on from current branch"
-    context: "commits"
-    command: >
-      git-chglog --next-tag '{{index .PromptResponses 0}}' -o CHANGELOG.md &&
-      LEFTHOOK=0 git commit -am "release {{index .PromptResponses 0}}" &&
-      git tag -a {{index .PromptResponses 0}} -m '{{index .PromptResponses 1}}'
+    - key: 'L'
+      command: 'git-chglog -o CHANGELOG.md'
+      context: 'global'
+      description: 'generate changelog file'
+    - key: 'T'
+      prompts:
+          - type: 'input'
+            title: 'Insert new tag'
+          - type: 'input'
+            title: 'Tag message'
+      description: 'Create a new tag on latest commits on from current branch'
+      context: 'commits'
+      command: >
+          git-chglog --next-tag '{{index .PromptResponses 0}}' -o CHANGELOG.md &&
+          LEFTHOOK=0 git commit -am "release {{index .PromptResponses 0}}" &&
+          git tag -a {{index .PromptResponses 0}} -m '{{index .PromptResponses 1}}'
