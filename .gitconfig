@@ -1,5 +1,9 @@
 [user]
 	name = Tigor Hutasuhut
 	email = tigor.hutasuhut@gmail.com
+
 [pull]
 	rebase = true
+
+[url "git@gitlab.bareksa.com:"]
+	insteadOf = https://gitlab.bareksa.com/
