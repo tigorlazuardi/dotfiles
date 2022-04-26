@@ -14,20 +14,21 @@
 
 > Features
 - **alias:** added dlo and dlm alias for ytmdl
+- **alias:** mirror now take from indonesia and singapore
 - **alias:** watchexec now default to SIGNINT signal
 - **alias:** update alias for mirror
 - **alias:** added alias for psql "pgh"
 - **env:** added CARGO_TARGET_DIR
 - **find-the-command:** used find the command loader
 - **gitconfig:** up
-- **lazygit:** update lazygit config to use delta as pager
 - **lazygit:** fix escape not registered
+- **lazygit:** update lazygit config to use delta as pager
 - **rsync:** added alias for rsyncpi wsl
 - **tmux:** f and c-f now used for choose-tree
 - **tmux:** removed <c-b> prefix
 - **yank:** added copy on mouse select
-- **ytmdl:** added ytmdl config
 - **ytmdl:** update config
+- **ytmdl:** added ytmdl config
 - **zr:** moved plugin manager to zr
 
 
