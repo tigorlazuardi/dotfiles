@@ -35,6 +35,7 @@ Recommended shells to symlink to is:
 
 > Bug Fixes
 - **tmux:** changed icon status bar to wezterm friendly icon on linux
+- **yay:** fix makepkg -si command
 
 > Configuration
 - **lefthook:** added lefthook and triggers
