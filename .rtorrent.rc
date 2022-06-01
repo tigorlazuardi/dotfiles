@@ -40,14 +40,29 @@ trackers.use_udp.set = yes
 
 
 ## Peer settings
-throttle.max_uploads.set = 100
-throttle.max_uploads.global.set = 250
+throttle.max_uploads.set = 30
+throttle.max_uploads.global.set = 600
+throttle.max_downloads.set = 60
+throttle.max_downloads.global.set = 600
+throttle.global_up.max_rate.set_kb = 5000
+throttle.global_down.max_rate.set_kb = 5000
 
-throttle.min_peers.normal.set = 20
-throttle.max_peers.normal.set = 60
+throttle.min_peers.normal.set = 30
+throttle.max_peers.normal.set = 120
 throttle.min_peers.seed.set = 30
-throttle.max_peers.seed.set = 80
-trackers.numwant.set = 80
+throttle.max_peers.seed.set = 120
+trackers.numwant.set = 120
+
+# schedulers
+## Download schedule
+schedule2 = throttle_full_download,01:00:00,24:00:00,throttle.global_down.max_rate.set_kb=0
+schedule2 = throttle_active_time_download,08:00:00,24:00:00,throttle.global_down.max_rate.set_kb=5000
+schedule2 = throttle_semiactive_time_download,19:00:00,24:00:00,throttle.global_down.max_rate.set_kb=10000
+
+## upload schedule
+schedule2 = throttle_full_upload,01:00:00,24:00:00,throttle.global_up.max_rate.set_kb=0
+schedule2 = throttle_active_time_upload,08:00:00,24:00:00,throttle.global_up.max_rate.set_kb=5000
+schedule2 = throttle_semiactive_time_upload,19:00:00,24:00:00,throttle.global_up.max_rate.set_kb=10000
 
 protocol.encryption.set = allow_incoming,try_outgoing,enable_retry
 
@@ -107,7 +122,7 @@ schedule2 = watch_start, 10, 10, ((load.start_verbose, (cat, (cfg.watch), "start
 
 ## Run the rTorrent process as a daemon in the background
 ## (and control via XMLRPC sockets)
-system.daemon.set = true
+# system.daemon.set = true
 network.scgi.open_local = (cat,(session.path),rpc.socket)
 execute.nothrow = chmod,770,(cat,(session.path),rpc.socket)
 
