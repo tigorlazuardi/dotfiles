@@ -2,6 +2,7 @@
 ## [Unreleased]
 
 > Bug Fixes
+- **npm:** fix path
 - **tmux:** changed icon status bar to wezterm friendly icon on linux
 - **yay:** fix makepkg -si command
 
@@ -14,25 +15,30 @@
 - changelog template from 3 heading to 2 headings for tags
 
 > Features
+- update rsyncpi win
+- **alias:** mirror now take from indonesia and singapore
+- **alias:** update alias for mirror
+- **alias:** watchexec now default to SIGNINT signal
 - **alias:** added dlo and dlm alias for ytmdl
 - **alias:** added alias for psql "pgh"
-- **alias:** mirror now take from indonesia and singapore
-- **alias:** watchexec now default to SIGNINT signal
-- **alias:** update alias for mirror
 - **env:** added CARGO_TARGET_DIR
 - **find-the-command:** used find the command loader
 - **gitconfig:** up
-- **lazygit:** update lazygit config to use delta as pager
 - **lazygit:** fix escape not registered
+- **lazygit:** update lazygit config to use delta as pager
 - **path:** added NODE_PATH
+- **ridit:** removed some subreddits
 - **rsync:** added alias for rsyncpi wsl
 - **rsyncpi:** change target ip
-- **tmux:** f and c-f now used for choose-tree
+- **rtorrent:** added rtorrent config
+- **rtorrent:** update config
 - **tmux:** removed <c-b> prefix
+- **tmux:** f and c-f now used for choose-tree
 - **yank:** added copy on mouse select
-- **ytmdl:** added ytmdl config
 - **ytmdl:** update config
+- **ytmdl:** added ytmdl config
 - **zr:** moved plugin manager to zr
+- **zsh:** completion now case insensitive
 
 
 <a name="v1.1.2"></a>
