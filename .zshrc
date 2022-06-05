@@ -6,6 +6,10 @@ autoload -Uz compinit
 compinit
 _comp_options+=(globdots)
 
+# case insensitive tab matching
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+
+
 HISTFILE=~/.zsh_history
 HISTSIZE=10000000
 SAVEHIST=10000000
