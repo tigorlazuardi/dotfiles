@@ -18,6 +18,7 @@ if [[ ! -f ~/.config/zr.zsh ]] || [[ ~/.config/_personal_shell/plugins.zsh -nt ~
 	MenkeTechnologies/zsh-cargo-completion \
 	zsh-users/zsh-autosuggestions \
 	jeffreytse/zsh-vi-mode \
+	marlonrichert/zsh-autocomplete \
 	zdharma-continuum/fast-syntax-highlighting \
     > ~/.config/zr.zsh
 fi
