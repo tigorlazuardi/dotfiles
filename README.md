@@ -56,6 +56,7 @@ Recommended shells to symlink to is:
 - **lazygit:** fix escape not registered
 - **lazygit:** update lazygit config to use delta as pager
 - **rsync:** added alias for rsyncpi wsl
+- **systemd:** update wireplumber
 - **tmux:** f and c-f now used for choose-tree
 - **tmux:** removed <c-b> prefix
 - **yank:** added copy on mouse select
