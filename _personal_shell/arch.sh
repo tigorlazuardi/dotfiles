@@ -11,7 +11,7 @@ if ! command -v yay &>/dev/null; then
 	fi
 	git clone https://aur.archlinux.org/yay.git "$HOME/yay"
 	cd "$HOME/yay" || exit
-	echo "$YAY_SUDO_PASSWORD" | sudo -S makepkg -si
+	echo "$YAY_SUDO_PASSWORD" | makepkg -si
 	[[ ! $? -ne 0 ]] && echo 'failed to install yay'
 	cd || exit
 fi

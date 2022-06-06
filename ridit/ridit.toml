@@ -1,7 +1,7 @@
 focused_profile = 'mobile'
 timeout = 10
 download_threads = 8
-path = '/home/tigor/raspberry_pi/ridit'
+path = '/hdd_5400/ridit'
 
 [server]
 port = 9876
@@ -236,12 +236,6 @@ nsfw = true
 download_first = false
 sort = 'new'
 
-[subreddits.cutetraps]
-proper_name = 'CuteTraps'
-nsfw = true
-download_first = false
-sort = 'new'
-
 [subreddits.cyberpunk]
 proper_name = 'Cyberpunk'
 nsfw = true
@@ -256,12 +250,6 @@ sort = 'new'
 
 [subreddits.dekaihentai]
 proper_name = 'dekaihentai'
-nsfw = true
-download_first = false
-sort = 'new'
-
-[subreddits.delicioustraps]
-proper_name = 'DeliciousTraps'
 nsfw = true
 download_first = false
 sort = 'new'
@@ -632,12 +620,6 @@ nsfw = true
 download_first = false
 sort = 'new'
 
-[subreddits.traphentai]
-proper_name = 'traphentai'
-nsfw = true
-download_first = false
-sort = 'new'
-
 [subreddits.underoppai]
 proper_name = 'UnderOppai'
 nsfw = true
@@ -646,12 +628,6 @@ sort = 'new'
 
 [subreddits.upskirthentai]
 proper_name = 'UpskirtHentai'
-nsfw = true
-download_first = false
-sort = 'new'
-
-[subreddits.ventihentai]
-proper_name = 'VentiHentai'
 nsfw = true
 download_first = false
 sort = 'new'
