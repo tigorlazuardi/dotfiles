@@ -17,6 +17,7 @@ if [[ ! -f ~/.config/zr.zsh ]] || [[ ~/.config/_personal_shell/plugins.zsh -nt ~
 	ohmyzsh/ohmyzsh.git/plugins/golang/golang.plugin.zsh \
 	MenkeTechnologies/zsh-cargo-completion \
 	zsh-users/zsh-autosuggestions \
+	jeffreytse/zsh-vi-mode \
 	zdharma-continuum/fast-syntax-highlighting \
     > ~/.config/zr.zsh
 fi

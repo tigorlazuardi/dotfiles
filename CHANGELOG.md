@@ -17,27 +17,28 @@
 > Features
 - update rsyncpi win
 - **alias:** mirror now take from indonesia and singapore
-- **alias:** update alias for mirror
 - **alias:** added alias for psql "pgh"
+- **alias:** update alias for mirror
 - **alias:** added dlo and dlm alias for ytmdl
 - **alias:** watchexec now default to SIGNINT signal
 - **env:** added CARGO_TARGET_DIR
 - **find-the-command:** used find the command loader
 - **gitconfig:** up
-- **lazygit:** update lazygit config to use delta as pager
 - **lazygit:** fix escape not registered
+- **lazygit:** update lazygit config to use delta as pager
 - **path:** added NODE_PATH
 - **ridit:** removed some subreddits
 - **rsync:** added alias for rsyncpi wsl
 - **rsyncpi:** change target ip
-- **rtorrent:** added rtorrent config
 - **rtorrent:** update config
+- **rtorrent:** added rtorrent config
 - **systemd:** update wireplumber
-- **tmux:** removed <c-b> prefix
 - **tmux:** f and c-f now used for choose-tree
+- **tmux:** removed <c-b> prefix
+- **vi-mode:** added vi mode
 - **yank:** added copy on mouse select
-- **ytmdl:** added ytmdl config
 - **ytmdl:** update config
+- **ytmdl:** added ytmdl config
 - **zr:** moved plugin manager to zr
 - **zsh:** completion now case insensitive
 
