@@ -48,11 +48,11 @@ Recommended shells to symlink to is:
 
 > Features
 - update rsyncpi win
-- **alias:** mirror now take from indonesia and singapore
+- **alias:** added alias for psql "pgh"
 - **alias:** update alias for mirror
 - **alias:** watchexec now default to SIGNINT signal
 - **alias:** added dlo and dlm alias for ytmdl
-- **alias:** added alias for psql "pgh"
+- **alias:** mirror now take from indonesia and singapore
 - **env:** added CARGO_TARGET_DIR
 - **find-the-command:** used find the command loader
 - **gitconfig:** up
@@ -62,18 +62,19 @@ Recommended shells to symlink to is:
 - **ridit:** removed some subreddits
 - **rsync:** added alias for rsyncpi wsl
 - **rsyncpi:** change target ip
-- **rtorrent:** added rtorrent config
 - **rtorrent:** update config
+- **rtorrent:** added rtorrent config
 - **systemd:** update wireplumber
-- **tmux:** removed <c-b> prefix
 - **tmux:** f and c-f now used for choose-tree
+- **tmux:** removed <c-b> prefix
 - **vi-mode:** added vi mode
 - **yank:** added copy on mouse select
-- **ytmdl:** update config
 - **ytmdl:** added ytmdl config
+- **ytmdl:** update config
 - **zr:** moved plugin manager to zr
 - **zsh:** completion now case insensitive
 - **zsh:** added autocomplete on type
+- **zsh:** update plugins
 
 > Revert
 - **zsh:** removed autocomplete
