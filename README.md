@@ -75,6 +75,9 @@ Recommended shells to symlink to is:
 - **zsh:** completion now case insensitive
 - **zsh:** added autocomplete on type
 
+> Revert
+- **zsh:** removed autocomplete
+
 
 <a name="v1.1.2"></a>
 ## [v1.1.2] - 2022-03-11
