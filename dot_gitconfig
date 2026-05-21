@@ -1,0 +1,50 @@
+[user]
+	email = tigor.hutasuhut@gmail.com
+	name = Tigor Hutasuhut
+[core]
+	pager = delta
+	fsmonitor = true
+	untrackedCache = true
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true
+	side-by-side = true
+	line-numbers = true
+	syntax-theme = Catppuccin Mocha
+[merge]
+	conflictstyle = zdiff3
+[init]
+	templateDir = /home/tigor/.git-template
+	defaultBranch = main
+[push]
+	default = simple
+	autoSetupRemote = true
+[pull]
+	rebase = true
+	ff = only
+[rebase]
+	autoStash = true
+	autoSquash = true
+	updateRefs = true
+[fetch]
+	prune = true
+	pruneTags = true
+[rerere]
+	enabled = true
+[diff]
+	algorithm = histogram
+	colorMoved = default
+	colorMovedWS = allow-indentation-change
+[branch]
+	sort = -committerdate
+[tag]
+	sort = version:refname
+[column]
+	ui = auto
+[commit]
+	verbose = true
+[submodule]
+	recurse = true
+[help]
+	autocorrect = prompt
