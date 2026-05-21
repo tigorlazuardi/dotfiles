@@ -1,0 +1,44 @@
+# ============================================================
+# npm/pnpm global config
+# Berlaku untuk semua project (kecuali di-override per-project)
+# ============================================================
+
+# --- KEAMANAN (anti supply-chain / Shai-Hulud) ---
+
+# Matikan auto-execute preinstall/postinstall scripts.
+# Ini defense #1 vs malicious packages (Shai-Hulud, dll).
+# Konsekuensi: package native (esbuild, sharp, prisma) butuh `pnpm approve-builds`
+# atau `pnpm rebuild <pkg>` manual. Aman dan eksplisit.
+ignore-scripts=true
+
+# Delay install package yang baru dipublish < 7 hari.
+# Logic: kalau ada versi infected dipush, community biasanya detect dalam jam-hari.
+# Mencegah download versi yang baru saja di-poison.
+# pnpm-only config (npm belum support, akan diabaikan oleh npm).
+minimum-release-age=10080
+minimum-release-age-exclude=
+
+# Pin exact version saat `pnpm add <pkg>` (no caret ^ atau tilde ~).
+# Lockfile + exact = full reproducibility.
+save-exact=true
+
+# Verifikasi engine version dari package.json (`"engines": {...}`)
+engine-strict=true
+
+# --- KUALITAS HIDUP ---
+
+# Matikan funding/donate messages saat install
+fund=false
+
+# Audit otomatis saat install (warning kalau ada vulnerability)
+audit=true
+audit-level=moderate
+
+# Lebih cepat kalau ada cache
+prefer-offline=true
+
+# Selalu generate/update lockfile
+package-lock=true
+
+# Output lebih clean
+loglevel=warn

@@ -1,0 +1,200 @@
+# ============================================================
+# Lazygit config
+# Docs: https://github.com/jesseduffield/lazygit/blob/master/docs/Config.md
+# ============================================================
+
+gui:
+  # Visual theme
+  theme:
+    activeBorderColor: [cyan, bold]
+    inactiveBorderColor: [white]
+    optionsTextColor: [blue]
+    selectedLineBgColor: [reverse]
+    selectedRangeBgColor: [reverse]
+    cherryPickedCommitBgColor: [cyan]
+    cherryPickedCommitFgColor: [blue]
+    unstagedChangesColor: [red]
+    defaultFgColor: [default]
+  # Nerd Font glyphs — kamu sudah pakai JetBrainsMono Nerd Font, manfaatin
+  nerdFontsVersion: "3"
+  # Show whitespace di diff
+  showFileTree: true
+  showRandomTip: false
+  showCommandLog: true
+  showBottomLine: true
+  showPanelJumps: true
+  showIcons: true
+  expandFocusedSidePanel: true # panel fokus auto-expand
+  mainPanelSplitMode: flexible # split horizontal/vertical otomatis
+  language: 'auto'
+  timeFormat: '02 Jan 06 15:04 MST'
+  shortTimeFormat: '15:04'
+  authorColors:
+    '*': '#c6a0f6' # consistent color per author (catppuccin mauve)
+  branchColors:
+    'main': '#a6da95' # green
+    'master': '#a6da95'
+    'develop': '#f5a97f' # orange
+  scrollHeight: 2
+  scrollPastBottom: true
+  sidePanelWidth: 0.3333
+  skipDiscardChangeWarning: false
+  skipStashWarning: false
+  showFileIcons: true
+  border: 'rounded' # rounded | single | double | hidden
+git:
+  # Pager — delta (sudah terinstall) jauh lebih cantik dari less
+  pagers:
+    - colorArg: always
+      pager: delta --paging=never --tabs=2 --syntax-theme='Catppuccin Mocha' --line-numbers --hyperlinks --hyperlinks-file-link-format='lazygit-edit://{path}:{line}'
+  commit:
+    signOff: false
+    autoWrapCommitMessage: true
+    autoWrapWidth: 72 # wrap commit msg di kolom 72 (best practice)
+  merging:
+    manualCommit: false
+    args: '' # bisa: '--no-ff' kalau selalu mau merge commit
+  log:
+    order: 'topo-order' # topo | date-order | author-date-order
+    showGraph: 'always' # always | never | when-maximised
+    showWholeGraph: false
+  skipHookPrefix: WIP # commit "WIP: blah" skip pre-commit hooks
+  mainBranches: [main, master, develop]
+  autoFetch: true
+  autoRefresh: true
+  fetchAll: true # fetch semua remote, bukan cuma origin
+  diffContextSize: 3
+  parseEmoji: true # render :sparkles: jadi ✨
+# OS / external tools
+os:
+  editPreset: 'nvim' # ganti ke 'code' / 'cursor' / 'helix' kalau perlu
+  # editCommand: ''                # custom override
+  copyToClipboardCmd: '' # auto-detect (wl-copy / xclip)
+  openLinkCommand: 'xdg-open {{link}}'
+# Confirmations
+confirmOnQuit: false
+quitOnTopLevelReturn: false # tekan `q` di top level keluar atau balik
+disableStartupPopups: true
+notARepository: 'prompt' # kalau bukan repo, tanya mau init/clone/quit
+promptToReturnFromSubprocess: false
+# ============================================================
+# Custom commands — extend lazygit dengan command keren
+# ============================================================
+customCommands:
+  # Tekan `C` di commits panel: copy SHA ke clipboard
+  - key: 'C'
+    context: 'commits'
+    description: 'Copy commit SHA to clipboard'
+    command: 'echo -n {{.SelectedLocalCommit.Sha}} | wl-copy'
+    output: log
+  # Tekan `n` di status: bikin branch baru dari main + checkout
+  - key: 'n'
+    context: 'localBranches'
+    description: 'New branch from main'
+    prompts:
+      - type: 'input'
+        title: 'Branch name'
+        key: 'BranchName'
+    command: 'git checkout main && git pull && git checkout -b {{.Form.BranchName}}'
+  # Tekan `P` di commits: buat PR via gh
+  - key: 'P'
+    context: 'commits'
+    description: 'Create PR via gh'
+    command: 'gh pr create --web'
+    loadingText: 'Opening browser...'
+  # Tekan `V` di files: view PR di browser
+  - key: 'V'
+    context: 'global'
+    description: 'View PR for current branch'
+    command: 'gh pr view --web 2>/dev/null || gh pr create --web'
+    loadingText: 'Opening PR...'
+  # Tekan `I` di global: list PRs interactive via gh
+  - key: 'I'
+    context: 'global'
+    description: 'List PRs (interactive)'
+    command: 'gh pr list && read -p "Press enter..."'
+    output: terminal
+  # Tekan `,` di stash: rename stash
+  - key: ','
+    context: 'stash'
+    description: 'Rename stash'
+    prompts:
+      - type: 'input'
+        title: 'New stash message'
+        key: 'Message'
+        initialValue: '{{ .SelectedStashEntry.Name }}'
+    command: 'git stash store -m "{{.Form.Message}}" $(git rev-parse {{.SelectedStashEntry.RefName}}) && git stash drop {{.SelectedStashEntry.RefName}}'
+    output: log
+  # Tekan `F` di global: fuzzy fzf checkout branch
+  - key: 'F'
+    context: 'localBranches'
+    description: 'Fuzzy checkout (fzf)'
+    command: "git checkout $(git branch --all | grep -v HEAD | sed 's|remotes/origin/||' | sort -u | fzf)"
+    output: terminal
+  # Tekan `R` di global: rebase interactive ke main
+  - key: 'R'
+    context: 'global'
+    description: 'Rebase interactive onto main'
+    command: 'git rebase -i main'
+    output: terminal
+  # Tekan `Z` di files panel: commit pakai glint (Conventional Commits wizard)
+  - key: 'Z'
+    context: 'files'
+    description: 'Commit with glint (Conventional Commits)'
+    command: 'glint'
+    output: terminal
+  # Tekan `S` di files: scan secret pakai gitleaks (staged + unstaged)
+  - key: 'S'
+    context: 'files'
+    description: 'Scan secrets (gitleaks)'
+    command: 'gitleaks detect --no-banner --verbose; read -p "Press enter to close..."'
+    output: terminal
+  # Tekan `s` (lowercase) di files: scan staged saja (cepat, sebelum commit)
+  - key: '<c-s>'
+    context: 'files'
+    description: 'Scan staged for secrets (gitleaks protect)'
+    command: 'gitleaks protect --staged --verbose --no-banner; read -p "Press enter to close..."'
+    output: terminal
+  # Tekan `O` di global: buka gh-dash (TUI dashboard PR/issue)
+  - key: 'O'
+    context: 'global'
+    description: 'Open gh-dash (PR/issue dashboard)'
+    command: 'gh dash'
+    output: terminal
+  # Tekan `A` di global: repo summary (onefetch)
+  - key: 'A'
+    context: 'global'
+    description: 'Repo summary (onefetch)'
+    command: 'onefetch; read -p "Press enter to close..."'
+    output: terminal
+  # Tekan `H` di files: run all pre-commit hooks manually
+  - key: 'H'
+    context: 'files'
+    description: 'Run pre-commit hooks manually'
+    command: 'pre-commit run --all-files; read -p "Press enter to close..."'
+    output: terminal
+  # Tekan `J` di commits: copy commit info as JSON (untuk processing dengan jq)
+  - key: 'J'
+    context: 'commits'
+    description: 'Copy commit info as JSON to clipboard'
+    command: 'git show --format=fuller --stat {{.SelectedLocalCommit.Sha}} | head -20 | wl-copy && echo "Copied"'
+    output: log
+# ============================================================
+# Keybindings overrides (opsional)
+# ============================================================
+keybinding:
+  universal:
+    quit: 'q'
+    quitWithoutChangingDirectory: 'Q'
+    return: '<esc>'
+    togglePanel: '<tab>'
+    prevItem: '<up>'
+    nextItem: '<down>'
+    prevPage: ','
+    nextPage: '.'
+    scrollLeft: 'H'
+    scrollRight: 'L'
+    # vim-style alternatif sudah default (j/k/h/l)
+  files:
+    commitChangesWithEditor: 'C' # 'C' = commit pakai $EDITOR (untuk multi-line)
+    # 'c' (lowercase) = commit dengan input box (single line) — default

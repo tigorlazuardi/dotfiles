@@ -1,0 +1,17 @@
+#!/usr/bin/env fish
+  # 1. Gitleaks: scan staged file untuk secret (selalu jalan)
+  if command -q gitleaks
+      gitleaks protect --staged --redact --verbose --no-banner
+      or begin
+          echo ""
+          echo "✗ Gitleaks detected secrets. Commit aborted."
+          echo "  Review hasil di atas. Kalau false-positive, tambahin ke .gitleaksignore"
+          echo "  Atau bypass dengan: git commit --no-verify"
+          exit 1
+      end
+  end
+
+  # 2. pre-commit framework (jalan kalau ada config di repo)
+  if test -f .pre-commit-config.yaml
+      pre-commit run
+  end
