@@ -1,0 +1,38 @@
+# ============================================================
+# .chezmoiignore — file/pattern yang TIDAK boleh di-track oleh chezmoi
+# Pattern relative ke $HOME, gitignore-style
+# Berlaku saat `chezmoi add` (skip) DAN `chezmoi apply` (gak touch target)
+# ============================================================
+
+# --- fish ---
+.config/fish/fish_variables            # machine-specific universal vars
+.config/fish/fish_history              # local history
+.config/fish/completions/**            # auto-downloaded completions (kalau ada)
+
+# --- lazygit ---
+.config/lazygit/state.yml              # runtime state, auto-generated
+.config/lazygit/*.log                  # error logs
+
+# --- ghostty ---
+.config/ghostty/themes/**              # local custom themes (opsional, hapus pattern ini kalau mau di-track)
+
+# --- chezmoi sendiri ---
+.config/chezmoi/chezmoi.toml.tmpl      # template-only, gak perlu di-track sebagai-is
+
+# --- system / cache yang nyasar ---
+.config/**/*.lock
+.config/**/cache/**
+.config/**/Cache/**
+.config/**/.cache/**
+.config/**/logs/**
+.config/**/*.log
+
+# --- security ---
+# Pastiin secret gak nyasar ke-add (defense-in-depth, gitleaks juga akan reject)
+.config/**/credentials*
+.config/**/secrets*
+.config/**/*.key
+.config/**/*.pem
+.npmrc-personal
+.envrc                                 # per-direktori env, jangan track global
+.envrc.local

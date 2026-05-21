@@ -1,0 +1,19 @@
+{{/* ============================================================
+     chezmoi.toml.tmpl
+     Template untuk ~/.config/chezmoi/chezmoi.toml
+     Dirender saat `chezmoi init`. Edit di sini, JANGAN edit output-nya.
+     ============================================================ */ -}}
+
+{{- $name  := promptStringOnce . "name"  "Nama lengkap (untuk git)" "Tigor Hutasuhut" -}}
+{{- $email := promptStringOnce . "email" "Email (untuk git)"        "tigor.hutasuhut@gmail.com" -}}
+
+[data]
+name  = {{ $name | quote }}
+email = {{ $email | quote }}
+
+[git]
+# Auto-commit setelah `chezmoi add` / `re-add`
+autoCommit = true
+# Auto-push setelah auto-commit
+autoPush = true
+# Commit message: pakai default chezmoi (auto-generate per file: "Add X", "Update Y", dll)
