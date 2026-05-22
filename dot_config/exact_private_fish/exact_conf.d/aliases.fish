@@ -4,7 +4,7 @@
 # ============================================================
 
 # --- ls -> eza ---
-alias ls 'eza --icons --git'
+alias ls 'eza -la --icons --git'
 alias ll 'eza -la --icons --git --group-directories-first'
 alias la 'eza -a --icons'
 alias lt 'eza --tree --icons --git-ignore --level=2'
