@@ -29,3 +29,12 @@ alias pni 'pnpm install --frozen-lockfile'    # selalu strict, no surprise
 alias pnr 'pnpm run'
 alias pnx 'pnpm dlx'                          # ephemeral exec, no global install
 alias pnu 'pnpm update --interactive'         # review tiap update manual
+
+# --- chezmoi shortcuts ---
+alias ce 'chezmoi edit'                       # edit source template, preserve syntax
+alias cea 'chezmoi edit --apply'              # edit + apply langsung
+alias ca 'chezmoi apply'
+alias cs 'chezmoi status'
+alias cd-cz 'chezmoi cd'                      # cd ke source dir
+alias ccat 'chezmoi cat'                      # render target ke stdout (preview)
+alias cdiff 'chezmoi diff'

@@ -29,3 +29,7 @@ autoPush = true
 [age]
 identity  = {{ $ageId | quote }}
 recipient = {{ $ageRecipient | quote }}
+
+[edit]
+# Editor untuk `chezmoi edit`. Fallback ke $EDITOR/$VISUAL kalau ini gak di-set.
+command = "nvim"

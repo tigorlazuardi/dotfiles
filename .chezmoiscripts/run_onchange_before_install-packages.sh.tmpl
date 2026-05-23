@@ -39,6 +39,8 @@ BREW_FORMULAE=(
   direnv
   node             # nodejs + npm
   pnpm             # langsung dari brew, skip corepack (lihat install script comment)
+  neovim           # default $EDITOR
+  age              # encryption untuk chezmoi secret
 )
 # Catatan: corepack tidak dipakai karena konflik binary dengan brew pnpm.
 # Konsekuensi: pnpm version fixed via brew, gak per-project (gak baca packageManager field).
