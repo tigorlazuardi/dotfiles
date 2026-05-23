@@ -42,3 +42,13 @@ package-lock=true
 
 # Output lebih clean
 loglevel=warn
+
+# --- AUTH ---
+# Token di-decrypt dari .npm-token.age saat apply. File .npm-token.age di source dir
+# (lone file, gak ke-apply karena gak ada prefix dot_/private_dot_). Encrypted by age.
+# Cara set/rotate token:
+#   pbpaste | chezmoi encrypt --output (chezmoi source-path)/.npm-token.age
+#   chezmoi apply ~/.npmrc
+{{- if stat (joinPath .chezmoi.sourceDir ".npm-token.age") }}
+//registry.npmjs.org/:_authToken={{ include ".npm-token.age" | decrypt | trim }}
+{{- end }}
