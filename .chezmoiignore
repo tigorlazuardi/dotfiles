@@ -18,6 +18,8 @@
 
 # --- chezmoi sendiri ---
 .config/chezmoi/chezmoi.toml.tmpl      # template-only, gak perlu di-track sebagai-is
+README.md                              # repo readme, bukan dotfile target
+LICENSE                                # repo license, bukan dotfile target
 
 # --- system / cache yang nyasar ---
 .config/**/*.lock
