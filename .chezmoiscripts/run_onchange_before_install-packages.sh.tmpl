@@ -41,6 +41,27 @@ BREW_FORMULAE=(
   pnpm             # langsung dari brew, skip corepack (lihat install script comment)
   neovim           # default $EDITOR
   age              # encryption untuk chezmoi secret
+
+  # --- nvim ecosystem (LSP/formatter/linter) ---
+  # LazyVim extras: go, typescript+biome, prettier, docker, markdown, sql, toml, sops.
+  # LSP lain (json, yaml, svelte, astro, tailwind, dll) di-handle mason on-demand.
+  go               # toolchain Go (gopls + gofmt bundled in)
+  gopls            # Go LSP (eksplisit, biar gak depend on `go install`)
+  gofumpt          # Go formatter (stricter dari gofmt)
+  golangci-lint    # Go linter aggregator
+  delve            # Go debugger (dlv)
+  biome            # TS/JS LSP + formatter + linter
+  prettier         # formatter (markdown, json, css, dll)
+  stylua           # Lua formatter (config exists: nvim/stylua.toml)
+  selene           # Lua linter (config exists: nvim/selene.toml)
+  shellcheck       # shell linter
+  shfmt            # shell formatter
+  hadolint         # Dockerfile linter
+  marksman         # Markdown LSP
+  taplo            # TOML formatter + LSP
+  sqlfluff         # SQL linter + formatter
+  lua-language-server  # Lua LSP (untuk nvim config sendiri via lazydev)
+  sops             # secret editor (plugin nvim-sops)
 )
 # Catatan: corepack tidak dipakai karena konflik binary dengan brew pnpm.
 # Konsekuensi: pnpm version fixed via brew, gak per-project (gak baca packageManager field).
@@ -114,11 +135,18 @@ fi
 # --- Pacman packages (core repos) ---
 log "Installing pacman packages..."
 sudo pacman -S --needed --noconfirm \
-  fish ghostty chezmoi nodejs npm \
+  fish ghostty chezmoi nodejs npm pnpm \
   lazygit git-delta gh gh-dash gitleaks pre-commit \
   eza bat fd ripgrep fzf jq onefetch \
   zoxide direnv wl-clipboard ttf-jetbrains-mono-nerd \
-  neovim age
+  neovim age \
+  `# --- nvim ecosystem (LSP/formatter/linter) ---` \
+  go gopls go-tools delve golangci-lint \
+  biome prettier \
+  stylua lua-language-server \
+  shellcheck shfmt \
+  taplo-cli \
+  sops
 
 # --- AUR packages via yay ---
 # yay -S idempotent (--needed skip kalau sudah terinstall).
@@ -127,6 +155,11 @@ log "Installing AUR packages..."
 yay -S --needed --noconfirm --answerdiff=None --answerclean=None \
   glint \
   claude-code \
+  gofumpt \
+  selene \
+  hadolint-bin \
+  marksman-bin \
+  sqlfluff \
   || warn "Beberapa AUR package gagal install. Cek output di atas."
 
 {{   else -}}

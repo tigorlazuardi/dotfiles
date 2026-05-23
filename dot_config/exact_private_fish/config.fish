@@ -5,6 +5,19 @@
 set -gx EDITOR nvim
 set -gx VISUAL nvim
 
+# --- PATH additions ---
+# bun — JS runtime + package manager. Global installs ke $BUN_INSTALL/bin.
+set -gx BUN_INSTALL "$HOME/.bun"
+
+# fish_add_path -g = global scope (current shell). Idempotent (skip kalau sudah ada).
+# Pakai -g (bukan -U universal) supaya gak nyangkut di fish_variables file dan
+# tetap fresh dari config.fish setiap shell start.
+# Order: bun > npm global > cargo > existing PATH.
+fish_add_path -g \
+    $BUN_INSTALL/bin \
+    $HOME/.local/npm/bin \
+    $HOME/.cargo/bin
+
 if status is-interactive
     # zoxide — ganti `cd` builtin dengan smart cd (frecency-based)
     # Pakai `cd` seperti biasa, tapi sekarang bisa: `cd proj` -> jump ke project terakhir

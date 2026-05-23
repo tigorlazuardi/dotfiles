@@ -27,6 +27,10 @@ engine-strict=true
 
 # --- KUALITAS HIDUP ---
 
+# Global install prefix — hindari /usr/local atau /opt/homebrew yang butuh sudo.
+# `npm install -g <pkg>` taro binary di $prefix/bin → harus ada di PATH (config.fish handle).
+prefix={{ .chezmoi.homeDir }}/.local/npm
+
 # Matikan funding/donate messages saat install
 fund=false
 
