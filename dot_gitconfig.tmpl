@@ -1,6 +1,6 @@
 [user]
-	email = tigor.hutasuhut@gmail.com
-	name = Tigor Hutasuhut
+	email = {{ .email | quote }}
+	name = {{ .name | quote }}
 [core]
 	pager = delta
 	fsmonitor = true
@@ -15,7 +15,7 @@
 [merge]
 	conflictstyle = zdiff3
 [init]
-	templateDir = /home/tigor/.git-template
+	templateDir = {{ .chezmoi.homeDir }}/.git-template
 	defaultBranch = main
 [push]
 	default = simple
