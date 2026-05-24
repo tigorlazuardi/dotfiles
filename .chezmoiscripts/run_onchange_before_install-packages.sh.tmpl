@@ -132,9 +132,11 @@ else
   log "yay sudah ada: $(yay --version | head -1)"
 fi
 
-# --- Pacman packages (core repos) ---
-log "Installing pacman packages..."
-sudo pacman -S --needed --noconfirm \
+# --- AUR packages via yay ---
+# yay -S idempotent (--needed skip kalau sudah terinstall).
+# Pakai --noconfirm + --answerdiff=None biar gak prompt PKGBUILD diff (CI-friendly).
+log "Installing AUR packages..."
+yay -S --needed --noconfirm --answerdiff=None --answerclean=None \
   fish ghostty chezmoi nodejs npm pnpm \
   lazygit git-delta gh gh-dash gitleaks pre-commit \
   eza bat fd ripgrep fzf jq onefetch \
@@ -144,15 +146,9 @@ sudo pacman -S --needed --noconfirm \
   go gopls go-tools delve golangci-lint \
   biome prettier \
   stylua lua-language-server \
-  shellcheck shfmt \
+  shellcheck-bin shfmt \
   taplo-cli \
   sops
-
-# --- AUR packages via yay ---
-# yay -S idempotent (--needed skip kalau sudah terinstall).
-# Pakai --noconfirm + --answerdiff=None biar gak prompt PKGBUILD diff (CI-friendly).
-log "Installing AUR packages..."
-yay -S --needed --noconfirm --answerdiff=None --answerclean=None \
   glint \
   claude-code \
   gofumpt \
