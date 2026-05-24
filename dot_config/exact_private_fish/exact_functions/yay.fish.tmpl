@@ -1,0 +1,5 @@
+{{ if eq .chezmoi.os "linux" -}}
+function yay --description 'Run yay with bypassing diffs and build-infos'
+  yay  $argv
+end
+{{ end -}}
