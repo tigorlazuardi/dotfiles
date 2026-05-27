@@ -79,12 +79,57 @@ A "slice" is a unit of work that fits roughly one PR or one focused milestone.
    - `IMPLEMENTATION.md` (general approach + reasoning).
    - `TASKS.md` (concrete steps).
    - `RESUME.md` (initial state, status: active).
-4. **Delegate.** Spawn `sonnet-implementer` with a tight spec: goal, files in scope, files out of scope, acceptance criteria for this step, gotchas. Point the worker at the slice folder path.
-5. **Review.** When the subagent returns, read its summary and the diff. Verify it matches the spec. Run tests/typecheck if relevant.
-6. **Update RESUME.md.** After each completed milestone, update: mark TASKS steps done, append decisions made into IMPLEMENTATION.md, record open questions, save the path of any worker handover.
-7. **Fix loop.** If the work is incomplete or wrong, spawn another `sonnet-implementer` with a fix spec referencing what failed. Do not implement the fix directly.
-8. **Worker-handover relay.** If a sonnet worker returns a pre-compaction handover, read the handover file, spawn a fresh `sonnet-implementer`, pass it the handover path and the original spec.
-9. **Wrap.** Report outcome to user. If slice complete, set RESUME.md status to `done`. Commit only if user asked.
+4. **Dependency check.** Look at the work and decide: is this a single linear chain, or does it split into independent branches? Independent branches → spawn workers in parallel (see "Parallel spawn" below). Dependent chain → serialize.
+5. **Delegate.** Spawn `sonnet-implementer` with a tight spec: goal, files in scope, files out of scope, acceptance criteria for this step, gotchas. Point the worker at the slice folder path.
+6. **Review.** When the subagent returns, read its summary and the diff. Verify it matches the spec. Run tests/typecheck if relevant.
+7. **Update RESUME.md.** After each completed milestone, update: mark TASKS steps done, append decisions made into IMPLEMENTATION.md, record open questions, save the path of any worker handover.
+8. **Fix loop.** If the work is incomplete or wrong, spawn another `sonnet-implementer` with a fix spec referencing what failed. Do not implement the fix directly.
+9. **Worker-handover relay.** If a sonnet worker returns a pre-compaction handover, read the handover file, spawn a fresh `sonnet-implementer`, pass it the handover path and the original spec.
+10. **Wrap.** Report outcome to user. If slice complete, set RESUME.md status to `done`. Commit only if user asked.
+
+## Parallel spawn (multi-agent fan-out)
+
+You may spawn multiple sonnet workers concurrently when their dependency chains are clear and do not overlap. This is the preferred way to speed up slices that decompose into independent units.
+
+### When to fan out
+
+Spawn in parallel when:
+- Tasks touch **disjoint file sets** (e.g., worker A edits `frontend/`, worker B edits `backend/`).
+- Tasks are **independent reads / research** that the orchestrator will synthesize.
+- A slice contains multiple sub-steps that share no state.
+
+Serialize (one at a time) when:
+- Worker B needs worker A's output (file produced, type added, function renamed).
+- Workers would edit the same file → merge conflicts.
+- A test/lint run must observe both changes together and you cannot afford a broken interim state.
+
+### Use git worktrees for parallel writes
+
+When spawning ≥2 workers that will both write code, **pass `isolation: "worktree"` in the Agent tool call**. This gives each worker its own temporary git worktree, branched from the default branch, so their edits do not collide with each other or with your checkout.
+
+How worktree isolation works (per Claude Code docs):
+- A temporary worktree is created from the repo's default branch.
+- The subagent runs entirely inside that worktree — its file edits never touch your main working copy.
+- When the subagent finishes, Claude Code returns the worktree path + branch name in the result. If the subagent made no changes, the worktree is auto-cleaned.
+- After all parallel workers return, the orchestrator merges their branches back (manually or via a follow-up worker), runs the combined test suite, then deletes the worktrees.
+
+### Fan-out workflow
+
+1. Decompose the slice's TASKS into independent units. List dependencies explicitly in `IMPLEMENTATION.md` or a short "Parallel plan" section in `RESUME.md`.
+2. For each independent unit, prepare a separate worker spec (files in scope, files out of scope, acceptance criteria).
+3. Spawn all workers in **one message with multiple Agent tool calls** (this is what runs them in parallel). Pass `isolation: "worktree"` when they write code.
+4. As each worker returns, capture: result summary, worktree path, branch name. Park these in RESUME.md under "Parallel results".
+5. Once all workers return, integrate: merge branches in order, resolve any conflicts (spawn a fix worker if conflicts are non-trivial), run combined verification.
+6. Clean up worktrees (chezmoi/CC handles auto-cleanup for no-op workers; otherwise `git worktree remove <path>` after merge).
+
+### Read-only fan-out
+
+For parallel research (Read/Grep/Glob only — no edits), worktree is unnecessary. Spawn multiple `sonnet-support` or `Explore` subagents in one message without `isolation: "worktree"`. Each returns its summary; you synthesize.
+
+### Caps
+
+- Soft cap ~4 parallel workers at a time. More than that and orchestrator review becomes the bottleneck.
+- If a parallel batch fails coherence checks (merged tests red, type drift, etc.), do NOT spawn more — diagnose, then either redo serially or shrink the slice.
 
 ## File templates
 

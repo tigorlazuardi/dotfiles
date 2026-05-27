@@ -59,6 +59,15 @@
         "installedAt": "2026-05-24T17:09:38.934Z",
         "lastUpdated": "2026-05-24T17:09:38.934Z"
       }
+    ],
+    "gopls-lsp@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/tigorhutasuhut/.claude/plugins/cache/claude-plugins-official/gopls-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-05-27T13:14:48.644Z",
+        "lastUpdated": "2026-05-27T13:14:48.644Z"
+      }
     ]
   }
 }
