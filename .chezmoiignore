@@ -29,6 +29,36 @@ LICENSE                                # repo license, bukan dotfile target
 .config/**/logs/**
 .config/**/*.log
 
+# --- claude code ---
+# Only track: commands/, agents/, skills/, hooks/, settings.json, plugins/*.json
+.claude/backups/**
+.claude/cache/**
+.claude/debug/**
+.claude/file-history/**
+.claude/paste-cache/**
+.claude/plans/**
+.claude/projects/**
+.claude/session-env/**
+.claude/sessions/**
+.claude/shell-snapshots/**
+.claude/statsig/**
+.claude/tasks/**
+.claude/telemetry/**
+.claude/todos/**
+.claude/history.jsonl
+.claude/*.bak
+.claude/.caveman-active
+.claude/.last-cleanup
+.claude/stats-cache.json
+.claude/mcp-needs-auth-cache.json
+.claude/plugins/cache/**
+.claude/plugins/marketplaces/**
+.claude/plugins/data/**
+.claude/plugins/install-counts-cache.json
+.claude/handovers/**
+.claude/scratch/**
+.claude/agent-memory/**
+
 # --- security ---
 # Pastiin secret gak nyasar ke-add (defense-in-depth, gitleaks juga akan reject)
 .config/**/credentials*

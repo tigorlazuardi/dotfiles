@@ -1,0 +1,64 @@
+{
+  "version": 2,
+  "plugins": {
+    "posthog@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/tigorhutasuhut/.claude/plugins/cache/claude-plugins-official/posthog/1.1.22",
+        "version": "1.1.22",
+        "installedAt": "2026-01-30T17:54:10.037Z",
+        "lastUpdated": "2026-05-19T17:50:15.780Z",
+        "gitCommitSha": "0eac06faf63e6258fbe5f9307787cef32688c14f"
+      }
+    ],
+    "frontend-design@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/tigorhutasuhut/.claude/plugins/cache/claude-plugins-official/frontend-design/unknown",
+        "version": "unknown",
+        "installedAt": "2026-02-02T12:39:05.371Z",
+        "lastUpdated": "2026-04-05T04:27:44.131Z",
+        "gitCommitSha": "27d2b86d72da27c64585150857cee8472ad47abb"
+      }
+    ],
+    "context7@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/tigorhutasuhut/.claude/plugins/cache/claude-plugins-official/context7/unknown",
+        "version": "unknown",
+        "installedAt": "2026-02-02T12:39:34.090Z",
+        "lastUpdated": "2026-04-05T04:27:44.131Z",
+        "gitCommitSha": "27d2b86d72da27c64585150857cee8472ad47abb"
+      }
+    ],
+    "playwright@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/tigorhutasuhut/.claude/plugins/cache/claude-plugins-official/playwright/unknown",
+        "version": "unknown",
+        "installedAt": "2026-02-02T12:39:34.113Z",
+        "lastUpdated": "2026-04-05T04:27:44.131Z",
+        "gitCommitSha": "27d2b86d72da27c64585150857cee8472ad47abb"
+      }
+    ],
+    "caveman@caveman": [
+      {
+        "scope": "user",
+        "installPath": "/Users/tigorhutasuhut/.claude/plugins/cache/caveman/caveman/18e45320a0b1",
+        "version": "18e45320a0b1",
+        "installedAt": "2026-05-19T17:50:59.941Z",
+        "lastUpdated": "2026-05-19T17:50:59.941Z",
+        "gitCommitSha": "18e45320a0b1aecc959a807f8568ee44b3aaa055"
+      }
+    ],
+    "ralph-loop@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/tigorhutasuhut/.claude/plugins/cache/claude-plugins-official/ralph-loop/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-05-24T17:09:38.934Z",
+        "lastUpdated": "2026-05-24T17:09:38.934Z"
+      }
+    ]
+  }
+}
