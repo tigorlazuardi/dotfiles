@@ -68,3 +68,23 @@ LICENSE                                # repo license, bukan dotfile target
 .npmrc-personal
 .envrc                                 # per-direktori env, jangan track global
 .envrc.local
+
+# ============================================================
+# nixos server — sync HANYA config Claude Code
+# ============================================================
+# Di NixOS, cuma ~/.claude/** + script reinstall plugin Claude yang
+# di-sync. Semua dotfile lain di-exclude.
+# Catatan chezmoi: exclude SELALU menang atas include (!pattern), jadi
+# whitelist via ! mustahil — harus enumerate tiap target non-claude.
+# Nested if: cek os==linux dulu, baru osRelease.id (darwin gak punya key 'id').
+{{ if eq .chezmoi.os "linux" -}}
+{{ if eq .chezmoi.osRelease.id "nixos" -}}
+.config
+.config/**
+.gitconfig
+.npmrc
+.git-template
+.git-template/**
+.chezmoiscripts/install-packages.sh
+{{ end -}}
+{{ end -}}

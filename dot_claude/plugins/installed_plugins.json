@@ -4,10 +4,10 @@
     "posthog@claude-plugins-official": [
       {
         "scope": "user",
-        "installPath": "/Users/tigorhutasuhut/.claude/plugins/cache/claude-plugins-official/posthog/1.1.22",
-        "version": "1.1.22",
+        "installPath": "/Users/tigorhutasuhut/.claude/plugins/cache/claude-plugins-official/posthog/1.1.26",
+        "version": "1.1.26",
         "installedAt": "2026-01-30T17:54:10.037Z",
-        "lastUpdated": "2026-05-19T17:50:15.780Z",
+        "lastUpdated": "2026-05-29T14:28:43.430Z",
         "gitCommitSha": "0eac06faf63e6258fbe5f9307787cef32688c14f"
       }
     ],
