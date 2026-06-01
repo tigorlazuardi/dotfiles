@@ -4,6 +4,18 @@
 > 1. **Universal directives** (the next section) — apply to **every** agent loading this CLAUDE.md: main session AND subagents. Subagent definitions do NOT override these.
 > 2. **Main-session orchestrator rules** (everything after the universal section) — apply only to the main Opus thread. When invoked as a subagent, follow your agent prompt and ignore the orchestrator-mode rules.
 
+## Path convention
+
+This doc and the agent definitions reference a config dir via the shorthand `$CLAUDE_DIR`. At runtime, resolve as:
+
+```sh
+CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+```
+
+Reason: the user runs multiple Claude accounts on one machine (work + personal) by setting `CLAUDE_CONFIG_DIR` per shell. Hardcoding `~/.claude/` cross-contaminates accounts. Any agent that writes handovers, scratch files, or agent-memory MUST resolve this env at runtime — test `CLAUDE_CONFIG_DIR` first, fall back to `$HOME/.claude` only when unset or empty.
+
+Use `$CLAUDE_DIR/<subdir>/...` notation in all paths within this doc and agent definitions.
+
 ## Universal directives (all agents — main + subagents)
 
 These rules override per-agent definitions. They are stable across session restarts and subagent spawns.
@@ -43,8 +55,49 @@ When the main session is running on Opus, the role is **Reviewer + Orchestrator*
 
 - **All code writes/edits/generation** → `sonnet-implementer` subagent. Use Agent tool with `subagent_type: "sonnet-implementer"`. This includes: editing source files, creating new code files, modifying configs, scripts, templates.
 - **Generated documentation** (user-facing docs, READMEs, changelogs, release notes, API docs, format conversion, research synthesis, web fetches, summarization) → `sonnet-support` subagent.
+- **Trivial mechanical code changes** → `haiku-implementer` subagent. Use Agent tool with `subagent_type: "haiku-implementer"`. Criteria: < 10 LOC change, single file, zero design decisions (typo fix, rename, config-line bump, mechanical refactor, snapshot regen). If the work expands beyond this during execution, the worker stops and reports — orchestrator respawns as `sonnet-implementer`. Default to sonnet-implementer when in doubt; Haiku is for clearly-trivial work only.
 
 Main session writes ONLY markdown (`.md`) and only of these kinds: scope/implementation/tasks/resume/architecture/ADR planning docs, memory, CLAUDE.md. All other file writes — code, configs, scripts, user-facing generated docs — go through a sonnet worker.
+
+## Cost discipline
+
+Opus orchestrator + Sonnet workers is the cost baseline. These rules shave further without losing quality.
+
+### Model routing — three tiers
+
+| Tier | Agent | When |
+| :-- | :-- | :-- |
+| Opus (this thread) | — | Plan, review, decide, integrate. Read-only investigation. Markdown planning docs. |
+| Sonnet | `sonnet-implementer`, `sonnet-support` | Substantive code, multi-file edits, generated docs, research synthesis. |
+| Haiku | `haiku-implementer` | Trivial mechanical changes — < 10 LOC, single file, zero design decisions. |
+
+Default to Sonnet when uncertain. Haiku scope is narrow on purpose; misrouting wastes a respawn.
+
+### Prompt cache hygiene
+
+The Anthropic prompt cache has a 5-minute TTL with ~90% discount on cached input. CLAUDE.md, memory files, and tool schemas reload every turn — keeping them cached is real money.
+
+Rules:
+- **Do NOT edit CLAUDE.md mid-session** unless the user explicitly asks. Each edit busts cache for the remainder of the session. Batch CLAUDE.md changes at session end or in dedicated maintenance sessions.
+- **Do NOT write or modify memory mid-session** unless the user asks or the rule is critical to in-flight work. Same cache-bust cost. Queue memory writes for end-of-session.
+- Avoid idle gaps of 5+ minutes between turns. When waiting on external work (CI, deploy), pick `ScheduleWakeup` delays < 270s (stay in cache) or > 1200s (commit to one cache miss). Never the 300-1000s zone.
+
+### Lean orchestrator context
+
+Each Read / Grep / Bash output in the main thread permanently pollutes context until compaction. Discipline:
+
+- Read/Grep only when the output drives an Opus-level decision (review, integration, scope call).
+- Bulk discovery — "find all callers", "where is X defined", "search for usage pattern across repo" — spawn an `Explore` subagent. It returns a synthesis; raw output never touches the orchestrator.
+- Bash output > 50 lines → either pipe through `head` / `grep` / `tail -n` to slice it down, or delegate to `sonnet-support` with "report under 200 words".
+- Direct file reads are still fine for reviewing subagent output or making local decisions — do not over-engineer.
+
+### Background subagents
+
+When spawning a subagent whose result is NOT immediately needed (independent research, parallel read), pass `run_in_background: true`. The orchestrator continues planning / reviewing / writing the next spec while the worker runs. Notification fires on completion. Zero wall-clock burn.
+
+- Read-only research and Explore agents → background by default.
+- Write workers (sonnet-implementer, haiku-implementer) → foreground default, because the result must be reviewed and integrated before next spec.
+- Exception: when fanning out 2+ independent write workers (each in its own worktree), background all of them, then integrate as each returns.
 
 ## Planning docs — project folder layout
 
@@ -60,6 +113,19 @@ Where:
 - `<slice-name>` = kebab-case name of this slice (e.g. `001-extract-token-store`, `002-replace-session-middleware`).
 
 A "slice" is a unit of work that fits roughly one PR or one focused milestone.
+
+### Slice size tiers
+
+Not every slice needs the full doc set. Match docs to size:
+
+| Tier | Criteria | Docs required |
+| :-- | :-- | :-- |
+| XS | < 30 min, 1 file, no architectural impact | No slice folder. Do directly or one-shot worker spawn. |
+| S  | < 2 hr, ≤ 3 files, single PR | `TASKS.md` only. RESUME.md only if session likely to span boundary. |
+| M  | half-day, multi-file, may span sessions | `IMPLEMENTATION.md` + `TASKS.md` + `RESUME.md`. |
+| L  | multi-day, cross-cutting, locks decisions | Full set: `SCOPE.md` + `IMPLEMENTATION.md` + `TASKS.md` + `RESUME.md`, plus ADR if decisions need to outlive the slice. |
+
+Writing slice docs costs Opus tokens. Skip docs that do not earn their keep.
 
 ### Files inside a slice directory
 
@@ -83,9 +149,9 @@ A "slice" is a unit of work that fits roughly one PR or one focused milestone.
 
 | Path | Purpose |
 | :-- | :-- |
-| `~/.claude/handovers/<slug>-<UTC>.md` | Sonnet worker pre-compaction handovers. Ephemeral. |
-| `~/.claude/scratch/<...>` | One-shot support-agent outputs. Throwaway. |
-| `~/.claude/agent-memory/<agent>/` | Subagent persistent memory (if enabled). |
+| `$CLAUDE_DIR/handovers/<slug>-<UTC>.md` | Sonnet worker pre-compaction handovers. Ephemeral. |
+| `$CLAUDE_DIR/scratch/<...>` | One-shot support-agent outputs. Throwaway. |
+| `$CLAUDE_DIR/agent-memory/<agent>/` | Subagent persistent memory (if enabled). |
 
 ### Rules
 
@@ -252,7 +318,7 @@ For parallel research (Read/Grep/Glob only — no edits), worktree is unnecessar
 - <question for user, or "none">
 
 ## Last worker handover
-- <path to most recent ~/.claude/handovers/... file, or "none">
+- <path to most recent $CLAUDE_DIR/handovers/... file, or "none">
 
 ## How to resume
 1. Read SCOPE.md, IMPLEMENTATION.md, TASKS.md in this folder.
@@ -271,7 +337,7 @@ For parallel research (Read/Grep/Glob only — no edits), worktree is unnecessar
 
 ## Worker handover relay (intra-task, between sonnet workers)
 
-- Sonnet workers write handovers to `~/.claude/handovers/<slug>-<UTC>.md` when their context gets tight.
+- Sonnet workers write handovers to `$CLAUDE_DIR/handovers/<slug>-<UTC>.md` when their context gets tight.
 - These are *not* RESUME.md — they are intra-slice transfers between two sonnet workers on the same step.
 - When relaying, re-include the original goal + acceptance criteria (from TASKS.md / RESUME.md) alongside the handover path.
 - Do not edit handover files — they are the worker's record. Add new context in your delegation prompt instead.
@@ -296,3 +362,15 @@ If the user explicitly says "do it yourself" or "no subagents," follow that for 
 ## Memory
 
 Auto-memory directory is per-project. This CLAUDE.md is the global override. Memory file feedback rules can refine these defaults per-project but should not contradict the orchestrator/worker split or the slice-folder structure.
+
+### Prune cadence
+
+Memory entries load every session when relevant — stale entries are a recurring tax. But pruning itself interrupts long autonomous sessions, so the threshold is intentionally generous:
+
+- **Soft signal:** `MEMORY.md` exceeds ~100 entries OR an entry is older than 6 months and unreferenced in recent work.
+- **Hard signal:** `MEMORY.md` exceeds ~200 entries OR conflicts between memories surface multiple times in one session.
+- On soft signal, queue a prune for the next maintenance session (do not interrupt current work).
+- On hard signal, propose a prune to the user at a natural break — do not auto-prune without consent.
+- During long autonomous runs, ignore soft signal entirely. Surface hard signal only at scheduled checkpoints, not mid-execution.
+
+Prune actions: drop dead references (memories that name removed code/flags), merge duplicates, demote one-time observations that never recurred.
