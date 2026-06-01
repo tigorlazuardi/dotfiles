@@ -55,6 +55,9 @@ LICENSE                                # repo license, bukan dotfile target
 .claude/plugins/marketplaces/**
 .claude/plugins/data/**
 .claude/plugins/install-counts-cache.json
+# machine-specific runtime cache: contains absolute installPath + timestamps, regenerated per-machine
+.claude/plugins/installed_plugins.json
+.claude/plugins/known_marketplaces.json
 .claude/handovers/**
 .claude/scratch/**
 .claude/agent-memory/**
