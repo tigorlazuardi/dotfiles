@@ -1,12 +1,14 @@
 #!/bin/sh
-# Re-install Claude Code plugins listed in ~/.claude/plugins/installed_plugins.json
-# Runs on chezmoi apply when the source JSON files change.
+# Re-install Claude Code plugins declared in ~/.claude/settings.json.
+# Runs on chezmoi apply when the settings template changes.
 #
 # Hash trigger (forces re-run when content changes):
-# installed_plugins.json: {{ include "dot_claude/plugins/installed_plugins.json" | sha256sum }}
-# known_marketplaces.json: {{ include "dot_claude/plugins/known_marketplaces.json" | sha256sum }}
+# settings: {{ include "dot_claude/private_settings.json.tmpl" | sha256sum }}
 
 set -eu
+
+CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+SETTINGS="$CLAUDE_DIR/settings.json"
 
 if ! command -v claude >/dev/null 2>&1; then
   echo "[claude-plugins] claude CLI not found in PATH, skipping plugin bootstrap"
@@ -18,16 +20,13 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 0
 fi
 
-MARKETPLACES="$HOME/.claude/plugins/known_marketplaces.json"
-INSTALLED="$HOME/.claude/plugins/installed_plugins.json"
-
-if [ ! -f "$MARKETPLACES" ] || [ ! -f "$INSTALLED" ]; then
-  echo "[claude-plugins] metadata files missing, nothing to do"
+if [ ! -f "$SETTINGS" ]; then
+  echo "[claude-plugins] $SETTINGS not found, nothing to do"
   exit 0
 fi
 
 echo "[claude-plugins] registering marketplaces…"
-jq -r 'to_entries[] | "\(.key)\t\(.value.source.repo // .value.source.url // .value.source.path)"' "$MARKETPLACES" \
+jq -r '(.extraKnownMarketplaces // {}) | to_entries[] | "\(.key)\t\(.value.source.repo // .value.source.url // .value.source.path // "")"' "$SETTINGS" \
 | while IFS="$(printf '\t')" read -r name source; do
     [ -z "$source" ] && continue
     if claude plugin marketplace list 2>/dev/null | grep -q "^$name\b"; then
@@ -39,7 +38,7 @@ jq -r 'to_entries[] | "\(.key)\t\(.value.source.repo // .value.source.url // .va
   done
 
 echo "[claude-plugins] installing plugins…"
-jq -r '.plugins | keys[]' "$INSTALLED" \
+jq -r '(.enabledPlugins // {}) | to_entries[] | select(.value == true) | .key' "$SETTINGS" \
 | while read -r plugin; do
     [ -z "$plugin" ] && continue
     if claude plugin list 2>/dev/null | grep -q "^$plugin\b"; then
