@@ -1,7 +1,7 @@
 {{ if eq .chezmoi.os "linux" -}}
 {{ if eq .chezmoi.osRelease.id "arch" -}}
 function yay --description 'Run yay with bypassing diffs and build-infos'
-  yay $argv
+  command yay $argv
 end
 {{ end -}}
 {{ end -}}
