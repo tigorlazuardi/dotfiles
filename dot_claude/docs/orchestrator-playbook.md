@@ -68,6 +68,37 @@ Research only (Read/Grep/Glob, no edits) → no worktree. Spawn multiple `sonnet
 - Do not edit handover files — worker's record. Add new context in the delegation prompt instead.
 - Old handovers are scratch; safe to delete once RESUME.md marks the slice done.
 
+## Ralph autonomous execution (Sonnet side)
+
+The complex-feature path: Opus authored a `CONTRACT.md` via `/ralph-plan`; a fresh Sonnet session now executes it unattended through the ralph-loop plugin. Contract template + ralph mechanics → `$CLAUDE_DIR/docs/ralph-contract-template.md`. This section is how the Sonnet loop session behaves.
+
+### Each iteration (the same prompt is fed back every time)
+1. Read `CONTRACT.md` + `RESUME.md` in the slice folder FIRST. They are your only memory — the prompt never changes; progress lives in these files + git.
+2. Idempotency — never redo a task already checked done in RESUME.md.
+3. Pick the next unchecked task. Implement it (delegate code writes to `sonnet-implementer` per the orchestrator/worker split — the loop session orchestrates + reviews, it does not hand-write code).
+4. Run the task's verify command (its "done when").
+   - Pass → check it done in RESUME.md, record files + decisions, reset its `attempts` to 0.
+   - Fail → increment that task's `attempts:` in RESUME.md.
+5. Checkpoint-commit per completed task (loop runs on its own `ralph/<scope>-<nnn>` branch → each iteration revertable).
+6. All tasks done → run the promise gate (below).
+
+### Escalation (Opus subagent, cold-context briefing)
+- Task tagged `review: opus`, or diff touches auth/secrets/migration/schema/public-API → Opus reviews the diff BEFORE the task is marked done.
+- Same task `attempts >= escalate_after` (default 2) → Opus DIAGNOSE. Returns `SOLVABLE`+hint (reset attempts, apply, continue) or `IMPOSSIBLE` (→ abort).
+- Briefing = the task row + failing verify output + file paths. Batch queued Opus questions into ONE call.
+
+### Promise gate (only legitimate success exit)
+Emit `<promise>PHRASE</promise>` ONLY when: every task checked done AND every verify command in the contract's success criteria run AND all exit 0 AND the output is pasted into the response. Never on self-assessment. Never to escape a stuck loop.
+
+### Abort protocol (only other authorized exit)
+Trigger: Opus DIAGNOSE returned IMPOSSIBLE. Steps: write `BLOCKED.md` (what/why/tried/Opus verdict/next step) → set RESUME.md status `blocked` → `rm .claude/ralph-loop.local.md` → exit with a summary. This overrides ralph's "never circumvent" default because Opus (higher awareness) gated it. Sonnet judgment alone is NOT a valid abort trigger.
+
+### Backstop
+`--max-iterations` is always set (default 30). If hit, the loop stops on its own; the user reviews RESUME.md + BLOCKED.md.
+
+### Resuming a stopped/blocked loop
+Re-run the same `/ralph-loop ...` start command in a fresh session. RESUME.md carries state; the loop continues from the next unchecked task. If it was blocked, the user resolves the BLOCKED.md item first.
+
 ## Memory prune cadence
 Memory entries load every session when relevant — stale entries are a recurring tax. Pruning interrupts long runs, so the threshold is generous:
 - **Soft signal:** `MEMORY.md` > ~100 entries OR an entry older than 6 months unreferenced in recent work.
