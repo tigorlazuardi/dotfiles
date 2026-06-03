@@ -18,7 +18,23 @@ The deliverable that makes execution safe is `CONTRACT.md` — its full template
 
 1. **Explore context.** Read relevant files, existing `plans/<scope>/`, ARCHITECTURE.md, prior ADRs. Understand current state before proposing.
 
-2. **Ask the ambiguous questions.** Purpose, constraints, success criteria, out-of-scope. Use `AskUserQuestion`; batch the decision-shaping ones. Do NOT guess on anything that changes the plan shape.
+2. **Ask the ambiguous questions — do this thoroughly before writing anything.**
+   This step is NOT a quick checkbox. A bad plan built on assumptions wastes far more time than an extra Q&A round.
+
+   Categories to interrogate. For each, ask if not crystal-clear from context:
+   - **Goal / why** — what problem does this solve? What does success look like to the user?
+   - **Scope** — what is explicitly OUT of scope? What is the user willing to sacrifice to keep this focused?
+   - **Success criteria** — how will the user verify it is done? Any non-functional requirements (perf, security, compat)?
+   - **Constraints** — tech stack, no-new-deps, must-not-break, deadline, branch strategy?
+   - **Existing state** — is there prior work / a half-done attempt / related ADRs to build on?
+   - **Escalation tolerance** — does the user want Opus review on every hard task, or only on security/migration?
+   - **Iteration cap** — how many iterations is acceptable? Any cost sensitivity?
+
+   Rules:
+   - Use `AskUserQuestion` to batch decision-shaping questions (up to 4 per call). Do NOT scatter them one-by-one.
+   - Do NOT guess on anything that changes the plan shape. A wrong assumption here gets baked into guardrails and verify commands that Sonnet cannot override.
+   - If the first answer opens new ambiguity, ask again. Keep Q&A going until you can write a plan with NO placeholders.
+   - Only move to step 3 when you can answer: "What exactly does done look like, and how do I prove it with a command?"
 
 3. **Propose approach.** 2-3 options + trade-offs + your recommendation. Get user approval before writing docs.
 
@@ -32,12 +48,18 @@ The deliverable that makes execution safe is `CONTRACT.md` — its full template
    - `CONTRACT.md` — the autonomous contract, per `$CLAUDE_DIR/docs/ralph-contract-template.md`. This is the heart.
 
 6. **Author the CONTRACT.md carefully** — you (Opus) have awareness Sonnet lacks; bake it in:
+   - **Sanity check §0 (preflight).** First section in CONTRACT.md. Bash commands the loop runs BEFORE any task work each iteration: branch guard, CONTRACT.md/RESUME.md exist, no BLOCKED.md, any project-specific prereqs. If any check fails → stop and report, do NOT proceed. Fill in real paths — no generic placeholders.
+   - **ralph-loop compat.** The contract is consumed by `/ralph-loop` per the ralph-loop plugin. Verify:
+     - State file: `.claude/.ralph-loop.local.md` (loop writes this — do NOT mention `.claude/ralph-loop.local.md` with wrong prefix).
+     - Promise tag: `<promise>PHRASE</promise>` exactly — the stop hook pattern-matches on this. No variation.
+     - Promise phrase in §3 == `--completion-promise` value in §10, character-for-character including case and spaces.
+     - `--max-iterations` is set; loop auto-stops at that count if promise never fires.
    - **Success criteria = machine-checkable.** Every "done" is a concrete command that exits 0. No vibe-based acceptance.
    - **Promise gate.** Sonnet may emit `<promise>` ONLY after running every verify command, all green, output pasted. Never on self-assessment.
    - **Tasks table** with per-task `difficulty` + `review: self|sonnet|opus` + `escalate_after: 2`. Tag genuinely hard / security / migration / public-API tasks `review: opus`.
    - **Guardrails** — explicit do-NOT-touch + constraints. Sonnet wanders more; lock scope.
    - **Escalation** — same task fails verify 2x → Opus diagnose. Task tagged `opus` → Opus review before done.
-   - **Abort protocol** — Opus-diagnose returns IMPOSSIBLE → write BLOCKED.md → `rm .claude/ralph-loop.local.md` → exit. Only authorized exit besides success.
+   - **Abort protocol** — Opus-diagnose returns IMPOSSIBLE → write BLOCKED.md → `rm .claude/.ralph-loop.local.md` → exit. Only authorized exit besides success.
    - **Backstop** — always set `--max-iterations` (default 30). Tune to task size.
 
 7. **Self-review the contract** (spec self-review): scan for placeholders/TBD, contradictions, ambiguous criteria, any "done when" that is not a runnable command. Fix inline. A clean spec is what a lower-awareness executor needs.

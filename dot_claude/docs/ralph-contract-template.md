@@ -6,8 +6,8 @@ A **ralph contract** lets a fresh Sonnet session execute a complex feature unatt
 
 ## How ralph-loop actually works (constraints that shape the contract)
 
-- `/ralph-loop "<prompt>" --max-iterations N --completion-promise 'PHRASE'` writes `.claude/ralph-loop.local.md` and feeds **the same prompt back every iteration** when the session tries to exit.
-- The loop exits ONLY when: (a) the session outputs `<promise>PHRASE</promise>` with PHRASE matched exactly, OR (b) `iteration >= max_iterations`, OR (c) the state file `.claude/ralph-loop.local.md` is deleted.
+- `/ralph-loop "<prompt>" --max-iterations N --completion-promise 'PHRASE'` writes `.claude/.ralph-loop.local.md` and feeds **the same prompt back every iteration** when the session tries to exit.
+- The loop exits ONLY when: (a) the session outputs `<promise>PHRASE</promise>` with PHRASE matched exactly, OR (b) `iteration >= max_iterations`, OR (c) the state file `.claude/.ralph-loop.local.md` is deleted.
 - Progress is NOT in the prompt (it never changes). All durable state lives in files: `CONTRACT.md` (fixed) + `RESUME.md` (progress) + git history. The loop re-reads them each iteration.
 - The session has Bash, so it CAN delete the state file to exit — that is the abort hatch. The contract must explicitly authorize it under one gated condition, because ralph's default instructions say "never circumvent / never lie to escape."
 
@@ -19,6 +19,25 @@ A **ralph contract** lets a fresh Sonnet session execute a complex feature unatt
 **Slice:** <repo>/plans/<scope>/<nnn>-<slice>/
 **Executor:** Sonnet orchestrator, autonomous ralph-loop (fresh session)
 **Planner:** Opus — contract authored <UTC date>
+
+## 0. Sanity check (preflight — run FIRST, every iteration, before any task work)
+
+```bash
+# 1. Must be on a ralph/ branch, never main/master
+git branch --show-current | grep -qE "^ralph/" \
+  || { echo "ERROR: not on ralph/ branch — abort"; exit 1; }
+# 2. Contract + progress files must exist
+test -f plans/<scope>/<nnn>-<slice>/CONTRACT.md \
+  || { echo "ERROR: CONTRACT.md missing"; exit 1; }
+test -f plans/<scope>/<nnn>-<slice>/RESUME.md \
+  || { echo "ERROR: RESUME.md missing"; exit 1; }
+# 3. If blocked, surface it and stop — do NOT iterate further
+test ! -f plans/<scope>/<nnn>-<slice>/BLOCKED.md \
+  || { echo "Loop BLOCKED — read BLOCKED.md:"; cat plans/<scope>/<nnn>-<slice>/BLOCKED.md; exit 0; }
+# 4. <project-specific prereq — e.g.: command -v node, test -f .env, npm ci check>
+```
+
+If ANY check fails: stop, print the error, do NOT proceed to §4 tasks.
 
 ## 1. Mission
 <one line: what this loop must achieve>
@@ -80,7 +99,7 @@ Trigger: Opus DIAGNOSE returned `IMPOSSIBLE`. (Sonnet judgment alone is NOT a va
 Steps:
 1. Write `BLOCKED.md` in the slice folder (template below).
 2. Set RESUME.md status: `blocked`.
-3. Run: `rm .claude/ralph-loop.local.md`
+3. Run: `rm .claude/.ralph-loop.local.md`
 4. Exit with a short summary pointing at BLOCKED.md.
 
 This OVERRIDES ralph's "never circumvent the loop" default — it is gated by Opus (higher awareness), not a self-escape. Do NOT emit the completion promise to abort (that lies). Do NOT delete the state file for any other reason.
@@ -148,9 +167,12 @@ The `attempts:` counter is the concrete stuck-detection signal that drives §6 �
 
 ## Authoring checklist (Opus, before emitting)
 
+- §0 sanity check has real paths filled in (no `<scope>` placeholders left). Project-specific prereq row filled or removed.
+- State file path in §7 abort is `.claude/.ralph-loop.local.md` (leading dot on filename) — matches what ralph-loop plugin actually creates.
+- Promise tag format is `<promise>PHRASE</promise>` exactly — stop hook pattern-matches on this literal tag.
+- Promise phrase in §3 == the `--completion-promise` value in §10, character-for-character (case + spaces).
 - Every "done when" is a command that exits 0 — no prose acceptance.
 - §2 full gate command actually runs the whole suite.
-- Promise phrase in §3 == the `--completion-promise` in §10, exactly.
 - Hard / security / migration / public-API tasks tagged `review: opus`.
 - Guardrails name concrete do-NOT-touch paths.
 - `--max-iterations` set in §10.
