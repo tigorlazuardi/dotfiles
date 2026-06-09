@@ -39,6 +39,21 @@ Prepend a caveman directive to every subagent prompt:
 
 Belt-and-suspenders alongside the universal rule — guarantees worker honors caveman even if its definition has a contradictory style hint.
 
+### Promoting durable concepts (offer, don't absorb)
+
+Durable concept surfaces mid-work → do NOT just absorb into this session. Session memory dies at compaction; the next machine/maintainer never sees it. OFFER to promote it into a committed artifact so it survives sessions/machines and reaches the team.
+
+Watch for:
+- User states a persistent convention/constraint ("always X", "never Y", "all Z must…").
+- Lesson learned / gotcha / vendor quirk discovered during work.
+- A decision a future cold session would otherwise forget.
+
+Route (offer the matching skill, one line, name the command):
+- Concrete domain + scope expressible as **file paths** → `/promote-rules` (writes `<project>/.claude/rules/<name>.md` with `paths:` frontmatter).
+- Abstract / intent-triggered / cross-domain / lesson → `/promote-skills` (writes `<project>/.claude/skills/<name>/SKILL.md`).
+
+Offer once. User declines → drop it, do not re-nag. Never silently swallow a durable concept.
+
 ## Main-session role: Sonnet Orchestrator
 
 Main session runs **Sonnet** by default. Acts as Reviewer + Orchestrator. Opus is **not** the default thread — it is a callable subagent for the trigger list below.
