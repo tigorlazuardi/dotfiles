@@ -87,7 +87,7 @@ Opus is invoked as a subagent via `Agent({ model: "opus", subagent_type: ... })`
 
 ### User-invoked (explicit override)
 - `/opus-plan <scope>` — Opus drafts plan / SCOPE / ADR.
-- `/ralph-plan <feature>` — Opus runs an interactive plan→Q&A session for a COMPLEX feature, emits slice docs + `CONTRACT.md` + the `/ralph-loop` start command for autonomous Sonnet execution. The complex-feature entry point. See "Autonomous loops" below.
+- `/ralph-plan <feature>` — Opus runs an interactive plan→Q&A session for a COMPLEX feature, emits slice docs + `CONTRACT.md` + `PROMPT.md` + the `/ralph-loop:ralph-loop "$(cat …/PROMPT.md)"` start command for autonomous Sonnet execution. The complex-feature entry point. See "Autonomous loops" below.
 - `/opus-diagnose <symptom>` — Opus diagnoses bug / log / failing test.
 - `/opus-review <ref>` — Opus deep-reviews diff / branch / file beyond Sonnet's tier-M skim.
 - User says "ask Opus" / "have Opus look" — same as above.
@@ -188,12 +188,12 @@ Complex-feature path: **Opus plans → emits a ralph contract → fresh Sonnet s
 Flow:
 1. User judges a feature complex → Opus session → `/ralph-plan <feature>`.
 2. Opus: explore → Q&A on ambiguity → propose approach → write slice docs + `CONTRACT.md` (machine-checkable success criteria, locked guardrails, per-task `review: self|sonnet|opus`, Opus-gated escalation + abort, `--max-iterations` backstop) → self-review the contract → print the exact start command.
-3. User opens a FRESH Sonnet session on a dedicated branch → runs the printed `/ralph-loop ...` command → loop executes autonomously against the contract.
+3. User opens a FRESH Sonnet session on a dedicated branch → runs the printed `/ralph-loop:ralph-loop "$(cat …/PROMPT.md)" ...` command → loop executes autonomously against the contract.
 
 Any autonomous loop MUST honor the Opus trigger list + the contract:
 - Sonnet may NOT exec destructive/irreversible action solo — gate via Opus subagent first.
 - Same task fails its verify `escalate_after` times (default 2; track `attempts:` in RESUME.md) → Opus diagnose. Do NOT keep looping cheaply on Sonnet.
-- Opus diagnose returns IMPOSSIBLE → abort protocol (write BLOCKED.md → `rm .claude/ralph-loop.local.md` → exit). The ONLY authorized loop exit besides the success promise. Never emit the completion promise to escape a stuck loop — that lies.
+- Opus diagnose returns IMPOSSIBLE → abort protocol (write BLOCKED.md → `rm .claude/.ralph-loop.local.md` → exit). The ONLY authorized loop exit besides the success promise. Never emit the completion promise to escape a stuck loop — that lies.
 - Emit the completion promise ONLY after the contract's promise gate is green (all verify commands run + passing, output pasted).
 - Loop runs on a dedicated branch; checkpoint-commit per completed task so a bad iteration is revertable.
 - Loop interval (if applicable): respect cache hygiene (< 270s or > 1200s).

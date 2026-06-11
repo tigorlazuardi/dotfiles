@@ -91,13 +91,13 @@ The complex-feature path: Opus authored a `CONTRACT.md` via `/ralph-plan`; a fre
 Emit `<promise>PHRASE</promise>` ONLY when: every task checked done AND every verify command in the contract's success criteria run AND all exit 0 AND the output is pasted into the response. Never on self-assessment. Never to escape a stuck loop.
 
 ### Abort protocol (only other authorized exit)
-Trigger: Opus DIAGNOSE returned IMPOSSIBLE. Steps: write `BLOCKED.md` (what/why/tried/Opus verdict/next step) → set RESUME.md status `blocked` → `rm .claude/ralph-loop.local.md` → exit with a summary. This overrides ralph's "never circumvent" default because Opus (higher awareness) gated it. Sonnet judgment alone is NOT a valid abort trigger.
+Trigger: Opus DIAGNOSE returned IMPOSSIBLE. Steps: write `BLOCKED.md` (what/why/tried/Opus verdict/next step) → set RESUME.md status `blocked` → `rm .claude/.ralph-loop.local.md` → exit with a summary. This overrides ralph's "never circumvent" default because Opus (higher awareness) gated it. Sonnet judgment alone is NOT a valid abort trigger.
 
 ### Backstop
 `--max-iterations` is always set (default 30). If hit, the loop stops on its own; the user reviews RESUME.md + BLOCKED.md.
 
 ### Resuming a stopped/blocked loop
-Re-run the same `/ralph-loop ...` start command in a fresh session. RESUME.md carries state; the loop continues from the next unchecked task. If it was blocked, the user resolves the BLOCKED.md item first.
+Re-run the same `/ralph-loop:ralph-loop "$(cat …/PROMPT.md)" ...` start command in a fresh session. RESUME.md carries state; the loop continues from the next unchecked task. If it was blocked, the user resolves the BLOCKED.md item first.
 
 ## Memory prune cadence
 Memory entries load every session when relevant — stale entries are a recurring tax. Pruning interrupts long runs, so the threshold is generous:

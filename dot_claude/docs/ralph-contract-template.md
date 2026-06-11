@@ -6,7 +6,7 @@ A **ralph contract** lets a fresh Sonnet session execute a complex feature unatt
 
 ## How ralph-loop actually works (constraints that shape the contract)
 
-- `/ralph-loop "<prompt>" --max-iterations N --completion-promise 'PHRASE'` writes `.claude/.ralph-loop.local.md` and feeds **the same prompt back every iteration** when the session tries to exit.
+- `/ralph-loop:ralph-loop "$(cat <slice>/PROMPT.md)" --max-iterations N --completion-promise 'PHRASE'` writes `.claude/.ralph-loop.local.md` and feeds **the same prompt back every iteration** when the session tries to exit. Invoke via the plugin form `/ralph-loop:ralph-loop` (`plugin:command`, repeated) — NOT `/ralph-loop`. The loop prompt lives in `PROMPT.md` and is inlined with `"$(cat …/PROMPT.md)"` (bash command-substitution at the `!`-run command) so it can be long without shell-escaping hell.
 - The loop exits ONLY when: (a) the session outputs `<promise>PHRASE</promise>` with PHRASE matched exactly, OR (b) `iteration >= max_iterations`, OR (c) the state file `.claude/.ralph-loop.local.md` is deleted.
 - Progress is NOT in the prompt (it never changes). All durable state lives in files: `CONTRACT.md` (fixed) + `RESUME.md` (progress) + git history. The loop re-reads them each iteration.
 - The session has Bash, so it CAN delete the state file to exit — that is the abort hatch. The contract must explicitly authorize it under one gated condition, because ralph's default instructions say "never circumvent / never lie to escape."
@@ -19,6 +19,7 @@ A **ralph contract** lets a fresh Sonnet session execute a complex feature unatt
 **Slice:** <repo>/plans/<scope>/<nnn>-<slice>/
 **Executor:** Sonnet orchestrator, autonomous ralph-loop (fresh session)
 **Planner:** Opus — contract authored <UTC date>
+**Base branch:** <branch active when ralph-plan ran — the PR/MR target in §11. Fill the real name, no placeholder.>
 
 ## 0. Sanity check (preflight — run FIRST, every iteration, before any task work)
 
@@ -121,8 +122,34 @@ max-iterations: <N>   (default 30; tune to task size). Hard ceiling. If hit, the
 ## 10. Start command (fresh Sonnet session, dedicated branch)
 ` ``
 git checkout -b ralph/<scope>-<nnn>
-/ralph-loop "Autonomous execution. Read plans/<scope>/<nnn>-<slice>/CONTRACT.md and RESUME.md. Execute the next unchecked task per the contract. Honor guardrails, escalation, abort, and the promise gate. Emit the promise ONLY when the §3 gate passes." --max-iterations 30 --completion-promise 'ALL ACCEPTANCE MET'
+/ralph-loop:ralph-loop "$(cat plans/<scope>/<nnn>-<slice>/PROMPT.md)" --max-iterations 30 --completion-promise 'ALL ACCEPTANCE MET'
 ` ``
+Invoke form is `/ralph-loop:ralph-loop` (`plugin:command`, repeated) — NOT `/ralph-loop`. The prompt is read from `PROMPT.md` via `"$(cat …/PROMPT.md)"`; keep the long autonomous prompt in that file (see PROMPT.md template below), not inline.
+
+## 11. Post-completion — open PR/MR to base branch
+Runs in the SAME response that emits the §3 promise (the loop exits on the promise, so this cannot wait for a later iteration). Target: PR/MR from head `ralph/<scope>-<nnn>` → base `<base branch>` (the **Base branch** in the header — the branch ralph-plan ran on).
+
+Steps:
+1. Push the feature branch (safe — own branch, never force, never the base/main):
+   `git push -u origin "$(git branch --show-current)"`
+2. Detect remote + provider:
+```bash
+url=$(git remote get-url origin 2>/dev/null) || { echo "no origin remote — skip PR/MR, report loop done + branch"; }
+host=$(printf '%s' "$url" | sed -E 's#^(git@|ssh://git@|https?://)([^/:]+)[/:].*#\2#')
+path=$(printf '%s' "$url" | sed -E 's#^(git@|ssh://git@|https?://)[^/:]+[/:]##; s#\.git$##')
+base="<base branch>"; head=$(git branch --show-current)
+```
+   Host not github* / gitlab* → skip PR/MR; just report loop done + the pushed branch name.
+3. Pick CLI by host: `github.com`/GitHub-Enterprise → `gh`; `gitlab.*` (incl. self-hosted) → `glab`.
+4. CLI authed AND host matches AND user has access (`gh auth status` / `glab auth status` exits 0, host listed) → **OFFER, do NOT auto-create** (PR/MR is outward-facing — surface the ready command, let the user confirm):
+   - GitHub: `gh pr create --base "$base" --head "$head" --fill`
+   - GitLab: `glab mr create --source-branch "$head" --target-branch "$base" --fill`
+5. CLI absent / not authed / wrong host / no access → generate the compare URL to open in a browser:
+   - GitHub: `https://$host/$path/compare/$base...$head?expand=1`
+   - GitLab: `https://$host/$path/-/merge_requests/new?merge_request[source_branch]=$head&merge_request[target_branch]=$base`
+   Print the URL.
+
+Always end the promise turn with: base ← head, plus the offered command (authed) or the compare URL (unauthed), so the user can act when they return.
 ```
 
 ## BLOCKED.md template
@@ -165,6 +192,27 @@ On top of the standard RESUME.md (see `orchestrator-templates.md`), a ralph slic
 The `attempts:` counter is the concrete stuck-detection signal that drives §6 — not a vibe. Each iteration updates it.
 ```
 
+## PROMPT.md template
+
+The fixed loop prompt, fed back verbatim every iteration via `"$(cat …/PROMPT.md)"`. Keep it self-contained — all changing state is in CONTRACT.md (fixed) + RESUME.md (progress), never here.
+
+```markdown
+Autonomous execution of the ralph contract at plans/<scope>/<nnn>-<slice>/.
+
+Every iteration, in order:
+1. Read CONTRACT.md and RESUME.md in that folder first.
+2. Run §0 preflight. Any check fails → stop, print error, do NOT proceed.
+3. Execute the next unchecked §4 task. Delegate code writes per the CLAUDE.md orchestrator/worker split.
+4. Run the task's verify command; update RESUME.md (`attempts:`, done check) per §8.
+5. Honor §5 guardrails, §6 escalation (Opus on opus-tagged tasks or attempts >= escalate_after), §7 abort.
+
+Emit the §3 completion promise `<promise>ALL ACCEPTANCE MET</promise>` ONLY after the gate is green: every §2 verify command run, all exit 0, output pasted. NEVER to escape the loop, NEVER on self-assessment.
+
+On the promise turn, also run §11: push the feature branch, then surface the PR/MR offer (gh/glab if authed) or the compare URL (if not) targeting the base branch.
+```
+
+Adjust the slice path + promise phrase to match this contract (phrase must equal §3 and `--completion-promise` exactly).
+
 ## Authoring checklist (Opus, before emitting)
 
 - §0 sanity check has real paths filled in (no `<scope>` placeholders left). Project-specific prereq row filled or removed.
@@ -176,4 +224,8 @@ The `attempts:` counter is the concrete stuck-detection signal that drives §6 �
 - Hard / security / migration / public-API tasks tagged `review: opus`.
 - Guardrails name concrete do-NOT-touch paths.
 - `--max-iterations` set in §10.
+- §10 start command uses the plugin form `/ralph-loop:ralph-loop "$(cat …/PROMPT.md)"` (repeated `plugin:command`), NOT `/ralph-loop`.
+- `PROMPT.md` emitted in the slice folder, self-contained, promise phrase matches §3 + §10.
+- Header **Base branch** filled with the real branch ralph-plan ran on (no placeholder) — §11 PR/MR targets it.
+- §11 present: provider detection + authed CLI offer (`gh`/`glab`) + unauthed compare-URL fallback.
 - No TBD / placeholder / contradiction left.
