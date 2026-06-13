@@ -35,3 +35,5 @@ if vim.env.SSH_CLIENT then
     },
   }
 end
+
+vim.g.lazyvim_ts_lsp = "tsgo"
