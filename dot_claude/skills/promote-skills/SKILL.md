@@ -15,6 +15,10 @@ Turn an abstract, intent-triggered lesson into a committed `.claude/skills/<name
 
 If the concept IS concrete + path-scopable → **stop, suggest `/promote-rules` instead**.
 
+## Cross-machine note (the whole point)
+
+Auto-memory and `~/.claude/skills/` are **machine-local**. A **project-level skill committed to git** (`.claude/skills/<name>/`) travels with the repo, so it works on every machine and teammate that clones it — intent-triggered memory that crosses machines. Prefer this when the user wants cross-machine persistence.
+
 ## Workflow
 
 1. **Identify the concept.** State the durable knowledge in 1–2 sentences. Confirm with the user if fuzzy.
@@ -22,9 +26,9 @@ If the concept IS concrete + path-scopable → **stop, suggest `/promote-rules` 
 2. **Confirm it is skill-shaped.** Abstract / intent-triggered / no clean path scope? If it is actually path-scopable → suggest `/promote-rules`, stop.
 
 3. **Resolve target dir.**
-   - Find the repo root (walk up for `.git`).
-   - Target `<root>/.claude/skills/`.
-   - No repo? Ask the user: project-local, or global `~/.claude/skills/`.
+   - **Project, committed** (`.claude/skills/<name>/SKILL.md`) — cross-machine, shared via git. Recommended for cross-machine intent memory and team workflows.
+   - **User-level** (`~/.claude/skills/<name>/`) — all your projects on *this machine only*; not cross-machine unless you sync your dotfiles.
+   - No repo? Only user-level applies (mention that committing needs a repo).
 
 4. **Reuse-first.** Search existing `<root>/.claude/skills/*/SKILL.md`. If one already covers this domain (same vendor/subsystem), append a section to it. Else create a new `<name>/SKILL.md` (kebab-case, e.g. the vendor name).
 
@@ -40,10 +44,22 @@ If the concept IS concrete + path-scopable → **stop, suggest `/promote-rules` 
 
 7. **Preview → approval.** Show the full file + target path. Get explicit OK.
 
-8. **Write + confirm.** Write the file. Print the path. Remind the user to commit it so the team and other machines get it.
+8. **Write + confirm.** Write the file. Print the path.
+
+9. **Commit if project-level** (this is what makes it cross-machine). Offer to commit so it actually travels:
+   ```
+   git add .claude/skills/<name>/
+   git commit -m "Add <name> skill"
+   ```
+   Without the commit it stays local to this checkout — defeating the cross-machine goal. Get the user's ok before committing.
 
 ## Keep skills tight
 
-- The `description` carries the trigger — spell out the situation that should summon it.
+- The `description` carries the trigger — spell out the situation that should summon it. Undertriggering is the common failure — err toward triggering.
 - Body = actionable knowledge, not a journal.
 - One domain per skill folder; append to an existing folder before spawning a near-duplicate.
+
+## Notes
+
+- A new skill is listed **next session** (skills load at session start). Mention it won't fire mid-session.
+- If the workflow is important enough to harden (test prompts, eval loop, description optimization), offer `skill-creator` to refine it later. This skill is the quick-capture path.

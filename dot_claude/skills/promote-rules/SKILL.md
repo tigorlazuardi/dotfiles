@@ -5,7 +5,7 @@ description: Promote a durable, path-scoped project convention into a .claude/ru
 
 # Promote a durable convention into a project rule
 
-Turn a durable, path-scoped convention into a committed `.claude/rules/` file. Rules trigger deterministically when work touches matching file paths — see https://code.claude.com/docs/en/memory#organize-rules-with-claude/rules/
+Turn a durable convention into a committed `.claude/rules/` file. Rules trigger deterministically when work touches matching file paths — see https://code.claude.com/docs/en/memory#organize-rules-with-claude/rules/
 
 ## Use a rule (not a skill) when
 
@@ -21,14 +21,15 @@ If the concept is abstract / intent-triggered / cross-domain with no clean path 
 
 2. **Confirm it is rule-shaped.** Concrete domain + path-scopable? If not → suggest `/promote-skills`, stop.
 
-3. **Resolve target dir.**
-   - Find the project repo root (walk up for `.git`).
-   - Target `<root>/.claude/rules/`.
-   - No repo? Ask the user: a project-local path, or global `~/.claude/rules/`.
+3. **Resolve target dir and scope.** Three options — ask if unclear:
+   - **Path-scoped** — applies only to files matching globs. Best when the habit is language- or area-specific. → project `.claude/rules/<name>.md` **with** `paths:` frontmatter. Only loads when Claude touches matching files (saves context).
+   - **Repo-wide** — applies to the whole project. → project `.claude/rules/<name>.md`, **no** frontmatter.
+   - **All projects** — personal habit across every repo. → `~/.claude/rules/<name>.md`.
+   - No repo? Only the all-projects option applies.
 
 4. **Reuse-first.** Search existing `<root>/.claude/rules/*.md`. If one already covers this domain (overlapping `paths:`), append/update it instead of creating a new file. Else pick a new kebab-case `<name>.md`.
 
-5. **Derive `paths:` globs.** From the domain, propose the glob(s). Show the user; let them tighten/loosen. Example:
+5. **Derive `paths:` globs** (for path-scoped). From the domain, propose the glob(s). Show the user; let them tighten/loosen. Example:
    ```
    paths:
      - packages/db/**/*.ts
@@ -51,5 +52,9 @@ If the concept is abstract / intent-triggered / cross-domain with no clean path 
 ## Keep rules tight
 
 - One coherent convention per file (or per closely-related cluster).
-- Body states WHAT + the non-negotiable, not a tutorial.
+- Body states WHAT + the non-negotiable, not a tutorial. Explain "why" briefly when it isn't obvious — rules with reasons get followed more reliably.
 - Paths as narrow as correctness allows — over-broad globs fire noise.
+
+## Notes
+
+- New/edited rule files are picked up **next session** (repo-wide/path-scoped) or when Claude next reads a matching file. Mention this so the user isn't surprised it's not live mid-session.
