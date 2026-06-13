@@ -1,5 +1,5 @@
 return {
-  "prismatic-koi/nvim-sops",
-  event = { "BufEnter" },
-  opts = {},
+	"prismatic-koi/nvim-sops",
+	event = { "BufEnter" },
+	opts = {},
 }

@@ -9,18 +9,18 @@
 
 -- Disable diagnostics for .env files
 vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
-  pattern = { ".env", ".env.*", "*.env" },
-  callback = function()
-    vim.diagnostic.enable(false, { bufnr = 0 })
-  end,
+	pattern = { ".env", ".env.*", "*.env" },
+	callback = function()
+		vim.diagnostic.enable(false, { bufnr = 0 })
+	end,
 })
 
 -- Disable diagnostics for certail filetypes
 vim.api.nvim_create_autocmd("FileType", {
-  pattern = { "markdown", "dockerfile" },
-  callback = function()
-    vim.diagnostic.enable(false, { bufnr = 0 })
-  end,
+	pattern = { "markdown", "dockerfile" },
+	callback = function()
+		vim.diagnostic.enable(false, { bufnr = 0 })
+	end,
 })
 
 -- ============================================
@@ -37,10 +37,10 @@ vim.keymap.set("v", "<MiddleMouse>", '"+p', { silent = true, desc = "Paste from 
 
 -- Ctrl+click go to definition (like VSCode)
 vim.keymap.set(
-  "n",
-  "<C-LeftMouse>",
-  "<LeftMouse><cmd>lua vim.lsp.buf.definition()<CR>",
-  { silent = true, desc = "Go to definition" }
+	"n",
+	"<C-LeftMouse>",
+	"<LeftMouse><cmd>lua vim.lsp.buf.definition()<CR>",
+	{ silent = true, desc = "Go to definition" }
 )
 
 -- Left click release shows hover documentation if available (with VSCode-like delay)
@@ -68,10 +68,10 @@ vim.keymap.set("n", "<3-LeftMouse>", '"+yy', { silent = true, desc = "Select lin
 
 -- Right-click context menu
 vim.keymap.set("n", "<RightMouse>", function()
-  vim.cmd([[popup PopUp]])
+	vim.cmd([[popup PopUp]])
 end, { silent = true, desc = "Context menu" })
 vim.keymap.set("v", "<RightMouse>", function()
-  vim.cmd([[popup PopUp]])
+	vim.cmd([[popup PopUp]])
 end, { silent = true, desc = "Context menu" })
 
 -- Alt+scroll for horizontal scrolling
@@ -81,11 +81,9 @@ vim.keymap.set("n", "<A-ScrollWheelDown>", "4zl", { silent = true, desc = "Scrol
 -- Scroll unfocused splits (mousefocus enables this)
 vim.opt.mousefocus = true
 
-vim.api.nvim_create_autocmd("FileType", {
-  pattern = { "typescript", "typescriptreact", "javascript", "javascriptreact" },
-  callback = function()
-    vim.opt_local.tabstop = 4
-    vim.opt_local.shiftwidth = 4
-    vim.opt_local.expandtab = true
-  end,
+vim.api.nvim_create_autocmd("LspAttach", {
+	group = vim.api.nvim_create_augroup("UserLSPConfig", {}),
+	callback = function()
+		vim.opt_local.tabstop = 4
+	end,
 })
