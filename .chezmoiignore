@@ -97,8 +97,6 @@ LICENSE                                # repo license, bukan dotfile target
 {{ if eq .chezmoi.osRelease.id "nixos" -}}
 .config
 .config/**
-.pi
-.pi/**
 .gitconfig
 .npmrc
 .git-template
