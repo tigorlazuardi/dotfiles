@@ -24,7 +24,7 @@ This is what makes the zellij continue-injector work: a bare `continue` lands he
 
 ## Phase 1 — Plan (interview hard, attended)
 
-Spawn `opus-planner` (read-only). Its job: interview the user until ambiguity is gone, then emit the DAG. Tell it to use AskUserQuestion liberally — **the user is present for planning** even though Build runs unattended. It must NOT finalize while anything is ambiguous.
+Spawn `opus-planner` (read-only). Its job: interview the user until ambiguity is gone, then emit the DAG. Tell it to use AskUserQuestion liberally — **the user is present for planning** even though Build runs unattended. It must NOT finalize while anything is ambiguous. The planner also probes verification capability (CI/test-tooling/DB/monitoring) and returns a `verification` block + per-slice `needsDb`/`needsBrowser` tags + the real-reflection `acceptanceCmd`s (feeds Phase 1.5). (If the planner subagent has no AskUserQuestion tool, it returns its questions as text and the captain relays them to the user via AskUserQuestion, then re-briefs a fresh planner with the answers baked in — subagents can't be resumed mid-run here.)
 
 Planner returns `slices.json`:
 ```json
@@ -46,6 +46,24 @@ Planner returns `slices.json`:
 - If the planner reports unresolved questions, relay them to the user and re-plan. **Do not proceed to Gate with open questions.**
 
 Write `slices.json` + an initial STATE (status `planned`) to `.claude/fleet/active/`. Persist `seedKnowledge` (see Knowledge below).
+
+## Phase 1.5 — Verification readiness preflight (real reflection, attended)
+
+A slice that only typechecks/lints/unit-tests gives the implementer **fake reflection** — backend code never touches a DB, UI code never renders in a browser, and a green slice can hide broken behavior. Before the Gate, the captain (with the planner) MUST guarantee the run environment can give **real reflection**, and guide the user to provision what's missing. This phase is mandatory; do not skip to Gate without it.
+
+**1. Audit what verification capability exists** (read, don't assume): CI config (does the pipeline actually run tests? integration? is it gated/dormant?), test tooling (vitest projects, is there an integration project? a browser/E2E harness?), DB access (is a connection string in the env? can integration run locally?), and **monitoring** — can the captain read CI results? (`glab`/`gh` authed? token scope?). Probe the real state; report it as a table.
+
+**2. Offer pragmatic options — do not prescribe one.** Setup cost is real; let the user pick by what they already have. Always present alternatives and ask the user's current state first:
+- **Real DB for backend slices**: Neon ephemeral branch (if API key) · local container (Podman/Docker `postgres:<min-version>`) · Postgres-as-CI-service (`services:`) · unit-only (weakest). Ask which the run-env supports before choosing.
+- **UI slice depth**: Playwright E2E smoke (truest, heaviest — add a wave-0 harness slice) · vitest browser-mode component tests (middle) · build+typecheck (lightest). 
+- **CI monitoring**: give the captain read access (token) so it can treat a red pipeline as a blocker after each epic push · or rely on local gate only.
+- If CI doesn't run tests at all, or a needed harness is absent → **building it is itself a slice** (wave-0), not an afterthought.
+
+**3. Encode real reflection into every slice's `acceptanceCmd`** — backend (`needsDb`) slices run integration against the real DB; UI (`needsBrowser`) slices run the E2E/component smoke. Tag slices `needsDb`/`needsBrowser`/`needsNeon` so the captain can verify the env supplies each before dispatching. Never let acceptance degrade to typecheck-only for a slice that writes data or renders UI.
+
+**4. Write `SETUP.md`** into `.claude/fleet/active/` — a concrete, copy-paste checklist of the **[REQUIRED]** provisioning only the user can do (credentials, containers, browser deps, CI vars, monitoring token) plus a captain readiness-probe checklist. Freeze the plan at `status: planned`. **Build stays blocked until the required items are green** (captain re-probes on the next `/fleet`/`continue`). If the user chose "set up together now", walk the commands interactively instead.
+
+The planner returns a `verification` block (db mode, ui mode, ciMonitor, runner) alongside the DAG; the captain owns turning it into SETUP.md + the readiness probe. **Real reflection is non-negotiable** — a fleet that can't truly verify its slices must not claim them done.
 
 ## Phase 2 — Gate (pre-approve, ONCE, attended)
 
@@ -123,3 +141,4 @@ repoPath: /abs/path
 - NEVER emit a success summary unless every intended slice is `merged` (or explicitly accepted as skipped by the user). A `blocked`/`conflict`/`failed` run reports honestly and stops.
 - NEVER force-push / `reset --hard` / drop schema / push to a shared branch without the user. Destructive need from a slice → it returns `blocked` → you surface it, you do not self-authorize.
 - Idempotent resume is sacred: disk STATE is the source of truth, every slice checkpoint-commits, re-running a done slice is avoided by reading STATE + git first.
+- Real reflection is non-negotiable (Phase 1.5): never dispatch a slice whose acceptance can't actually exercise it. On every Build entry (fresh AND resume), re-probe the env supplies what pending slices need (`needsDb` → DB reachable; `needsBrowser` → browser installed; CI monitor authed). If a required capability is missing, STOP and point the user at SETUP.md — do not dispatch slices that would fake-green. A slice can never be marked `done` on typecheck/lint alone when it writes data or renders UI.
