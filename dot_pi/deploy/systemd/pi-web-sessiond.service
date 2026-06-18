@@ -1,0 +1,21 @@
+[Unit]
+Description=pi-web session daemon (owns long-lived Pi sessions; survives web restarts + browser disconnects)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/pi-web.env
+# Requires a global install on the VPS so the @earendil-works/pi-coding-agent peer
+# resolves:  npm i -g @jmfederico/pi-web @earendil-works/pi-coding-agent
+ExecStart=pi-web-sessiond
+Restart=on-failure
+RestartSec=3
+# Hardening (user service; tighten as your VPS policy allows)
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=%h/.local/share/pi-web %h/.pi
+ProtectHome=read-only
+
+[Install]
+WantedBy=default.target

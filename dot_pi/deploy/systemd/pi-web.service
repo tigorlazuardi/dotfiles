@@ -1,0 +1,20 @@
+[Unit]
+Description=pi-web server (API + browser UI; bind localhost, front with Caddy)
+After=network-online.target pi-web-sessiond.service
+Wants=network-online.target
+# Web can restart freely while sessions keep running in the daemon.
+BindsTo=pi-web-sessiond.service
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/pi-web.env
+ExecStart=pi-web-server
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=%h/.local/share/pi-web %h/.pi
+ProtectHome=read-only
+
+[Install]
+WantedBy=default.target
