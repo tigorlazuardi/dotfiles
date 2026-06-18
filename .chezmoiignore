@@ -72,6 +72,19 @@ LICENSE                                # repo license, bukan dotfile target
 .envrc                                 # per-direktori env, jangan track global
 .envrc.local
 
+# --- pi coding agent ---
+# Track HANYA config statis: AGENTS.md, settings.json, subagents.json,
+# skills/, prompts/, dan auth.json (encrypted via --encrypt).
+# Exclude semua yang dinamis / machine-specific / regenerated.
+.pi/agent/npm/**                       # installed packages, regen dari settings.packages
+.pi/agent/sessions/**                  # session history, dinamis
+.pi/.pi/**                             # stray project dir kalau pi dijalanin dari ~/.pi
+.pi/agent/subagent-schedules/**        # schedule storage (udah di-disable juga)
+.pi/agent/**/.venv/**                  # python venv (mis. skill excalidraw) — machine-specific
+.pi/agent/**/node_modules/**           # node deps — regen
+.pi/agent/**/__pycache__/**            # python cache
+.pi/agent/**/*.pyc
+
 # ============================================================
 # nixos server — sync HANYA config Claude Code
 # ============================================================
@@ -84,6 +97,8 @@ LICENSE                                # repo license, bukan dotfile target
 {{ if eq .chezmoi.osRelease.id "nixos" -}}
 .config
 .config/**
+.pi
+.pi/**
 .gitconfig
 .npmrc
 .git-template

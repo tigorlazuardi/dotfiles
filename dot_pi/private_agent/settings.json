@@ -1,0 +1,17 @@
+{
+  "defaultProvider": "openrouter",
+  "defaultModel": "anthropic/claude-opus-4.8",
+  "defaultThinkingLevel": "medium",
+  "quietStartup": true,
+  "models": [
+    "anthropic/claude-opus-4.8",
+    "anthropic/claude-sonnet-4.6",
+    "anthropic/claude-haiku-4.5",
+    "moonshotai/kimi-k2.7-code"
+  ],
+  "packages": [
+    "npm:@tintinweb/pi-subagents"
+  ],
+  "lastChangelogVersion": "0.79.6",
+  "theme": "dark"
+}
