@@ -10,7 +10,8 @@
     "moonshotai/kimi-k2.7-code"
   ],
   "packages": [
-    "npm:@tintinweb/pi-subagents"
+    "npm:@tintinweb/pi-subagents",
+    "npm:@lnilluv/pi-ralph-loop"
   ],
   "lastChangelogVersion": "0.79.6",
   "theme": "dark"
