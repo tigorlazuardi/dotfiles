@@ -84,6 +84,10 @@ LICENSE                                # repo license, bukan dotfile target
 .pi/agent/**/node_modules/**           # node deps — regen
 .pi/agent/**/__pycache__/**            # python cache
 .pi/agent/**/*.pyc
+# pi-dynamic-workflows: sync authored commands (saved/) + source (src/) only.
+.pi/workflows/projects/**              # run history, journals, locks — dinamis
+.pi/workflows/settings.json            # machine pref (workflows-trigger etc)
+.pi/workflows/model-tiers.json         # machine/provider tier mapping
 
 # ============================================================
 # nixos server — sync HANYA config Claude Code

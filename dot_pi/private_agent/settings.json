@@ -11,7 +11,12 @@
   ],
   "packages": [
     "npm:@tintinweb/pi-subagents",
-    "npm:@lnilluv/pi-ralph-loop"
+    "npm:@lnilluv/pi-ralph-loop",
+    "npm:@quintinshaw/pi-dynamic-workflows",
+    "npm:pi-ask-user",
+    "npm:@majorgilles/pi-grill-me",
+    "npm:@jmfederico/pi-web",
+    "npm:@llblab/pi-telegram"
   ],
   "lastChangelogVersion": "0.79.6",
   "theme": "dark"
