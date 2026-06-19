@@ -55,6 +55,21 @@ Planner returns `slices.json`:
 
 Write `slices.json` + an initial STATE (`status: planned`) to `plans/fleet/<epic>/`. Commit the dir so state is on origin immediately. Persist `seedKnowledge` (see Knowledge below).
 
+## Phase 1.2 — Visual plan (L-tier and above)
+
+If the feature scope is **L or larger** (multi-day, cross-cutting, locks decisions, 4+ slices, or the planner explicitly flags it), invoke the `/visual-plan` skill to build a rich visual artifact from the DAG before the Gate. This is architecture/backend work — no canvas or wireframe needed; use `create-visual-plan` with document-only mode.
+
+The visual plan must include:
+- A `diagram` block showing the wave DAG (slice nodes, dep arrows, wave groupings)
+- A table of slices: id, intent, `orchestratorModel`, `lowTolerance`, `acceptanceCmd`, key deps
+- Risk surface callout: which slices are low-tolerance and why
+- TBD mode note if `trunkBased: true` (merge target, push cadence, CI/CD implication)
+- Open questions block (`question-form`) for anything the planner couldn't resolve
+
+After `create-visual-plan` returns the plan URL, store it in STATE.md as `visualPlanUrl`. The Gate (Phase 2) surfaces this URL as the primary review artifact instead of a text summary. Run the self-review pass from `/visual-plan` concurrently while the user reads — do not make the user wait for it. Apply any clear-cut fixes with `update-visual-plan` contentPatches; route genuine judgment calls into the `question-form` Open Questions block.
+
+Skip this phase for S-tier or smaller — text summary in Gate is sufficient.
+
 ## Phase 1.5 — Verification readiness preflight (real reflection, attended)
 
 A slice that only typechecks/lints/unit-tests gives the implementer **fake reflection** — backend code never touches a DB, UI code never renders in a browser, and a green slice can hide broken behavior. Before the Gate, the captain (with the planner) MUST guarantee the run environment can give **real reflection**, and guide the user to provision what's missing. This phase is mandatory; do not skip to Gate without it.
@@ -75,7 +90,11 @@ The planner returns a `verification` block (db mode, ui mode, ciMonitor, runner)
 
 ## Phase 2 — Gate (pre-approve, ONCE, attended)
 
-Show the user the wave plan + which slices are low-tolerance (opus-reviewed). Ask ONE approval via AskUserQuestion: **Go / edit slices / cancel**. On Go, set `status: running`, `approved: true` in STATE, commit and **push** `plans/fleet/<epic>/` so any machine sees the running state immediately.
+**L-tier:** Surface the visual plan URL (from `visualPlanUrl` in STATE) as the primary review artifact. Tell the user to review it, then ask ONE approval via AskUserQuestion: **Go / edit slices / cancel**. If the visual plan's Open Questions block has unresolved items, relay them to the user before asking for approval — do not gate with open questions outstanding.
+
+**S-tier or smaller:** Show a text summary of the wave plan + which slices are low-tolerance (opus-reviewed), then ask the same ONE approval.
+
+On Go, set `status: running`, `approved: true` in STATE, commit and **push** `plans/fleet/<epic>/` so any machine sees the running state immediately.
 
 **Install the resume hook.** So that a bare `continue` (what the zellij injector types after a rate-limit reset) reliably re-enters this skill — even after compaction or a `claude --continue` restart wiped conversation context — write a guard block into `<repoPath>/.claude/CLAUDE.md` (create or append):
 ```markdown
@@ -148,6 +167,7 @@ baseBranch: main
 integrationBranch: fleet/<scope>   # ignored when trunkBased: true
 trunkBased: false
 repoPath: /abs/path
+visualPlanUrl:             # set by Phase 1.2 if L-tier; empty otherwise
 
 ## Slices
 - auth      [done]    merged @ <sha>  reviewer: go (opus)
