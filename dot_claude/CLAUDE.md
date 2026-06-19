@@ -142,6 +142,15 @@ Artifacts live in the repo so they commit alongside code: `<repo>/plans/<scope-n
 - `<scope-name>` kebab feature (`auth-rewrite`); `<nnn>` zero-padded sequential per scope (never renumber); `<slice-name>` kebab slice. A slice ≈ one PR / focused milestone. Which docs per slice → Effort tier. Templates → `docs/orchestrator-templates.md`.
 - Working in `~/.claude` itself (not a user git repo) → still put the slice folder at `<cwd>/plans/...`. Keep TASKS/RESUME current (stale docs mislead the next worker). When delegating, point at the slice folder + the spec for *this* step — don't paste the whole RESUME.md.
 
+## Visual plan — L-tier design output
+
+For any L-tier feature design or plan output — whether from brainstorming, `/ralph-plan` interview, `/opus-plan`, or the `writing-plans` skill — invoke `/visual-plan` (`create-visual-plan`, document-only mode, no canvas) to build a rich review artifact before the user approves. Pass the spec/design text as `planText` if it exists, or build directly from codebase exploration.
+
+- **Trigger**: L-tier scope determined (multi-day, cross-cutting, risk surface, 4+ tasks, broad blast radius). Applies to: end of brainstorming interview before spec is committed; ralph-plan Step 2.7 before contract is written; opus one-shot planning phase before execution begins; fleet Phase 1.2 before Gate.
+- **What to include**: architecture/data-flow diagram, task/slice table with risk tiers, hard-to-reverse decision callouts, open questions (`question-form`).
+- **Flow**: create → surface URL to user → run self-review concurrently → fix clear-cut issues with `update-visual-plan` → route ambiguities to user via AskUserQuestion → gate on approval before implementation begins.
+- **Skip for**: S/M-tier — text summary is sufficient.
+
 ## Running a slice
 
 Full workflow, parallel fan-out, worktree isolation, handover relay, resume, rationale → `$CLAUDE_DIR/docs/orchestrator-playbook.md`. Shape: 1. Resume check → 2. Slice setup (docs per tier; Opus drafts SCOPE/ADR if L) → 3. Dependency check → 4. Delegate with tight spec + stop conditions → 5. Review vs spec: treat worker output as **evidence to inspect, not a verdict to forward** — reopen cited files, skim high-risk diffs, rerun verification before claiming done; Opus deep-reviews if trigger → 6. Update RESUME.md → 7. Fix loop / handover relay (escalate to Opus after 2 failed handovers) → 8. Wrap, commit if asked.

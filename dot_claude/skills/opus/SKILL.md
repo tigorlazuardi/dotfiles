@@ -27,6 +27,20 @@ pwd && ls -la
 git log --oneline -5 2>/dev/null || echo "no git"
 ```
 
+**Classify tier.** Assess: is this L-tier? (multi-day, cross-cutting, touches risk surface — auth/payments/migrations/data deletion/public API, or hard to verify, or broad blast radius). If yes, run Step 1.5 before spawning the executor.
+
+### 1.5. Visual plan (L-tier only)
+
+For L-tier tasks: spawn a **plan-only** Opus subagent whose sole job is to produce a plan and a visual artifact — it does NOT execute anything. Brief it with all context from Step 1 and instruct it to:
+1. Explore the repo to ground the plan in real files/symbols.
+2. Decompose into steps, identify hard-to-reverse decisions, assign risk tiers.
+3. Call `create-visual-plan` (document-only mode — no canvas, this is architecture/backend) with: a `diagram` of the work graph, a table of steps with risk tier + rationale, hard-to-reverse decision callouts, and an open questions `question-form`.
+4. Return: the visual plan URL + a terse plan summary.
+
+After the subagent returns: surface the visual plan URL to the user. Run the visual-plan self-review pass concurrently. Apply clear-cut fixes with `update-visual-plan`; route real ambiguities to the user via AskUserQuestion. **Do NOT spawn the executor (Step 2) until the user approves the plan and all open questions are resolved.**
+
+Skip this step for S/M-tier — proceed directly to Step 2.
+
 ### 2. Spawn Opus as orchestrator
 
 ```

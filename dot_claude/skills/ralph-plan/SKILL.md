@@ -112,6 +112,21 @@ gitignored files (`.env`, `node_modules`, `.venv`) aren't copied — so fill the
 `<install-cmd>` and a per-worktree isolation scheme (unique ports/DB schema) so concurrent tasks don't
 collide. The template has slots for both.
 
+## Step 2.7 — Visual plan (L-tier feature scope)
+
+If the overall feature is **L-tier** (multi-day, cross-cutting, 4+ tasks, touches risk surface, or hard to verify), invoke the `/visual-plan` skill — specifically `create-visual-plan` in document-only mode (architecture/backend, no canvas) — before writing the contract files. This gives the user a rich review artifact before anything is committed.
+
+The visual plan must cover:
+- A `diagram` block of the full task DAG: nodes per task, dep arrows, batch groupings (parallel batches in same column), wave ordering
+- A table of tasks: id, batch, `orchestrator-model`, reviewer tier (Opus/Sonnet), `parallel_group`, key deps, done-condition summary
+- Risk surface callout: which tasks are L-tier, why, and what happens if they go wrong
+- Implementation strategy rationale (Sonnet vs Opus orchestrator choice, why split if split)
+- Open questions block (`question-form`) for anything still unresolved
+
+After `create-visual-plan` returns the plan URL: surface it to the user and ask them to review. Run the self-review pass concurrently (do not make the user wait). Apply clear-cut fixes with `update-visual-plan` contentPatches; route real ambiguities into the `question-form` or ask the user directly. **Do not proceed to Step 3 until the user approves the plan and all open questions are resolved.**
+
+Skip this step for S/M-tier feature scope — a terse written summary before handoff is enough.
+
 ## Step 3 — Write the artifacts
 
 Each slice gets a directory: `plans/<scope>/<nnn>-<slice-name>/` where `<nnn>` is a zero-padded index
