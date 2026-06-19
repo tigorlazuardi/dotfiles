@@ -27,6 +27,14 @@ Override per-agent definitions. Stable across restarts and spawns.
 ### Delegation rule (orchestrator → subagent)
 Prepend to every subagent prompt: `[Communication: respond in caveman ultra mode per global CLAUDE.md. Code/commits/security normal. Persist every response.]` — guarantees the worker honors caveman even if its definition hints otherwise.
 
+Every handoff packet MUST include explicit stop conditions. Worker stops and reports back (does NOT retry solo) when:
+- Live code doesn't match the assumption in the handoff
+- A verify command fails twice after a reasonable fix
+- Work requires files outside the assigned scope
+- Agent can't produce concrete evidence for its claim
+
+Workers MUST return compact structured output: findings + changed files + commands run + residual risk + stop conditions hit + anything the orchestrator must decide. Raw narration is not a return value.
+
 ### Nested subagents (CC v2.1.172+)
 A subagent spawns its own subagents only if its `tools` include `Agent` (binary — the `Agent(type)` parens are ignored in a subagent def). Bound a tree by giving `Agent` only to agents that self-limit by prompt; keep leaves without it. `ralph-reviewer` nests (spawns `ralph-scout` + `ralph-verifier`); other ralph agents are leaves. Don't nest *write* workers outside ralph — an Opus subagent returns a spec UP, not its own implementer. Depth/foreground rules + ralph tree → `docs/orchestration-modes.md`.
 
@@ -136,7 +144,7 @@ Artifacts live in the repo so they commit alongside code: `<repo>/plans/<scope-n
 
 ## Running a slice
 
-Full workflow, parallel fan-out, worktree isolation, handover relay, resume, rationale → `$CLAUDE_DIR/docs/orchestrator-playbook.md`. Shape: 1. Resume check → 2. Slice setup (docs per tier; Opus drafts SCOPE/ADR if L) → 3. Dependency check → 4. Delegate with tight spec → 5. Review vs spec (Opus deep-review if trigger) → 6. Update RESUME.md → 7. Fix loop / handover relay (escalate to Opus after 2 failed handovers) → 8. Wrap, commit if asked.
+Full workflow, parallel fan-out, worktree isolation, handover relay, resume, rationale → `$CLAUDE_DIR/docs/orchestrator-playbook.md`. Shape: 1. Resume check → 2. Slice setup (docs per tier; Opus drafts SCOPE/ADR if L) → 3. Dependency check → 4. Delegate with tight spec + stop conditions → 5. Review vs spec: treat worker output as **evidence to inspect, not a verdict to forward** — reopen cited files, skim high-risk diffs, rerun verification before claiming done; Opus deep-reviews if trigger → 6. Update RESUME.md → 7. Fix loop / handover relay (escalate to Opus after 2 failed handovers) → 8. Wrap, commit if asked.
 
 ## Autonomous loops (ralph-loop)
 
