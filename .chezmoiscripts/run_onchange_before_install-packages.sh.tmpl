@@ -35,6 +35,7 @@ BREW_FORMULAE=(
   fzf
   jq
   onefetch
+  tuxedo           # keyboard-driven todo.txt TUI
   zoxide
   direnv
   node             # nodejs + npm
@@ -139,7 +140,7 @@ log "Installing AUR packages..."
 yay -S --needed --noconfirm --answerdiff=None --answerclean=None \
   fish ghostty chezmoi nodejs npm pnpm \
   lazygit git-delta gh gh-dash gitleaks pre-commit \
-  eza bat fd ripgrep fzf jq onefetch \
+  eza bat fd ripgrep fzf jq onefetch tuxedo-bin \
   zoxide direnv wl-clipboard ttf-jetbrains-mono-nerd \
   neovim age \
   `# --- nvim ecosystem (LSP/formatter/linter) ---` \
