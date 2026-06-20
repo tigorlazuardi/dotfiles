@@ -32,6 +32,8 @@ Spawn `opus-planner` (read-only). Its job: interview the user until ambiguity is
 
 **Detect trunk-based development.** Check for a project skill or `.claude/rules/` file that declares trunk-based development (TBD). Also ask the planner to probe: is there a GitLab/GitHub branch protection requiring PRs, or does the team push directly to `main`/`master`? Set `trunkBased: true` in `slices.json` if TBD is confirmed. This changes the merge target in Phase 3 (see below).
 
+**Resolve the integration branch start point.** For non-TBD runs the `integrationBranch` is cut from `origin/<baseBranch>`. If the start point is **ambiguous** — `baseBranch` itself is unclear (multiple long-lived branches like `main`/`develop`/`release/*`, no obvious default; or an existing `integrationBranch` with a different base than expected) — **the captain MUST ask the user** (AskUserQuestion) which branch to base off, before writing `slices.json`. Do not guess. Record the resolved `baseBranch` in `slices.json`. (TBD mode has no integration branch, so this only applies when `trunkBased: false`.)
+
 Planner returns `slices.json`:
 ```json
 {
@@ -118,7 +120,7 @@ There is **no mid-run gate** thereafter — Build runs unattended and the inject
 **Build steps:**
 
 1. **Branch setup (first Build entry only).**
-   - Standard: `git fetch origin && git checkout -B <integrationBranch> origin/<baseBranch>`
+   - Standard: `git fetch origin && git checkout -B <integrationBranch> origin/<baseBranch>`. If `baseBranch` was unresolved/ambiguous at plan time and no answer is recorded in `slices.json`, STOP and ask the user before creating the branch — never cut the integration branch from a guessed base.
    - Trunk: `git fetch origin && git checkout <baseBranch> && git pull --rebase origin/<baseBranch>`
    - On resume: branch already exists — do NOT recreate. Standard: `git checkout <integrationBranch>`. Trunk: `git pull --rebase origin/<baseBranch>`.
 
