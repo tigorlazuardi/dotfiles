@@ -31,7 +31,19 @@ x 2026-06-20 2026-06-19 Restore library from backup +project @context
 - leading `YYYY-MM-DD` (no priority) → creation date.
 - `+project`   → project tag.
 - `@context`   → context tag.
-- `due:YYYY-MM-DD` → deadline (key:value; other `key:value` pairs allowed too).
+- `key:value`  → metadata extension. Recognized keys:
+  - `due:YYYY-MM-DD` → deadline (used for sort + due-bucket grouping).
+  - `rec:[+]N{d,b,w,m,y}` → recurrence (d=day, b=business day, w=week, m=month,
+    y=year). `+` = strict, anchored to the previous `due:`; no `+` = computed from
+    completion date. On completion, the **tuxedo binary** inserts a fresh copy with
+    `due:` advanced — see caveat under "Marking done".
+  - `t:YYYY-MM-DD` or `t:-Nd` → threshold/start; hides the task until then
+    (`t:-3d` = until 3 days before `due:`).
+  - Other arbitrary `key:value` pairs are allowed and preserved.
+
+Dates are ISO 8601 (`YYYY-MM-DD`). Natural-language input (e.g. "tomorrow",
+"monthly", "high priority") is a **tuxedo TUI** convenience for the human; Claude
+always writes the canonical form above.
 
 **Incomplete = any non-blank line NOT starting with `x `.**
 
@@ -57,6 +69,12 @@ date and text, drop any `(X)` priority. E.g.:
 ```
 (A) 2026-06-19 Restore library +backup @manga   →   x 2026-06-20 2026-06-19 Restore library +backup @manga
 ```
+
+**Recurrence caveat:** auto-spawning the next occurrence of a `rec:` task on
+completion is a *tuxedo-binary* behavior. Claude edits the file directly, so it
+will NOT happen automatically. If you mark a `rec:` line done by hand, also append
+the next occurrence (creation = today, `due:` advanced per `rec:`) — or leave that
+task for the user to complete in tuxedo so recurrence fires.
 
 ## Adding tasks
 
