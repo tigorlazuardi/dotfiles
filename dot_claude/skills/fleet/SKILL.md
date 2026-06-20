@@ -112,6 +112,8 @@ There is **no mid-run gate** thereafter — Build runs unattended and the inject
 
 ## Phase 3 — Build (unattended, resumable)
 
+**Mandatory: load `usage-checkpoint` at Build entry.** Build is the long-running unattended phase — the captain MUST invoke the `usage-checkpoint` skill on every Build entry (fresh AND resume) and run its two-phase guard at the wave barriers: check usage **before dispatching each wave** and **after each wave returns** (waves are ≥ 1 agent, often ≥ 3). At 80% schedule the wakeup timer and continue; at 90% stop dispatching new waves and write handover into STATE.md before exiting. The timer-before-100% invariant is non-negotiable — a rate-limited captain with no scheduled wakeup cannot self-resume. (Thresholds + `ccusage` command → `usage-checkpoint`.)
+
 **Trunk-based vs integration-branch mode** (read `trunkBased` from `slices.json`):
 
 - **Standard mode** (`trunkBased: false`): captain maintains a dedicated `integrationBranch`. Slices merge into it. After each wave, captain pushes `integrationBranch` to origin.
@@ -187,4 +189,5 @@ visualPlanUrl:             # set by Phase 1.2 if L-tier; empty otherwise
 - NEVER emit a success summary unless every intended slice is `merged` (or explicitly accepted as skipped by the user). A `blocked`/`conflict`/`failed` run reports honestly and stops.
 - NEVER force-push / `reset --hard` / drop schema without the user. Trunk-based push to `baseBranch` is authorized by the Gate approval — that is the only push to a shared branch the captain may do autonomously.
 - Idempotent resume is sacred: disk STATE is the source of truth, every slice checkpoint-commits+pushes, re-running a done slice is avoided by reading STATE + git first.
+- Usage guard is non-negotiable (Phase 3): captain loads `usage-checkpoint` at every Build entry and checks usage at each wave barrier. A scheduled wakeup timer set before 100% is the hard invariant — without it a rate-limited captain cannot self-resume.
 - Real reflection is non-negotiable (Phase 1.5): never dispatch a slice whose acceptance can't actually exercise it. On every Build entry (fresh AND resume), re-probe the env supplies what pending slices need (`needsDb` → DB reachable; `needsBrowser` → browser installed; CI monitor authed). If a required capability is missing, STOP and point the user at SETUP.md — do not dispatch slices that would fake-green. A slice can never be marked `done` on typecheck/lint alone when it writes data or renders UI.
