@@ -4,13 +4,15 @@ export const meta = {
   phases: [{ title: 'Implement' }, { title: 'Review' }],
 }
 
-// args: { slice, knowledge, integrationBranch }
+// args: { slice, knowledge, integrationBranch, writeDirectly }
 //   slice: { id, desc, paths[], deps[], tier, lowTolerance, acceptance }
 //   knowledge: [{ kind:'rule'|'skill', name, scope, body }]  (accumulated so far)
 //   integrationBranch: the base branch slices fork from (already cut from origin)
+//   writeDirectly: if true, persist knowledgeDelta mid-slice after impl and review
 const slice = args && args.slice ? args.slice : {}
 const knowledge = (args && args.knowledge) || []
 const integrationBranch = (args && args.integrationBranch) || 'main'
+const writeDirectly = !!(args && args.writeDirectly)
 const sliceBranch = `fleet/${slice.id}`
 
 const knowledgeBlock = knowledge.length
@@ -77,6 +79,13 @@ if (!impl) {
   return { sliceId: slice.id, passed: false, branch: sliceBranch, verdict: 'error', reason: 'implement agent died', knowledgeDelta: [] }
 }
 
+const writtenItems = []
+
+if (writeDirectly && impl && impl.knowledgeDelta && impl.knowledgeDelta.length) {
+  const names = await writeKnowledgeInline(impl.knowledgeDelta, 'impl')
+  names.forEach((n) => writtenItems.push(n))
+}
+
 phase('Review')
 const reviewerType = slice.lowTolerance ? 'deep-reviewer' : 'reviewer'
 const review = await agent(
@@ -115,6 +124,11 @@ const reviewVerdict = review ? review.verdict : 'no-go'
 const reviewFindings = review ? review.findings : ['review agent died']
 const delta = [].concat(impl.knowledgeDelta || [], (review && review.knowledgeDelta) || [])
 
+if (writeDirectly && review && review.knowledgeDelta && review.knowledgeDelta.length) {
+  const names = await writeKnowledgeInline(review.knowledgeDelta, 'review')
+  names.forEach((n) => writtenItems.push(n))
+}
+
 return {
   sliceId: slice.id,
   passed: impl.passed === true && reviewVerdict === 'go',
@@ -124,4 +138,27 @@ return {
   findings: reviewFindings,
   summary: impl.summary || '',
   knowledgeDelta: delta,
+  writtenItems,
+}
+
+// ---------- helper: persist knowledge mid-slice ----------
+async function writeKnowledgeInline(items, tag) {
+  if (!items || !items.length) return []
+  const rules = items.filter((k) => k.kind === 'rule')
+  const skills = items.filter((k) => k.kind === 'skill')
+  const spec = [
+    rules.length
+      ? 'RULES -> write each to .pi/rules/<name>.md with YAML frontmatter `paths:` (the scope as a glob list) then the body:\n' +
+        rules.map((k) => `  - name: ${k.name}\n    paths: ${k.scope}\n    body: ${k.body}`).join('\n')
+      : '',
+    skills.length
+      ? 'SKILLS -> write each to .pi/skills/<name>/SKILL.md with YAML frontmatter `name:` and `description:` (the scope/intent is the description) then the body:\n' +
+        skills.map((k) => `  - name: ${k.name}\n    description: ${k.scope}\n    body: ${k.body}`).join('\n')
+      : '',
+  ].filter(Boolean).join('\n\n')
+  await agent(
+    `Persist slice knowledge mid-slice (slice: ${slice.id}, tag: ${tag}). Create directories as needed via bash. Do NOT overwrite an existing file with the same name — if one exists, merge the new body in. Write valid frontmatter.\n\n${spec}`,
+    { agentType: 'support', label: `knowledge:${slice.id}:${tag}`, phase: 'Implement', schema: { type: 'object', required: ['written'], properties: { written: { type: 'array', items: { type: 'string' } } } } },
+  )
+  return items.map((k) => k.name)
 }

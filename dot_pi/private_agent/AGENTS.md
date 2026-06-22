@@ -49,3 +49,27 @@ Main session = orchestrator. Its model (pick via `Ctrl+P`) IS the orchestrator t
 
 ## Stack conventions
 - Per-repo, in each project `./AGENTS.md`. DO NOT put here.
+
+## Knowledge transfer (fleet)
+
+The `/fleet` workflow propagates durable conventions, gotchas, and decisions between orchestrators automatically — write them once, every future slice and session inherits them.
+
+Where knowledge lives:
+- `.pi/rules/<name>.md` — path-scoped rule (YAML `paths:` frontmatter, glob list). Auto-loaded when Pi touches matching files.
+- `.pi/skills/<name>/SKILL.md` — intent-triggered skill (YAML `name:` + `description:` frontmatter). Auto-loaded when description matches the LLM's intent.
+
+How fleet captures it:
+1. Planner returns `seedKnowledge[]` upfront (conventions discovered while planning).
+2. Each slice's implementer + reviewer return `knowledgeDelta[]` (new conventions discovered while building/reviewing).
+3. Between waves, the control plane appends every new delta into the shared `knowledge[]` array, persists items as files, and injects the accumulated array into the NEXT wave's slice prompts.
+4. Writer is the `support` worker — append-merges to existing files, never overwrites.
+
+Tiered write policy:
+- `slice.writeDirectly: true` (default when `slice.lowTolerance` is true) — slice_orchestrator writes knowledge files mid-slice, immediately after impl and review return. Faster propagation; safe because the deep-reviewer gate already ran.
+- `slice.writeDirectly: false` — control plane batches the write at end-of-wave. Lower write churn for routine slices.
+
+Trivia filter: only persist DURABLE concepts (real conventions, schemas, vendor quirks, gotchas other slices must honor). One-off slice trivia stays in the slice diff, not in `.pi/rules`/`.pi/skills`.
+
+Manual capture: `/promote-rules` and `/promote-skills` skills write to the same dirs with the same frontmatter, so manual + fleet-auto capture converge.
+
+Cross-machine resume: fleet writes `plans/fleet/<runName>/state.json` after every phase and commits it. A teammate running `git pull` + `/fleet runName=<runName>` resumes from the last persisted wave, with all accumulated knowledge intact. Pass `args.resume = true` to force-skip Plan + Gate; otherwise auto-detected if an unfinished state file exists.
