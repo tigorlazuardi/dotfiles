@@ -50,6 +50,10 @@ Main session = orchestrator. Its model (pick via `Ctrl+P`) IS the orchestrator t
 ## Stack conventions
 - Per-repo, in each project `./AGENTS.md`. DO NOT put here.
 
+## Telemetry is part of "done" (every plan)
+
+Whenever you plan a feature, service, endpoint, job, migration, or any program, the `telemetry-planning` skill MUST run as part of the plan — not as an afterthought, not as a follow-up ticket. Observability (tracing + logs + metrics) is part of the implementation and the acceptance criteria. OpenTelemetry is the default standard. Sensitive data: redact content but keep the field name visible. Four tiers — **A** always redact (secrets: tokens, passwords, API keys, JWTs, auth headers, private keys, card PAN/CVV); **B** keep visible by default (account handles: email-as-login, username, opaque account/customer/tenant id — they are the support-debug join key, redacting them breaks complaint triage); **C** redact by default (KYC-only PII with no ops use: full name, DOB, gov IDs, address, partial card, geo); **D** ask the user per-field for context-dependent fields (phone, IP, free-text input, namespace fields, any override on B/C). Histograms: set explicit buckets that match the domain (default OTel buckets are almost always wrong). Cardinality: low by default; when a label is high-value-but-high-cardinality (e.g. `tenant_id`), OFFER the trade-off to the user explicitly. The moment a project's telemetry stack is clear, capture it as a project rule/skill via `/promote-rules`/`/promote-skills` so the next session does not re-derive it. Full guidance + bucket examples + cardinality offer template → `~/.pi/agent/skills/telemetry-planning/SKILL.md`.
+
 ## Knowledge transfer (fleet)
 
 The `/fleet` workflow propagates durable conventions, gotchas, and decisions between orchestrators automatically — write them once, every future slice and session inherits them.
