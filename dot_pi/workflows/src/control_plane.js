@@ -10,14 +10,11 @@ export const meta = {
   ],
 }
 
-// args: { task?: string, planPath?: string, baseBranch?: string, runName?: string, resume?: boolean }
+// args: { task?: string, planPath?: string, baseBranch?: string, runName?: string }
 const task = (args && args.task) || ''
 const planPath = (args && args.planPath) || ''
 const runName = (args && args.runName) || 'integration'
 const argBase = (args && args.baseBranch) || ''
-const forceResume = !!(args && args.resume)
-const stateDir = `plans/fleet/${runName}`
-const statePath = `${stateDir}/state.json`
 
 const DELTA_SCHEMA = {
   type: 'array',
@@ -33,24 +30,8 @@ const DELTA_SCHEMA = {
   },
 }
 
-// ---------- Plan (with resume probe) ----------
+// ---------- Plan ----------
 phase('Plan')
-const resumeProbe = await agent(
-  `Check for an existing fleet resume state. If the file \`${statePath}\` exists, parse it and return its content under \`state\`. If it does not exist, return \`{ state: null }\`. Use bash.`,
-  {
-    agentType: 'support',
-    label: 'resume-probe',
-    phase: 'Plan',
-    schema: {
-      type: 'object',
-      required: ['state'],
-      properties: { state: { type: ['object', 'null'] } },
-    },
-  },
-)
-const priorState = resumeProbe && resumeProbe.state ? resumeProbe.state : null
-const isResume = forceResume || (priorState && priorState.status && priorState.status !== 'complete')
-
 const plan = await agent(
   `You are the fleet planner. Turn this work into a slice DAG and seed the shared knowledge base.
 
@@ -87,7 +68,6 @@ DISAMBIGUATION GUARD: this fleet runs autonomously in the background — you CAN
               deps: { type: 'array', items: { type: 'string' } },
               tier: { type: 'string' },
               lowTolerance: { type: 'boolean' },
-              writeDirectly: { type: 'boolean' },
               acceptance: { type: 'string' },
             },
           },
@@ -98,88 +78,69 @@ DISAMBIGUATION GUARD: this fleet runs autonomously in the background — you CAN
   },
 )
 
-// ---------- Resume or fresh plan ----------
-let baseBranch, integrationBranch, byId, waves, knowledge, completedSlices, currentWaveIdx
-
-if (isResume) {
-  // Reuse state from prior run — skip Plan + Gate + Setup
-  baseBranch = priorState.baseBranch
-  integrationBranch = priorState.integrationBranch
-  byId = priorState.byId
-  waves = priorState.waves
-  knowledge = (priorState.knowledge || []).slice()
-  completedSlices = Object.assign({}, priorState.completedSlices || {})
-  currentWaveIdx = priorState.currentWaveIdx || 0
-  log(`Resuming run ${runName} from wave ${currentWaveIdx + 1}/${waves.length}`)
-} else {
-  if (!plan) {
-    return { aborted: true, reason: 'planner died' }
+if (!plan) {
+  return { aborted: true, reason: 'planner died' }
+}
+if (plan.needsClarification && plan.needsClarification.length) {
+  return {
+    aborted: true,
+    reason: 'plan is ambiguous — interview not complete',
+    needsClarification: plan.needsClarification,
+    nextStep: 'Run /grill-me in the main session to resolve these, update the spec, then re-run /fleet.',
   }
-  if (plan.needsClarification && plan.needsClarification.length) {
-    return {
-      aborted: true,
-      reason: 'plan is ambiguous — interview not complete',
-      needsClarification: plan.needsClarification,
-      nextStep: 'Run /grill-me in the main session to resolve these, update the spec, then re-run /fleet.',
-    }
-  }
-  if (!plan.slices || !plan.slices.length) {
-    return { aborted: true, reason: 'planner produced no slices' }
-  }
+}
+if (!plan.slices || !plan.slices.length) {
+  return { aborted: true, reason: 'planner produced no slices' }
+}
 
-  baseBranch = argBase || plan.baseBranch || 'main'
-  integrationBranch = `fleet/${runName}`
-  knowledge = (plan.seedKnowledge || []).slice()
+const baseBranch = argBase || plan.baseBranch || 'main'
+const integrationBranch = `fleet/${runName}`
+let knowledge = (plan.seedKnowledge || []).slice()
 
-  // normalize writeDirectly per slice
-  plan.slices.forEach((s) => {
-    if (s.writeDirectly === undefined) s.writeDirectly = s.lowTolerance === true
+// ---------- compute topological waves (Kahn) ----------
+const byId = {}
+plan.slices.forEach((s) => { byId[s.id] = s })
+const indeg = {}
+plan.slices.forEach((s) => { indeg[s.id] = 0 })
+plan.slices.forEach((s) => {
+  (s.deps || []).forEach((d) => { if (byId[d]) indeg[s.id]++ })
+})
+const waves = []
+let remaining = plan.slices.map((s) => s.id)
+let guard = 0
+while (remaining.length && guard++ < 1000) {
+  const ready = remaining.filter((id) => indeg[id] === 0)
+  if (!ready.length) {
+    return { aborted: true, reason: 'dependency cycle detected', remaining }
+  }
+  waves.push(ready)
+  remaining = remaining.filter((id) => !ready.includes(id))
+  remaining.forEach((id) => {
+    (byId[id].deps || []).forEach((d) => { if (ready.includes(d)) indeg[id]-- })
   })
+}
+log(`Planned ${plan.slices.length} slices in ${waves.length} wave(s): ${waves.map((w) => '[' + w.join(',') + ']').join(' -> ')}`)
 
-  // ---------- compute topological waves (Kahn) ----------
-  byId = {}
-  plan.slices.forEach((s) => { byId[s.id] = s })
-  const indeg = {}
-  plan.slices.forEach((s) => { indeg[s.id] = 0 })
-  plan.slices.forEach((s) => {
-    (s.deps || []).forEach((d) => { if (byId[d]) indeg[s.id]++ })
-  })
-  waves = []
-  let remaining = plan.slices.map((s) => s.id)
-  let guard = 0
-  while (remaining.length && guard++ < 1000) {
-    const ready = remaining.filter((id) => indeg[id] === 0)
-    if (!ready.length) {
-      return { aborted: true, reason: 'dependency cycle detected', remaining }
-    }
-    waves.push(ready)
-    remaining = remaining.filter((id) => !ready.includes(id))
-    remaining.forEach((id) => {
-      (byId[id].deps || []).forEach((d) => { if (ready.includes(d)) indeg[id]-- })
-    })
-  }
-  log(`Planned ${plan.slices.length} slices in ${waves.length} wave(s): ${waves.map((w) => '[' + w.join(',') + ']').join(' -> ')}`)
+// ---------- Gate ----------
+phase('Gate')
+const summary = waves
+  .map((w, i) => `Wave ${i + 1}: ${w.map((id) => id + (byId[id].lowTolerance ? '(!low-tol)' : '')).join(', ')}`)
+  .join('\n')
+const knowledgeSummary = knowledge.length
+  ? knowledge.map((k) => `- [${k.kind}] ${k.name}: ${k.body}`).join('\n')
+  : '(none)'
+const approved = await checkpoint(
+  `Fleet plan ready.\nBase: ${baseBranch} -> integration: ${integrationBranch}\n\n${summary}\n\nSeed knowledge:\n${knowledgeSummary}\n\nApprove and start building? (Building writes code in isolated worktrees and auto-merges clean slices.)`,
+  { kind: 'confirm', default: false },
+)
+if (!approved) {
+  return { aborted: true, reason: 'plan not approved at gate', waves, knowledge }
+}
 
-  // ---------- Gate ----------
-  phase('Gate')
-  const summary = waves
-    .map((w, i) => `Wave ${i + 1}: ${w.map((id) => id + (byId[id].lowTolerance ? '(!low-tol)' : '')).join(', ')}`)
-    .join('\n')
-  const knowledgeSummary = knowledge.length
-    ? knowledge.map((k) => `- [${k.kind}] ${k.name}: ${k.body}`).join('\n')
-    : '(none)'
-  const approved = await checkpoint(
-    `Fleet plan ready.\nBase: ${baseBranch} -> integration: ${integrationBranch}\n\n${summary}\n\nSeed knowledge:\n${knowledgeSummary}\n\nApprove and start building? (Building writes code in isolated worktrees and auto-merges clean slices.)`,
-    { kind: 'confirm', default: false },
-  )
-  if (!approved) {
-    return { aborted: true, reason: 'plan not approved at gate', waves, knowledge }
-  }
-
-  // ---------- Setup: integration branch fresh from origin ----------
-  phase('Setup')
-  const setup = await agent(
-    `Prepare the fleet integration branch. Run, from the repo root, via bash:
+// ---------- Setup: integration branch fresh from origin ----------
+phase('Setup')
+const setup = await agent(
+  `Prepare the fleet integration branch. Run, from the repo root, via bash:
 1. git fetch origin
 2. Verify origin/${baseBranch} exists. If it does NOT, report and stop (do not invent a base).
 3. git worktree prune
@@ -188,81 +149,46 @@ if (isResume) {
 5. Confirm HEAD is at origin/${baseBranch}.
 
 Report the resolved base commit and whether setup succeeded.`,
-    {
-      agentType: 'support',
-      label: 'setup-base',
-      phase: 'Setup',
-      schema: {
-        type: 'object',
-        required: ['ok'],
-        properties: { ok: { type: 'boolean' }, baseCommit: { type: 'string' }, note: { type: 'string' } },
-      },
+  {
+    agentType: 'support',
+    label: 'setup-base',
+    phase: 'Setup',
+    schema: {
+      type: 'object',
+      required: ['ok'],
+      properties: { ok: { type: 'boolean' }, baseCommit: { type: 'string' }, note: { type: 'string' } },
     },
-  )
-  if (!setup || !setup.ok) {
-    return { aborted: true, reason: 'integration branch setup failed', detail: setup }
-  }
+  },
+)
+if (!setup || !setup.ok) {
+  return { aborted: true, reason: 'integration branch setup failed', detail: setup }
+}
 
-  // persist seed knowledge to .pi/rules + .pi/skills
-  if (knowledge.length) {
-    await writeKnowledge(knowledge, 'seed')
-  }
-
-  completedSlices = {}
-  currentWaveIdx = 0
-
-  // ---------- writeState helper ----------
-  async function writeState(state) {
-    await agent(
-      `Persist fleet state. Create dir \`${stateDir}\` if missing. Write the JSON below to \`${statePath}\` (pretty-printed). Stamp it with an ISO timestamp in the \`updatedAt\` field. Then \`git add ${statePath}\` (do NOT commit yet — the captain or user batches commits).\n\nSTATE:\n${JSON.stringify(state)}`,
-      { agentType: 'support', label: 'write-state', phase: 'Build', schema: { type: 'object', required: ['written'], properties: { written: { type: 'boolean' } } } },
-    )
-  }
-
-  // initial state persist
-  await writeState({ status: 'running', runName, baseBranch, integrationBranch, slices: plan.slices, byId, waves, currentWaveIdx: 0, completedSlices: {}, knowledge })
+// persist seed knowledge to .pi/rules + .pi/skills
+if (knowledge.length) {
+  await writeKnowledge(knowledge, 'seed')
 }
 
 // ---------- Build: wave by wave (barrier between waves for deps) ----------
 phase('Build')
-
-// writeState available in both paths — redefine at build scope so resume path can also call it
-async function writeState(state) {
-  await agent(
-    `Persist fleet state. Create dir \`${stateDir}\` if missing. Write the JSON below to \`${statePath}\` (pretty-printed). Stamp it with an ISO timestamp in the \`updatedAt\` field. Then \`git add ${statePath}\` (do NOT commit yet — the captain or user batches commits).\n\nSTATE:\n${JSON.stringify(state)}`,
-    { agentType: 'support', label: 'write-state', phase: 'Build', schema: { type: 'object', required: ['written'], properties: { written: { type: 'boolean' } } } },
-  )
-}
-
 const allResults = []
-for (let w = currentWaveIdx; w < waves.length; w++) {
+for (let w = 0; w < waves.length; w++) {
   const wave = waves[w]
   log(`Wave ${w + 1}/${waves.length}: building ${wave.join(', ')}`)
   const results = await parallel(
-    wave
-      .filter((id) => !completedSlices[id])
-      .map((id) => () =>
-        workflow('slice_orchestrator', { slice: byId[id], knowledge: knowledge.slice(), integrationBranch, writeDirectly: byId[id].writeDirectly === true }),
-      ),
+    wave.map((id) => () =>
+      workflow('slice_orchestrator', { slice: byId[id], knowledge: knowledge.slice(), integrationBranch }),
+    ),
   )
   const clean = results.filter(Boolean)
 
-  // record completed slices
-  clean.forEach((r) => { completedSlices[r.sliceId] = r })
-
   // collect + persist new knowledge BEFORE the next wave so it propagates
   const newDelta = []
-  clean.forEach((r) => {
-    const already = new Set((r.writtenItems || []))
-    ;(r.knowledgeDelta || []).forEach((k) => { if (!already.has(k.name)) newDelta.push(k) })
-  })
+  clean.forEach((r) => (r.knowledgeDelta || []).forEach((k) => newDelta.push(k)))
   if (newDelta.length) {
     knowledge = knowledge.concat(newDelta)
     await writeKnowledge(newDelta, `wave-${w + 1}`)
   }
-
-  // persist state after wave
-  await writeState({ status: 'running', runName, baseBranch, integrationBranch, slices: Object.values(byId), byId, waves, currentWaveIdx: w + 1, completedSlices, knowledge })
 
   // auto-merge passed + clean slices into the integration branch
   const toMerge = clean.filter((r) => r.passed).map((r) => r.branch)
@@ -303,8 +229,6 @@ const passed = allResults.filter((r) => r.passed)
 const failed = allResults.filter((r) => !r.passed)
 const merged = allResults.filter((r) => r.merged)
 const conflicted = allResults.filter((r) => r.conflicted)
-
-await writeState({ status: 'complete', runName, baseBranch, integrationBranch, slices: Object.values(byId), byId, waves, currentWaveIdx: waves.length, completedSlices, knowledge })
 
 return {
   integrationBranch,
