@@ -38,6 +38,8 @@ BREW_FORMULAE=(
   tuxedo           # keyboard-driven todo.txt TUI
   zoxide
   direnv
+  mise             # per-project tool versions (mise.toml)
+  usage            # mise completions spec backend
   node             # nodejs + npm
   pnpm             # langsung dari brew, skip corepack (lihat install script comment)
   neovim           # default $EDITOR
@@ -141,7 +143,7 @@ yay -S --needed --noconfirm --answerdiff=None --answerclean=None \
   fish ghostty chezmoi nodejs npm pnpm \
   lazygit git-delta gh gh-dash gitleaks pre-commit \
   eza bat fd ripgrep fzf jq onefetch tuxedo-bin \
-  zoxide direnv wl-clipboard ttf-jetbrains-mono-nerd \
+  zoxide direnv mise usage wl-clipboard ttf-jetbrains-mono-nerd \
   neovim age \
   `# --- nvim ecosystem (LSP/formatter/linter) ---` \
   go gopls go-tools delve golangci-lint \
@@ -149,7 +151,7 @@ yay -S --needed --noconfirm --answerdiff=None --answerclean=None \
   stylua lua-language-server \
   shellcheck-bin shfmt \
   taplo-cli \
-  sops
+  sops \
   glint \
   claude-code \
   gofumpt \
