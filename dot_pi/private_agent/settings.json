@@ -1,6 +1,6 @@
 {
-  "defaultProvider": "openrouter",
-  "defaultModel": "anthropic/claude-opus-4.8",
+  "defaultProvider": "9router",
+  "defaultModel": "cc/claude-opus-4-8",
   "defaultThinkingLevel": "medium",
   "quietStartup": true,
   "models": [
@@ -16,8 +16,9 @@
     "npm:pi-ask-user",
     "npm:@majorgilles/pi-grill-me",
     "npm:@jmfederico/pi-web",
-    "npm:@llblab/pi-telegram"
+    "npm:@llblab/pi-telegram",
+    "npm:pi-9router-ext"
   ],
-  "lastChangelogVersion": "0.79.6",
+  "lastChangelogVersion": "0.80.2",
   "theme": "dark"
 }

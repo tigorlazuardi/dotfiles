@@ -16,6 +16,7 @@ set -gx BUN_INSTALL "$HOME/.bun"
 fish_add_path -g \
     $BUN_INSTALL/bin \
     $HOME/.local/npm/bin \
+    $HOME/.local/bin \
     $HOME/.cargo/bin
 
 if status is-interactive
@@ -31,3 +32,6 @@ if status is-interactive
     # Completions butuh `usage` (lihat install-packages script).
     mise activate fish | source
 end
+
+# mise
+mise activate fish | source
