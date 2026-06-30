@@ -85,8 +85,14 @@ LICENSE                                # repo license, bukan dotfile target
 .pi/agent/**/node_modules/**           # node deps — regen
 .pi/agent/**/__pycache__/**            # python cache
 .pi/agent/**/*.pyc
-# pi-dynamic-workflows: not tracked, per-device.
-.pi/workflows/**
+# pi-dynamic-workflows: runs/projects/saved are per-device & dynamic and stay
+# ignored, but settings.json (keyword-trigger toggle etc.) is a real
+# preference -> tracked. Ignore the dynamic subdirs explicitly instead of the
+# whole dir, so the settings.json negation can take effect.
+.pi/workflows/projects/**
+.pi/workflows/runs/**
+.pi/workflows/saved/**
+.pi/workflows/*.bak
 
 # ============================================================
 # nixos server — sync HANYA config Claude Code
