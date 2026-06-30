@@ -27,10 +27,6 @@ if status is-interactive
 
     # direnv — auto-load .envrc per direktori
     direnv hook fish | source
-
-    # mise — per-project tool versions (mise.toml). Activate handle PATH + shims.
-    # Completions butuh `usage` (lihat install-packages script).
-    mise activate fish | source
 end
 
 # mise

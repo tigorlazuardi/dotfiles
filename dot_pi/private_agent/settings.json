@@ -3,12 +3,6 @@
   "defaultModel": "cc/claude-opus-4-8",
   "defaultThinkingLevel": "medium",
   "quietStartup": true,
-  "models": [
-    "anthropic/claude-opus-4.8",
-    "anthropic/claude-sonnet-4.6",
-    "anthropic/claude-haiku-4.5",
-    "moonshotai/kimi-k2.7-code"
-  ],
   "packages": [
     "npm:@tintinweb/pi-subagents",
     "npm:@lnilluv/pi-ralph-loop",
@@ -17,8 +11,24 @@
     "npm:@majorgilles/pi-grill-me",
     "npm:@jmfederico/pi-web",
     "npm:@llblab/pi-telegram",
-    "npm:pi-9router-ext"
+    "npm:pi-9router-ext",
+    "npm:pi-observational-memory"
   ],
   "lastChangelogVersion": "0.80.2",
-  "theme": "dark"
+  "theme": "dark",
+  "observational-memory": {
+    "observeAfterTokens": 10000,
+    "reflectAfterTokens": 20000,
+    "compactAfterTokens": 81000,
+    "observationsPoolMaxTokens": 20000,
+    "observationsPoolTargetTokens": 10000,
+    "agentMaxTurns": 16,
+    "model": {
+      "provider": "9router",
+      "id": "cc/claude-haiku-4-5-20251001",
+      "thinking": "low"
+    },
+    "passive": false,
+    "debugLog": false
+  }
 }
