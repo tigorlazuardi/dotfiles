@@ -74,8 +74,9 @@ LICENSE                                # repo license, bukan dotfile target
 
 # --- pi coding agent ---
 # Track HANYA config statis: AGENTS.md, settings.json, subagents.json,
-# skills/, prompts/, dan auth.json (encrypted via --encrypt).
+# skills/, prompts/.
 # Exclude semua yang dinamis / machine-specific / regenerated.
+.pi/agent/auth.json                    # per-device credential, tiap device punya sendiri
 .pi/agent/npm/**                       # installed packages, regen dari settings.packages
 .pi/agent/sessions/**                  # session history, dinamis
 .pi/.pi/**                             # stray project dir kalau pi dijalanin dari ~/.pi
