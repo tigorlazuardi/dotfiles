@@ -116,7 +116,7 @@ Every Telemetry section MUST list:
 2. **Tier B fields kept visible** — name them + state "support-debug default".
 3. **Tier C fields redacted** — name them + redaction strategy.
 4. **Tier D answers** — each field + chosen strategy (a/b/c/d) + pointer to company policy doc if one exists.
-5. **Committed project rule** — which `.pi/rules/<name>.md` codifies the above. If no rule yet, mark as follow-up before merge.
+5. **Committed project rule** — which `.agents/rules/<name>.md` codifies the above. If no rule yet, mark as follow-up before merge.
 
 ## Histograms — explicit buckets
 
@@ -170,8 +170,8 @@ If the project already has a non-OTel stack: do NOT rip-and-replace as part of a
 
 Once a project commits to a specific telemetry stack — SDK version, exporter, collector endpoint, backend, naming conventions, redaction list, bucket sets — CAPTURE it as a project-level rule or skill so future sessions stop re-deriving it.
 
-- Path-scoped (instrumentation code lives under specific dirs) → `/promote-rules` → writes `.pi/rules/<name>.md` with `paths:` frontmatter.
-- Intent-triggered (e.g. "add a metric", "add a span", "instrument this") → `/promote-skills` → writes `.pi/skills/<name>/SKILL.md`.
+- Path-scoped (instrumentation code lives under specific dirs) → `/promote-rules` → writes `.agents/rules/<name>.md` with `paths:` frontmatter.
+- Intent-triggered (e.g. "add a metric", "add a span", "instrument this") → `/promote-skills` → writes `.agents/skills/<name>/SKILL.md`.
 
 Trigger to capture: the moment you have answered the same telemetry stack question twice in this project. Do not wait for the third time.
 

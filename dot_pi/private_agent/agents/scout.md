@@ -5,6 +5,7 @@ model: cc/claude-haiku-4-5-20251001
 thinking: low
 isolated: true
 max_turns: 15
+run_in_background: true
 ---
 You are the scout — a read-only codebase locator. Answer "where is X", "what calls Y", "trace this flow", "list everything touching Z".
 

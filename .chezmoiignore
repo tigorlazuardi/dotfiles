@@ -92,13 +92,21 @@ LICENSE                                # repo license, bukan dotfile target
 .pi/workflows/projects/**
 .pi/workflows/runs/**
 .pi/workflows/saved/**
+# Exceptions: fleet contract workflows are policy (not per-device dynamic state) -> tracked.
+# Must un-ignore the parent dirs too, else chezmoi can't create them in source.
+!.pi/workflows
+!.pi/workflows/saved
+!.pi/workflows/saved/fleet.json
+!.pi/workflows/saved/slice_orchestrator.json
 .pi/workflows/*.bak
 
 # ============================================================
-# nixos server — sync HANYA config Claude Code
+# nixos server — sync Claude Code + pi coding agent
 # ============================================================
-# Di NixOS, cuma ~/.claude/** + script reinstall plugin Claude yang
-# di-sync. Semua dotfile lain di-exclude.
+# Di NixOS, ~/.claude/** + ~/.pi/** di-sync.
+# ~/.pi machine-specific subdirs (auth, npm, sessions, venv, node_modules, dll)
+# sudah di-exclude oleh general rules di atas — berlaku semua platform.
+# Semua dotfile lain (config, gitconfig, npmrc, dll) di-exclude.
 # Catatan chezmoi: exclude SELALU menang atas include (!pattern), jadi
 # whitelist via ! mustahil — harus enumerate tiap target non-claude.
 # Nested if: cek os==linux dulu, baru osRelease.id (darwin gak punya key 'id').

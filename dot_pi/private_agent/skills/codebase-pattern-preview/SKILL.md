@@ -1,11 +1,11 @@
 ---
 name: codebase-pattern-preview
-description: Interview the user about their stack, then produce an MDX preview that shows the CONCRETE patterns a codebase will use — how DB access works (e.g. Drizzle, go-jet), where business logic lives, where the HTTP router lives, function input/output signatures, example handlers, contracts, and error handling — authored for Plandeck so a human reviews the plan before code exists. After the patterns are implemented, generate matching `.pi/rules` and `.pi/skills` in THAT codebase to enforce the style in future sessions. Use when bootstrapping or planning any codebase (backend, library, service, full-stack), when the user wants to "see the patterns / shape / example code" before building, or asks how DB access / API / function signatures should look. Language- and framework-agnostic; pairs with `plandeck-authoring`.
+description: Interview the user about their stack, then produce an MDX preview that shows the CONCRETE patterns a codebase will use — how DB access works (e.g. Drizzle, go-jet), where business logic lives, where the HTTP router lives, function input/output signatures, example handlers, contracts, and error handling — authored for Plandeck so a human reviews the plan before code exists. After the patterns are implemented, generate matching `.agents/rules` and `.agents/skills` in THAT codebase to enforce the style in future sessions. Use when bootstrapping or planning any codebase (backend, library, service, full-stack), when the user wants to "see the patterns / shape / example code" before building, or asks how DB access / API / function signatures should look. Language- and framework-agnostic; pairs with `plandeck-authoring`.
 ---
 
 # Codebase pattern preview
 
-Goal: before writing real code, show the human the EXACT patterns the codebase will follow — concrete example code, not prose. Output is an MDX doc reviewed in Plandeck. After sign-off and implementation, capture the same patterns as `.pi/rules` / `.pi/skills` inside that repo so future sessions enforce them.
+Goal: before writing real code, show the human the EXACT patterns the codebase will follow — concrete example code, not prose. Output is an MDX doc reviewed in Plandeck. After sign-off and implementation, capture the same patterns as `.agents/rules` / `.agents/skills` inside that repo so future sessions enforce them.
 
 This is language- and framework-agnostic. Do NOT assume a stack — interview first. Authoring rules (MDX blocks, Mermaid, discovery, read-only) come from the `plandeck-authoring` skill.
 
@@ -46,8 +46,8 @@ Use `<CodeTabs>` to show variants side by side (schema / query / sample; success
 
 Once the human approves and the patterns are implemented in the repo, capture them so future sessions follow them automatically. In THAT codebase:
 
-- **Path-scoped conventions** → `.pi/rules/<name>.md` with `paths:` frontmatter. e.g. a rule for `**/repo/*.ts` that says "every repo function takes ctx first and returns `Result<T, E>`; DB access only via Drizzle, never raw SQL."
-- **Intent-triggered patterns / gotchas** → `.pi/skills/<name>/SKILL.md` with `name:` + `description:` frontmatter. e.g. "how to add a new endpoint: contract → service → handler → test, in this order."
+- **Path-scoped conventions** → `.agents/rules/<name>.md` with `paths:` frontmatter. e.g. a rule for `**/repo/*.ts` that says "every repo function takes ctx first and returns `Result<T, E>`; DB access only via Drizzle, never raw SQL."
+- **Intent-triggered patterns / gotchas** → `.agents/skills/<name>/SKILL.md` with `name:` + `description:` frontmatter. e.g. "how to add a new endpoint: contract → service → handler → test, in this order."
 - One rule/skill per coherent pattern. Keep them concrete and example-backed (link or inline the canonical example from the codebase).
 - Mirror the approved `<Decision>` blocks into these files so the rationale survives.
 
@@ -143,4 +143,4 @@ Explicit error flow; handler maps Result.error to HTTP.
 2. Write the `.mdx` preview into a Plandeck folder; tell the user the path + that the Plandeck CLI renders it.
 3. Human reviews, flips `<Decision>` statuses, answers `<Callout>` questions.
 4. Implement the approved patterns.
-5. Capture them as `.pi/rules` / `.pi/skills` in that repo so future sessions enforce the style.
+5. Capture them as `.agents/rules` / `.agents/skills` in that repo so future sessions enforce the style.

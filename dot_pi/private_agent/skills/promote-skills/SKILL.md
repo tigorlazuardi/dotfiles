@@ -1,11 +1,13 @@
 ---
 name: promote-skills
-description: Promote a durable, intent-triggered lesson or cross-domain concept into a .pi/skills/<name>/SKILL.md so future sessions recall it. Use for abstract knowledge NOT cleanly scoped to file paths — vendor quirks, lessons learned, cross-cutting gotchas, operational constraints — e.g. "vendor X server enters maintenance 2–4am weekends, reject clients then". OFFER this whenever durable knowledge surfaces that a future cold session would otherwise forget, instead of silently absorbing it. Also triggers on "/promote-skills", "make this a skill", "remember this for the project".
+description: Promote a durable, intent-triggered lesson or cross-domain concept into a repo `.agents/skills/<name>/SKILL.md` so future sessions recall it and other agent harnesses pick it up too. Use for abstract knowledge NOT cleanly scoped to file paths — vendor quirks, lessons learned, cross-cutting gotchas, operational constraints — e.g. "vendor X server enters maintenance 2–4am weekends, reject clients then". OFFER this whenever durable knowledge surfaces that a future cold session would otherwise forget, instead of silently absorbing it. Also triggers on "/promote-skills", "make this a skill", "remember this for the project".
 ---
 
 # Promote durable knowledge into a project skill
 
-Turn an abstract, intent-triggered lesson into a committed `.pi/skills/<name>/SKILL.md` so future cold sessions recall it. Skills trigger on the LLM's intent matching the `description`, not on file paths.
+Turn an abstract, intent-triggered lesson into a committed `.agents/skills/<name>/SKILL.md` so future cold sessions recall it. Skills trigger on the LLM's intent matching the `description`, not on file paths.
+
+**Location policy (default repo-level):** save to repo `.agents/skills/<name>/SKILL.md` unless the user EXPLICITLY asks for user-level. Repo-level `.agents/skills/` is shared with the team, travels with the repo, and is read by any harness supporting `.agents/`. User-level (`~/.pi/agent/skills/`) is machine-local and pi-only. Assume repo-level unless told otherwise.
 
 ## Use a skill (not a rule) when
 
@@ -17,7 +19,7 @@ If the concept IS concrete + path-scopable → **stop, suggest `/promote-rules` 
 
 ## Cross-machine note (the whole point)
 
-Auto-memory and `~/.pi/agent/skills/` are **machine-local**. A **project-level skill committed to git** (`.pi/skills/<name>/`) travels with the repo, so it works on every machine and teammate that clones it — intent-triggered memory that crosses machines. Prefer this when the user wants cross-machine persistence.
+Auto-memory and `~/.pi/agent/skills/` are **machine-local**. A **project-level skill committed to git** (`.agents/skills/<name>/`) travels with the repo, so it works on every machine, teammate, and harness that clones it — intent-triggered memory that crosses machines AND tools. This is the default and is what cross-machine persistence relies on.
 
 ## Workflow
 
@@ -25,12 +27,12 @@ Auto-memory and `~/.pi/agent/skills/` are **machine-local**. A **project-level s
 
 2. **Confirm it is skill-shaped.** Abstract / intent-triggered / no clean path scope? If it is actually path-scopable → suggest `/promote-rules`, stop.
 
-3. **Resolve target dir.**
-   - **Project, committed** (`.pi/skills/<name>/SKILL.md`) — cross-machine, shared via git. Recommended for cross-machine intent memory and team workflows.
-   - **User-level** (`~/.pi/agent/skills/<name>/`) — all your projects on *this machine only*; not cross-machine unless you sync your dotfiles.
+3. **Resolve target dir.** Default is repo-level; only go user-level on explicit request.
+   - **Project, committed (DEFAULT)** (`.agents/skills/<name>/SKILL.md`) — cross-machine + cross-harness, shared via git. Use unless the user explicitly asks otherwise.
+   - **User-level (explicit only)** (`~/.pi/agent/skills/<name>/`) — all your projects on *this machine only*, pi-only; not cross-machine unless you sync dotfiles. Use ONLY when the user explicitly asks for user/global level.
    - No repo? Only user-level applies (mention that committing needs a repo).
 
-4. **Reuse-first.** Search existing `<root>/.pi/skills/*/SKILL.md`. If one already covers this domain (same vendor/subsystem), append a section to it. Else create a new `<name>/SKILL.md` (kebab-case, e.g. the vendor name).
+4. **Reuse-first.** Search existing `<root>/.agents/skills/*/SKILL.md` (or `~/.pi/agent/skills/*/SKILL.md` for user-level). If one already covers this domain (same vendor/subsystem), append a section to it. Else create a new `<name>/SKILL.md` (kebab-case, e.g. the vendor name).
 
 5. **Draft frontmatter.** `name` + a trigger-optimized `description`. The description IS the trigger — write it so a future session self-invokes when it hits this situation:
    ```
@@ -48,7 +50,7 @@ Auto-memory and `~/.pi/agent/skills/` are **machine-local**. A **project-level s
 
 9. **Commit if project-level** (this is what makes it cross-machine). Offer to commit so it actually travels:
    ```
-   git add .pi/skills/<name>/
+   git add .agents/skills/<name>/
    git commit -m "Add <name> skill"
    ```
    Without the commit it stays local to this checkout — defeating the cross-machine goal. Get the user's ok before committing.

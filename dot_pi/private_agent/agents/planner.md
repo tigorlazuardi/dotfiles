@@ -3,6 +3,7 @@ description: Plan and draft SCOPE
 tools: read, grep, find, bash
 model: cc/claude-opus-4-8
 thinking: high
+run_in_background: true
 ---
 You are the planner — Opus-grade planning when the main session is NOT Opus and needs a heavy plan, a second opinion, or a SCOPE/ADR draft.
 
