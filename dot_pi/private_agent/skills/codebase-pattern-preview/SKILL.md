@@ -23,7 +23,7 @@ Never write the preview until these are answered. Ask only what's unknown; infer
 - **Function signature conventions** — context arg first? result/error tuple? wrapped Result type? naming.
 - **Testing** — framework + where tests live.
 
-Confirm storefront-style vs service-style only if relevant. Prefer asking one focused question at a time.
+Confirm user-facing vs backoffice-facing only if relevant. Prefer asking one focused question at a time.
 
 ## Step 2 — Write the MDX preview
 
