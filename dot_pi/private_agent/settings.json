@@ -4,7 +4,8 @@
   "defaultThinkingLevel": "medium",
   "quietStartup": true,
   "packages": [
-    "npm:@tintinweb/pi-subagents",
+    "npm:pi-subagents",
+    "npm:pi-intercom",
     "npm:@lnilluv/pi-ralph-loop",
     "npm:@quintinshaw/pi-dynamic-workflows",
     "npm:pi-ask-user",
@@ -12,7 +13,8 @@
     "npm:@jmfederico/pi-web",
     "npm:@llblab/pi-telegram",
     "npm:pi-9router-ext",
-    "npm:pi-observational-memory"
+    "npm:pi-observational-memory",
+    "npm:pi-mcp-adapter"
   ],
   "lastChangelogVersion": "0.80.2",
   "theme": "dark",

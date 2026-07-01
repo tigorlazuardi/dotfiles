@@ -1,0 +1,7 @@
+{
+  "asyncByDefault": true,
+  "forceTopLevelAsync": true,
+  "intercomBridge": {
+    "mode": "always"
+  }
+}

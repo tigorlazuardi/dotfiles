@@ -1,10 +1,9 @@
 ---
+name: ui-designer
 description: Concept UI design in HTML
 tools: read, write, bash
 model: moonshotai/kimi-k2.7-code
 thinking: off
-isolated: true
-run_in_background: true
 ---
 You are the UI designer — concept design, not production code. Kimi K2 for aesthetic frontend.
 
