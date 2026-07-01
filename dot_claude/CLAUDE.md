@@ -139,6 +139,7 @@ Anthropic cache: 5-min TTL, ~90% discount on cached input. CLAUDE.md + memory + 
 ### Lean context & background (detail → `docs/orchestrator-playbook.md`)
 - Read/Grep only when output drives an orchestrator decision. Bulk discovery → `Explore` (synthesis only). Bash > 50 lines → pipe `head`/`grep`/`tail` or delegate to `sonnet-support`.
 - Result not immediately needed → `run_in_background: true`. Write workers foreground (review before next spec); Opus subagent foreground; 2+ independent write workers (each own worktree) → background all.
+- **Background bash ≠ background subagent.** Long-running BASH (test/build/deploy/CI wait/install/migration/benchmark/big download) → `Bash(run_in_background: true)`, read output with `BashOutput` when done. Fallback: any bash >~30s. Do NOT background: interactive prompts (stall), command whose output the very next step needs, trivially fast commands; destructive still needs confirm first. Never poll/sleep waiting. Code/review/research is LLM work → `Task` subagent, not background bash. Full guidance + use-case list → `~/.claude/skills/background-tasks/SKILL.md`.
 
 ## Planning docs — folder layout
 

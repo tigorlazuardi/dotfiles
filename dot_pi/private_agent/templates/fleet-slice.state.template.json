@@ -1,0 +1,71 @@
+{
+  "_template": "fleet-slice",
+  "_doc": "Level-2 slice-orchestrator state for ONE slice inside a fleet wave. Reports to CAPTAIN (status only). Location: <repo>/plans/fleet/<yyyy-mm-dd>-<epic>/<wave>/<sliceId>/state.json (RELATIVE to project repo root, committed there). A slice can run for HOURS -> persist every step so resume continues mid-slice. Design ref: pi config docs/design/2026-07-01-fleet-ralph-state-schema.md.",
+  "_instantiate": "Created by the slice orchestrator on dispatch (copies assignment from Level-1). Updated every step + every assumption/escalation. CRITICAL: partial work must be COMMITTED to the slice branch, not just recorded here.",
+
+  "sliceId": "<sliceId>",
+  "schemaVersion": 1,
+  "branch": "fleet/<epic>/<sliceId>",
+  "updatedAt": null,
+
+  "reportsTo": "captain",
+  "_escalation_boundary": "Technical escalation STOPS at the orchestrator. Only wave/slice STATUS goes up to captain. Orchestrator resolves ambiguity itself + records in assumptions[].",
+
+  "assignment": {
+    "implementer": "implementer",
+    "reviewer": "reviewer",
+    "_doc": "= Level-1 effective* at dispatch.",
+    "upgradedFromPlan": false,
+    "upgradeReason": null
+  },
+
+  "step": "impl",
+  "_step_enum": "impl | review | knowledge-write | done",
+  "stepsDone": [],
+
+  "impl": {
+    "committed": false,
+    "lastCommitSha": null,
+    "incrementalCommits": [],
+    "_doc": "commit-on-meaningful-progress so partial work survives on branch. Resume = checkout branch@lastCommitSha + continue from step."
+  },
+
+  "review": {
+    "reached": false,
+    "verdict": null,
+    "_verdict_enum": "pass | fail | needs-fix",
+    "reviewer": "reviewer",
+    "issues": []
+  },
+
+  "assumptions": [
+    {
+      "_example": true,
+      "id": "a1",
+      "at": null,
+      "context": "what was ambiguous (spec gap / two valid designs)",
+      "decision": "what the orchestrator chose",
+      "rationale": "why",
+      "reversible": true,
+      "durable": false,
+      "_durable_doc": "true -> also push to knowledgeDelta[] -> .agents/rules (durable convention). false -> stays here (judgment audit only).",
+      "reviewedByUser": false
+    }
+  ],
+
+  "escalations": [
+    {
+      "_example": true,
+      "at": null,
+      "from": "implementer",
+      "reason": "need_decision",
+      "_reason_enum": "need_decision | interview_request | progress_update",
+      "question": "the exact ambiguity",
+      "resolvedBy": "orchestrator",
+      "answer": "the decision",
+      "ledToAssumption": "a1"
+    }
+  ],
+
+  "knowledgeDelta": []
+}

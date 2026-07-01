@@ -38,8 +38,17 @@ Main session = orchestrator. Its model (pick via `Ctrl+P`) IS the orchestrator t
 - When the user gives mid-run direction for a running worker, forward it via `steer_subagent(agent_id, message)` instead of killing + respawning. Main agent is the steering relay between user and background workers.
 - Do not poll/sleep waiting on a background worker — completion arrives as a notification.
 
+### Background bash (`bg_run`)
+`bg_run` (plugin `pi-background-tasks`) = run a **bash command** in background, wake on completion (success OR error) with exit code. Different from a worker subagent: `bg_run` = shell process; worker subagent = LLM reasoning. Code/review/research → worker, not `bg_run`.
+- Long-running bash → auto-background, no asking: test suite, build, deploy/pipeline, CI wait, dep install, migration, benchmark, big download.
+- Fallback: any bash command >~30s → background too, keep agent responsive.
+- Do NOT background: interactive prompts (stall), command whose output the very next step needs, trivially fast commands. Destructive still needs Safety confirm first.
+- After spawn: do other work, never poll/sleep — wakeup notification brings exit code. Report honest: check exit code + logs before claiming pass/fail.
+- Full guidance + use-case list → `~/.pi/agent/skills/background-tasks/SKILL.md`.
+
 ### Worker pool (`~/.pi/agent/agents/`)
-- `implementer` (Sonnet) — code writes/edits against a spec.
+- `implementer` (Sonnet) — code writes/edits against a spec. Standard fault-tolerance.
+- `implementer-critical` (Opus) — LOW fault-tolerance implementation: auth / secrets / DB migration / schema / public-API / money-payment / data-deletion / irreversible. Stricter contract: no-assumption at trust/money boundaries (escalate, don't guess), defense-in-depth, idempotency, reversibility, mandatory edge + failure-path tests, telemetry. The IMPLEMENT-side mirror of `deep-reviewer`.
 - `implementer-lite` (Haiku) — trivial mechanical only; stops + reports if scope expands.
 - `reviewer` (Sonnet) — S/M diff review; escalates low-tolerance findings to `deep-reviewer`.
 - `deep-reviewer` (Opus) — auth / secrets / migration / schema / public-API / money review. **Mandatory** review for any worker diff touching those.
@@ -48,8 +57,15 @@ Main session = orchestrator. Its model (pick via `Ctrl+P`) IS the orchestrator t
 - `support` (Sonnet) — docs, research, synthesis (no source edits).
 - `ui-designer` (Kimi K2, leaf) — concept UI, ready HTML.
 
+### Fault-tolerance routing (implement + review)
+Classify each slice/task: **low** (auth / secrets / DB migration / schema / public-API / money-payment / data-deletion / irreversible), **standard**, or **trivial**. Routing follows the class on BOTH sides:
+- low → `implementer-critical` (implement) + `deep-reviewer` (review).
+- standard → `implementer` + `reviewer`.
+- trivial → `implementer-lite` + `reviewer`.
+- **Safety ratchet (upgrade-only):** tier order `implementer-lite < implementer < implementer-critical` and `reviewer < deep-reviewer`. The orchestrator may UPGRADE a slice's tier when it turns out riskier than planned, but must NEVER downgrade. A low-tolerance slice must never be silently downgraded — including on resume after a rate-limit/process death. In fleet/ralph, the planner sets the class at Plan time and it persists in state (see pi config `docs/design/2026-07-01-fleet-ralph-state-schema.md` + `templates/*.state.template.json`); resume reads the effective assignment, no re-judgment.
+
 ### Escalation triggers (route to Opus tier)
-- Diff touches auth / secrets / DB migration / schema / public API → `deep-reviewer`.
+- Diff touches auth / secrets / DB migration / schema / public API → `deep-reviewer` (review) AND `implementer-critical` (implement).
 - Worker handover fails 2x on same step, or two workers read a spec differently → `planner` rewrites the spec.
 - Irreversible/destructive action proposed in an autonomous loop → gate via Opus review before exec.
 - Steering: redirect a running worker with `steer_subagent` instead of killing + respawning.
@@ -92,4 +108,4 @@ Testing tools must be clear + usable before Build (captain contract): a slice's 
 
 Captain stays conversational during fleet (mandatory): the main agent / captain must remain reachable while a fleet run is in flight. The user can ask it at any time for status (which wave, which slices running/passed/failed/conflicted), progress, or potential steering. The captain answers from the live run state and forwards user direction to running workers via `steer_subagent(agent_id, message)` — it is the relay between the user and the background fleet, never a silent black box. Surface a status summary on request; offer steering options when the user wants to redirect.
 
-Resume / "continue" — NOT YET IMPLEMENTED (known gap, but REQUIRED behavior): the user expects that after a rate limit or any interruption, saying **"continue"** resumes fleet from the LATEST persisted state — never a restart from Plan. Target flow: captain tracks the active `runName`; on "continue" it re-invokes `/fleet runName=<sameRunName> args.resume=true`; the control plane loads `plans/fleet/<runName>/state.json`, skips Plan+Gate+already-done waves, re-attempts only unmerged/conflicted merges, rebuilds only failed/never-started slices, and reloads accumulated `knowledge[]`. Reality today: a workflow run is in-memory for its turn — if the process dies or a rate limit breaks the turn, the in-memory run is GONE, and the current saved `workflows/saved/fleet.json` persists NO state.json and has no resume branch, so an interrupted run restarts from Plan. Resume needs TWO state levels (both required, because a slice_orchestrator can run for HOURS): **Level 1** control-plane state (`plans/fleet/<runName>/state.json`) for cross-slice status/waves/knowledge, and **Level 2** per-slice state so a multi-hour slice resumes from its last completed step instead of rebuilding from zero. Hard prerequisite: the impl step must COMMIT partial work incrementally to the slice branch — a state file pointing at uncommitted edits is useless, the work dies with the in-memory session. Resume is impossible until both levels persist AND impl commits incrementally. Do not promise "continue" works until that lands. Full spec + state granularity → `~/.pi/agent/rules/fleet-knowledge.md`.
+Resume / "continue" — NOT YET IMPLEMENTED (known gap, but REQUIRED behavior): the user expects that after a rate limit or any interruption, saying **"continue"** resumes fleet from the LATEST persisted state — never a restart from Plan. Target flow: captain tracks the active `runName`; on "continue" it re-invokes `/fleet runName=<sameRunName> args.resume=true`; the control plane loads `<repo>/plans/fleet/<yyyy-mm-dd>-<epic>/state.json` (RELATIVE to the project repo, committed there — NOT ~/.pi), skips Plan+Gate+already-done waves, re-attempts only unmerged/conflicted merges, rebuilds only failed/never-started slices, and reloads accumulated `knowledge[]`. Reality today: a workflow run is in-memory for its turn — if the process dies or a rate limit breaks the turn, the in-memory run is GONE, and the current saved `workflows/saved/fleet.json` persists NO state.json and has no resume branch, so an interrupted run restarts from Plan. Resume needs TWO state levels (both required, because a slice_orchestrator can run for HOURS): **Level 1** control-plane state (`<repo>/plans/fleet/<yyyy-mm-dd>-<epic>/state.json`, repo-relative) for cross-slice status/waves/knowledge, and **Level 2** per-slice state so a multi-hour slice resumes from its last completed step instead of rebuilding from zero. Hard prerequisite: the impl step must COMMIT partial work incrementally to the slice branch — a state file pointing at uncommitted edits is useless, the work dies with the in-memory session. Resume is impossible until both levels persist AND impl commits incrementally. Do not promise "continue" works until that lands. Full spec + state granularity → `~/.pi/agent/rules/fleet-knowledge.md`.

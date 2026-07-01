@@ -1,0 +1,81 @@
+{
+  "_template": "fleet-captain",
+  "_doc": "Level-1 control-plane / captain state. Point: EPIC. Location: <repo>/plans/fleet/<yyyy-mm-dd>-<epic>/state.json (RELATIVE to the project repo root, committed to that repo -- NOT ~/.pi). Captain tracks wave/slice status + resume. Technical issues NEVER reach here (orchestrator handles those). Design ref: pi config docs/design/2026-07-01-fleet-ralph-state-schema.md.",
+  "_instantiate": "Planner fills runName, baseBranch, integrationBranch, sliceDag (with faultTolerance + assignment per slice), and phases. Captain updates phases/slices/stopFlag/knowledge at runtime.",
+
+  "runName": "<yyyy-mm-dd>-<epic>",
+  "schemaVersion": 1,
+  "createdAt": null,
+  "updatedAt": null,
+
+  "baseBranch": "main",
+  "integrationBranch": "fleet/<epic>",
+
+  "branchStrategy": {
+    "_doc": "Ditetapkan SEKALI di planning (auto-deteksi + konfirmasi user 1x), dipakai seluruh run. Resume anchor — jangan lupa base branch.",
+    "model": "trunk",
+    "_model_enum": "trunk | classic",
+    "featureFlag": false,
+    "flagLib": null,
+    "_flagLib_doc": "nama lib terdeteksi (unleash/launchdarkly/flagsmith/env-gate) atau null",
+    "integration": "pr-mr",
+    "_integration_enum": "auto-push (trunk: merge+push base tiap wave) | pr-mr (classic / trunk-no-flag-opt-out: kumpulkan -> PR/MR ke base)",
+    "confirmedAtPlanning": false,
+    "promotedRule": null,
+    "_promotedRule_doc": "nama .agents/rules yg dibuat dari keputusan ini (mis 'fleet-branch-strategy'), atau null kalau user tak promote",
+    "prTooling": {
+      "_doc": "Probe di planning saat integration=pr-mr. PR/MR CLI TIDAK wajib. Gagal runtime -> selalu fallback url-mode, jangan block.",
+      "prTool": null,
+      "_prTool_enum": "gh | glab | null",
+      "prToolReady": false,
+      "_prToolReady_doc": "true kalau CLI ada + auth proper",
+      "prMode": "url",
+      "_prMode_enum": "cli (auto-bikin PR/MR) | url (print URL utk bikin manual di step akhir)"
+    }
+  },
+
+  "phases": {
+    "plan": "pending",
+    "gate": "pending",
+    "setup": "pending",
+    "waves": {}
+  },
+
+  "sliceDag": [
+    {
+      "id": "<sliceId>",
+      "dependsOn": [],
+      "wave": 0,
+      "faultTolerance": "standard",
+      "_faultTolerance_enum": "low | standard | trivial  (low = auth/secrets/migration/schema/public-API/money/data-deletion/irreversible)",
+      "assignment": {
+        "plannedImplementer": "implementer",
+        "plannedReviewer": "reviewer",
+        "_default_mapping": "low -> implementer-critical + deep-reviewer ; standard -> implementer + reviewer ; trivial -> implementer-lite + reviewer",
+        "effectiveImplementer": "implementer",
+        "effectiveReviewer": "reviewer",
+        "_ratchet": "tier order implementer-lite<implementer<implementer-critical ; reviewer<deep-reviewer. Orchestrator may UPGRADE effective>=planned, NEVER downgrade. Resume reads effective*, no re-judgment, no silent-downgrade."
+      },
+      "level2": "<wave>/<sliceId>/state.json"
+    }
+  ],
+
+  "slices": {
+    "<sliceId>": {
+      "status": "pending",
+      "_status_enum": "pending | running | passed | failed | merged | conflicted | blocked-soft | blocked-hard",
+      "branch": null,
+      "level2": "<wave>/<sliceId>/state.json"
+    }
+  },
+
+  "knowledge": [],
+  "_knowledge_doc": "Accumulated knowledge[] across waves (seedKnowledge + per-slice knowledgeDelta). Reloaded on resume. Durable items also persisted to .agents/rules via writeKnowledge().",
+
+  "stopFlag": {
+    "stopped": false,
+    "reason": null,
+    "stoppedAt": null,
+    "_doc": "Captain STOPs fleet when a hard-dependency dies and dependents cannot proceed (blocked-hard). Technical ambiguity does NOT stop fleet -- orchestrator decides + records assumption."
+  }
+}

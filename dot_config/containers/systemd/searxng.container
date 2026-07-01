@@ -1,0 +1,33 @@
+[Unit]
+Description=SearXNG metasearch (local, for 9router / pi)
+Documentation=https://docs.searxng.org
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=docker.io/searxng/searxng:latest
+ContainerName=searxng
+AutoUpdate=registry
+
+# Publish to loopback only; 9router on the host reaches it at http://localhost:8888
+PublishPort=127.0.0.1:8888:8080
+
+# chezmoi-managed config dir at the path the entrypoint reads ($__SEARXNG_CONFIG_PATH).
+# FORCE_OWNERSHIP=false below stops the entrypoint from chown-ing these host files
+# (which previously broke host ownership on every start). settings.yml is 0644 so
+# the in-container searxng user (uid 977) can still read it.
+Volume=%h/.config/searxng:/etc/searxng:Z
+# Writable runtime/cache dir as a podman-managed named volume (never touches host).
+Volume=searxng-data:/var/cache/searxng:Z
+
+# Do NOT chown the bind-mounted host config.
+Environment=FORCE_OWNERSHIP=false
+Environment=SEARXNG_BASE_URL=http://localhost:8888/
+
+[Service]
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,6 @@
+x 2026-07-01 2026-07-01 Implementasi state schema ke workflow fleet/ralph aktual (saat ini baru desain di docs/design + templates/) +orchestration @design
+(B) Putuskan contact_supervisor: nicobailon/pi-subagents vs @tintinweb (escalation bridge env vars, keputusan infra) +orchestration @infra
+x 2026-07-01 2026-07-01 Tentukan siapa flush Level-1 captain state ke disk saat captain=workflow in-memory (blocker resume fleet) +orchestration @design
+x 2026-07-01 2026-07-01 Definisikan 'meaningful progress' utk commit-incremental impl (prasyarat resume mid-slice) +orchestration @design
+(C) 9router quota footer plugin: baru PLAN.md, implementasi di repo terpisah github.com/tigorlazuardi/9router-quota-footer +plugin @later
+(A) EKSEKUSI SCOPE state-schema-impl: 12 slice (9 kelompok-A siap + 3 kelompok-B unblocked). SCOPE+keputusan D1/D2/D3+branch-strategy+PR-tooling di docs/design/2026-07-01-state-schema-impl-scope.md. Mulai: Wave0 plan-schema-assignment|knowledge-agents-dir|route-implementer-ratchet. 9 slice low-tol=deep-reviewer. Review manual A3 ratchet sblm dogfood. +orchestration @exec
