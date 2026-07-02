@@ -16,7 +16,8 @@
     "npm:pi-prompt-template-model",
     "npm:pi-patty-bg-tasks",
     "npm:@koltmcbride/pi-loop",
-    "npm:pi-lean-dimension"
+    "npm:pi-lean-dimension",
+    "npm:@kmmuntasir/pi-nested-subagents"
   ],
   "searxng": {
     "url": "http://localhost:8888"
