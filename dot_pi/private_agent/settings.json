@@ -15,7 +15,8 @@
     "npm:pi-mcp-adapter",
     "npm:pi-background-tasks",
     "npm:pi-rules",
-    "npm:@monotykamary/pi-vcc"
+    "npm:@monotykamary/pi-vcc",
+    "npm:pi-prompt-template-model"
   ],
   "lastChangelogVersion": "0.80.3",
   "theme": "dark"
