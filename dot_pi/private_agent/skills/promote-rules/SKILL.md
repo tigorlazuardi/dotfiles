@@ -1,13 +1,13 @@
 ---
 name: promote-rules
-description: Promote a durable, path-scoped project convention into a repo `.agents/rules/` file (with `paths:` frontmatter) so it survives sessions and machines, is shared with the team, and is picked up by other agent harnesses too. Use when a concrete, domain-specific rule emerges that can be scoped to file paths — e.g. "all drizzle timestamp fields must be timezone-aware", "API handlers must validate input with zod". OFFER this whenever the user states a durable convention/constraint tied to a clear part of the codebase, instead of silently absorbing it. Also triggers on "/promote-rules", "make this a rule", "save this convention", "remember this for these files".
+description: Promote a durable, path-scoped project convention into a repo `.pi/rules/` file (with `paths:` frontmatter) so it survives sessions and machines, is shared with the team, and is auto-loaded by pi. Use when a concrete, domain-specific rule emerges that can be scoped to file paths — e.g. "all drizzle timestamp fields must be timezone-aware", "API handlers must validate input with zod". OFFER this whenever the user states a durable convention/constraint tied to a clear part of the codebase, instead of silently absorbing it. Also triggers on "/promote-rules", "make this a rule", "save this convention", "remember this for these files".
 ---
 
 # Promote a durable convention into a project rule
 
-Turn a durable convention into a committed `.agents/rules/` file. Rules trigger deterministically when work touches matching file paths.
+Turn a durable convention into a committed `.pi/rules/` file. Rules trigger deterministically when work touches matching file paths.
 
-**Location policy (default repo-level):** save to repo `.agents/rules/` unless the user EXPLICITLY asks for user-level. Repo-level (`.agents/rules/`) is shared with the team and read by any harness that supports `.agents/`. User-level (`~/.pi/agent/rules/`) is your personal cross-repo habit, pi-only. Assume repo-level unless told otherwise.
+**Location policy (default repo-level):** save to repo `.pi/rules/` unless the user EXPLICITLY asks for user-level. Repo-level (`.pi/rules/`) is shared with the team and auto-loaded by pi. User-level (`~/.pi/agent/rules/`) is your personal cross-repo habit, pi-only. Assume repo-level unless told otherwise.
 
 ## Use a rule (not a skill) when
 
@@ -24,12 +24,12 @@ If the concept is abstract / intent-triggered / cross-domain with no clean path 
 2. **Confirm it is rule-shaped.** Concrete domain + path-scopable? If not → suggest `/promote-skills`, stop.
 
 3. **Resolve target dir and scope.** Default is repo-level; only go user-level on explicit request. Options:
-   - **Path-scoped (repo)** — applies only to files matching globs. Best when the habit is language- or area-specific. → project `.agents/rules/<name>.md` **with** `paths:` frontmatter. Only loads when work touches matching files (saves context).
-   - **Repo-wide** — applies to the whole project. → project `.agents/rules/<name>.md`, **no** frontmatter.
+   - **Path-scoped (repo)** — applies only to files matching globs. Best when the habit is language- or area-specific. → project `.pi/rules/<name>.md` **with** `paths:` frontmatter. Only loads when work touches matching files (saves context).
+   - **Repo-wide** — applies to the whole project. → project `.pi/rules/<name>.md`, **no** frontmatter.
    - **All projects (user-level, explicit only)** — personal habit across every repo, pi-only. → `~/.pi/agent/rules/<name>.md`. Use ONLY when the user explicitly asks for user/global level.
    - No repo? Then the user-level option applies.
 
-4. **Reuse-first.** Search existing `<root>/.agents/rules/*.md` (or `~/.pi/agent/rules/*.md` for user-level). If one already covers this domain (overlapping `paths:`), append/update it instead of creating a new file. Else pick a new kebab-case `<name>.md`.
+4. **Reuse-first.** Search existing `<root>/.pi/rules/*.md` (or `~/.pi/agent/rules/*.md` for user-level). If one already covers this domain (overlapping `paths:`), append/update it instead of creating a new file. Else pick a new kebab-case `<name>.md`.
 
 5. **Derive `paths:` globs** (for path-scoped). From the domain, propose the glob(s). Show the user; let them tighten/loosen. Example:
    ```

@@ -3,7 +3,7 @@ name: implementer
 description: Write and edit code
 tools: read, bash, edit, write, grep, find
 model: cc/claude-sonnet-4-6
-thinking: high
+thinking: medium
 ---
 You are the implementer. You execute a clear spec from the orchestrator — write and edit code, create files, run commands.
 

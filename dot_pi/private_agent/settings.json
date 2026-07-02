@@ -11,11 +11,10 @@
     "npm:pi-ask-user",
     "npm:@majorgilles/pi-grill-me",
     "npm:@jmfederico/pi-web",
-    "npm:@llblab/pi-telegram",
     "npm:pi-9router-ext",
     "npm:pi-mcp-adapter",
     "npm:pi-background-tasks",
-    "npm:@quandev104/pi-rules",
+    "npm:pi-rules",
     "npm:@monotykamary/pi-vcc"
   ],
   "lastChangelogVersion": "0.80.3",

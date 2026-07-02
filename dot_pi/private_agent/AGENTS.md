@@ -86,21 +86,21 @@ Whenever you plan a feature, service, endpoint, job, migration, or any program, 
 
 ## Knowledge transfer (all work, not just fleet)
 
-Knowledge transfer is a GENERAL practice across every session and workflow, not a fleet-only feature. Durable conventions, gotchas, and decisions get captured once as `.agents/rules` / `.agents/skills` and every future session + slice inherits them. Fleet is just one consumer/producer of this system; manual sessions are another.
+Knowledge transfer is a GENERAL practice across every session and workflow, not a fleet-only feature. Durable conventions, gotchas, and decisions get captured once as `.pi/rules` / `.pi/skills` and every future session + slice inherits them. Fleet is just one consumer/producer of this system; manual sessions are another.
 
 **Permission differs by context — this is the only real difference:**
 - **Inside fleet** — writing rules/skills is **IMPLICIT/automatic**. The control plane and slices persist `seedKnowledge` and `knowledgeDelta` without asking, because the run is autonomous and already gated. No per-write permission needed.
-- **Outside fleet (normal sessions)** — writing rules/skills needs **EXPLICIT user permission**. When durable knowledge surfaces, OFFER to capture it (via `/promote-rules` / `/promote-skills`) and write only after the user agrees. Never silently write `.agents/rules` / `.agents/skills` in a normal session.
+- **Outside fleet (normal sessions)** — writing rules/skills needs **EXPLICIT user permission**. When durable knowledge surfaces, OFFER to capture it (via `/promote-rules` / `/promote-skills`) and write only after the user agrees. Never silently write `.pi/rules` / `.pi/skills` in a normal session.
 
 Where knowledge lives (same files, both contexts):
-- `.agents/rules/<name>.md` — path-scoped rule (YAML `paths:` frontmatter, glob list). Auto-loaded when Pi touches matching files.
-- `.agents/skills/<name>/SKILL.md` — intent-triggered skill (YAML `name:` + `description:` frontmatter). Auto-loaded when description matches the LLM's intent.
+- `.pi/rules/<name>.md` — path-scoped rule (YAML `paths:` frontmatter, glob list). Auto-loaded when Pi touches matching files.
+- `.pi/skills/<name>/SKILL.md` — intent-triggered skill (YAML `name:` + `description:` frontmatter). Auto-loaded when description matches the LLM's intent.
 
-**Location policy — repo-level by default:** write to repo `.agents/rules` / `.agents/skills` (committed to git, shared with the team, picked up by ANY harness that supports `.agents/`, pi included — pi auto-loads `.agents/skills/` and `.agents/rules/`). Use user-level `~/.pi/agent/rules` / `~/.pi/agent/skills` ONLY when the user explicitly asks for user/global level (machine-local, pi-only, personal cross-repo habit). Assume repo-level unless the user explicitly says user-level. Fleet always writes repo-level.
+**Location policy — repo-level by default:** write to repo `.pi/rules` / `.pi/skills` (committed to git, shared with the team, auto-loaded by pi). Use user-level `~/.pi/agent/rules` / `~/.pi/agent/skills` ONLY when the user explicitly asks for user/global level (machine-local, pi-only, personal cross-repo habit). Assume repo-level unless the user explicitly says user-level. Fleet always writes repo-level.
 
 Fleet-specific mechanics (capture flow, propagation snapshot, tiered write policy `slice.writeDirectly`, persistence helper) live in `~/.pi/agent/rules/fleet-knowledge.md` — not duplicated here.
 
-Trivia filter (both contexts): only persist DURABLE concepts (real conventions, schemas, vendor quirks, gotchas others must honor). One-off trivia stays in the diff, not in `.agents/rules`/`.agents/skills`.
+Trivia filter (both contexts): only persist DURABLE concepts (real conventions, schemas, vendor quirks, gotchas others must honor). One-off trivia stays in the diff, not in `.pi/rules`/`.pi/skills`.
 
 Manual capture (normal sessions): `/promote-rules` and `/promote-skills` write to the same dirs with the same frontmatter, so manual + fleet-auto capture converge on one knowledge base. In a normal session this path is gated on explicit user permission (see above); in fleet the automatic path runs without asking.
 
