@@ -38,13 +38,14 @@ Main session = orchestrator. Its model (pick via `Ctrl+P`) IS the orchestrator t
 - When the user gives mid-run direction for a running worker, forward it via `steer_subagent(agent_id, message)` instead of killing + respawning. Main agent is the steering relay between user and background workers.
 - Do not poll/sleep waiting on a background worker — completion arrives as a notification.
 
-### Background bash (`bg_run`)
-`bg_run` (plugin `pi-background-tasks`) = run a **bash command** in background, wake on completion (success OR error) with exit code. Different from a worker subagent: `bg_run` = shell process; worker subagent = LLM reasoning. Code/review/research → worker, not `bg_run`.
-- Long-running bash → auto-background, no asking: test suite, build, deploy/pipeline, CI wait, dep install, migration, benchmark, big download.
-- Fallback: any bash command >~30s → background too, keep agent responsive.
+### Background bash (`pi-patty-bg-tasks`)
+Plugin `pi-patty-bg-tasks` = run a **bash command** in background, wake on completion (success OR error) with status + output path. Output goes to `/tmp/pi-bg/` (NOT the project — no `.pi/tasks/` pollution), auto-swept after 24h. Different from a worker subagent: this = shell process; worker subagent = LLM reasoning. Code/review/research → worker, not background bash.
+- Tools: `bash` (built-in override, auto-backgrounds a slow command), `bash_bg` (start in background up front), `jobs` (list/output/kill/attach/search/cleanup/stats), `job_decide` (keep/kill/check when auto-bg fires), `monitor` (stream each stdout line / WebSocket frame as an event), `agent_bg` (detached `pi -p` coworker). Ctrl+B backgrounds the running foreground command on the spot.
+- **Auto-background at 15s (user convention):** patty's default auto-bg timeout is 120s and is NOT env-configurable, so enforce 15s per-call. Whenever a `bash`/`bash_bg` command could plausibly run >15s (test suite, build, deploy/pipeline, CI wait, dep install, migration, benchmark, big download, or any unknown-duration command), pass `timeout: 15`. Skip only when you deliberately want it foreground and expect it fast.
+- Long-running bash → background, no asking: test suite, build, deploy/pipeline, CI wait, dep install, migration, benchmark, big download.
 - Do NOT background: interactive prompts (stall), command whose output the very next step needs, trivially fast commands. Destructive still needs Safety confirm first.
-- After spawn: do other work, never poll/sleep — wakeup notification brings exit code. Report honest: check exit code + logs before claiming pass/fail.
-- Full guidance + use-case list → `~/.pi/agent/skills/background-tasks/SKILL.md`.
+- After spawn: do other work, never poll/sleep — wakeup notification brings status. Report honest: check status + `jobs action=output` before claiming pass/fail.
+- Full guidance → `~/.pi/agent/skills/background-tasks/SKILL.md`.
 
 ### Worker pool (`~/.pi/agent/agents/`)
 - `implementer` (Sonnet) — code writes/edits against a spec. Standard fault-tolerance.
