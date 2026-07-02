@@ -121,3 +121,4 @@ LICENSE                                # repo license, bukan dotfile target
 .chezmoiscripts/install-packages.sh
 {{ end -}}
 {{ end -}}
+.omniroute/.env

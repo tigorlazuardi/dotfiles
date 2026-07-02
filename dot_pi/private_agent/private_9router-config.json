@@ -1,6 +1,0 @@
-{
-  "baseUrl": "http://localhost:20128",
-  "enableReasoning": true,
-  "webSearchRoute": "searxng",
-  "webFetchRoute": "jina-reader/fetch"
-}

@@ -1,7 +1,7 @@
 {
-  "defaultProvider": "9router",
+  "defaultProvider": "omniroute",
   "defaultModel": "cc/claude-opus-4-8",
-  "defaultThinkingLevel": "medium",
+  "defaultThinkingLevel": "high",
   "quietStartup": true,
   "packages": [
     "npm:pi-subagents",
@@ -10,15 +10,17 @@
     "npm:@quintinshaw/pi-dynamic-workflows",
     "npm:pi-ask-user",
     "npm:@majorgilles/pi-grill-me",
-    "npm:@jmfederico/pi-web",
-    "npm:pi-9router-ext",
     "npm:pi-mcp-adapter",
     "npm:pi-rules",
     "npm:@monotykamary/pi-vcc",
     "npm:pi-prompt-template-model",
     "npm:pi-patty-bg-tasks",
-    "npm:@koltmcbride/pi-loop"
+    "npm:@koltmcbride/pi-loop",
+    "npm:pi-lean-dimension"
   ],
+  "searxng": {
+    "url": "http://localhost:8888"
+  },
   "lastChangelogVersion": "0.80.3",
   "theme": "dark"
 }

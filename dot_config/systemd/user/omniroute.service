@@ -1,0 +1,13 @@
+[Unit]
+Description=Omniroute service
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/bun install -g omniroute
+ExecStart=%h/.bun/bin/omniroute --tray --no-open
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=default.target
