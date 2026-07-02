@@ -1,7 +1,9 @@
 # Fleet State-File Schema (Level-1 / Level-2)
 
 **Tanggal:** 2026-07-01
-**Status:** Desain skema. Belum implementasi. Menurunkan field konkret dari topologi 4-scope (`2026-07-01-intercom-orchestration-map.md`) + spec resume yang sudah ada (pi config `rules/fleet-knowledge.md` §64-105).
+**Status:** ⚠️ SUPERSEDED. Skema wave-based ini diganti DAG-based.
+**Superseded-by:** `2026-07-03-fleet-dag-rework.md` (wave→DAG, judge-gate, validation 2-lapis, fork-nesting toolkit). Doc ini disimpan untuk jejak evolusi; JANGAN dipakai sebagai rujukan implementasi terbaru.
+**Status (historis):** Desain skema. Belum implementasi. Menurunkan field konkret dari topologi 4-scope (`2026-07-01-intercom-orchestration-map.md`) + spec resume yang sudah ada (pi config `rules/fleet-knowledge.md` §64-105).
 **Tujuan:** Menutup resume-gap fleet (Level-1 + Level-2 belum persist ke disk) + menampung `assumptions[]` (orchestrator putuskan-sendiri) yang muncul dari diskusi 4-scope.
 
 ## Prinsip pemisahan (ditetapkan user)
