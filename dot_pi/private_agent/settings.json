@@ -13,10 +13,11 @@
     "npm:@jmfederico/pi-web",
     "npm:pi-9router-ext",
     "npm:pi-mcp-adapter",
-    "npm:pi-background-tasks",
     "npm:pi-rules",
     "npm:@monotykamary/pi-vcc",
-    "npm:pi-prompt-template-model"
+    "npm:pi-prompt-template-model",
+    "npm:pi-patty-bg-tasks",
+    "npm:@koltmcbride/pi-loop"
   ],
   "lastChangelogVersion": "0.80.3",
   "theme": "dark"
