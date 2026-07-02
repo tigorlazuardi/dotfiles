@@ -1,0 +1,15 @@
+{
+  "providers": {
+    "9router": {
+      "name": "9router",
+      "baseUrl": "http://localhost:20128/v1",
+      "api": "openai-completions",
+      "apiKey": "9router-no-api-key",
+      "models": [
+        { "id": "cc/claude-opus-4-8", "reasoning": true, "contextWindow": 1000000, "maxTokens": 64000 },
+        { "id": "cc/claude-sonnet-4-6", "reasoning": true, "contextWindow": 256000, "maxTokens": 64000 },
+        { "id": "cc/claude-haiku-4-5-20251001", "reasoning": true, "contextWindow": 200000, "maxTokens": 64000 }
+      ]
+    }
+  }
+}
