@@ -17,7 +17,8 @@
     "npm:pi-patty-bg-tasks",
     "npm:@koltmcbride/pi-loop",
     "npm:pi-lean-dimension",
-    "npm:@kmmuntasir/pi-nested-subagents"
+    "npm:@kmmuntasir/pi-nested-subagents",
+    "npm:pi-diet-lsp"
   ],
   "searxng": {
     "url": "http://localhost:8888"
