@@ -35,9 +35,48 @@ In-memory, zero external services, good enough for local doc sets.
 
 Record real architecture choices as `<Decision>` blocks so the human gets an ADR trail, not buried prose.
 
+## Code blocks
+
+Fenced code blocks (both `.md` and `.mdx`) render as a syntax-highlighted box with a border, in light and dark themes. Set the language after the opening fence for highlighting (e.g. ` ```ts `).
+
+**Line numbers are ON by default.** Optional metadata after the language controls the header and gutter:
+
+| Meta | Effect | Default |
+|---|---|---|
+| `title="server.ts"` | Shows a filename/header bar above the block | none |
+| `showLineNumbers=false` | Hides the line-number gutter | line numbers on |
+| `startLine=42` | First line number (useful for excerpts) | `1` |
+
+Examples (the meta goes on the info string, after the language):
+
+````md
+```ts title="src/server.ts"
+import { serve } from "bun";
+serve({ port: 3000 });
+```
+
+```sql showLineNumbers=false
+SELECT * FROM orders WHERE status = 3;
+```
+
+```go title="sync.go" startLine=42
+func FindVerifiedOrders() ([]Order, error) { ... }
+```
+````
+
+Notes:
+
+- Prefer `title="..."` when the snippet is a real file — the header gives the reader instant context.
+- Use `startLine=N` when you paste an excerpt from deep in a file so the numbers match the source.
+- Inline `<code>…</code>` and inline code spans stay literal (underscores, asterisks, backticks inside them are NOT parsed as Markdown), so `<code>product_id</code>` renders as-is.
+
 ## Mermaid diagrams
 
-Fenced ` ```mermaid ` blocks render as diagrams in both `.md` and `.mdx`. Prefer a diagram over a long textual description of a flow or architecture.
+Fenced ` ```mermaid ` blocks render as diagrams (centered) in both `.md` and `.mdx`. Prefer a diagram over a long textual description of a flow or architecture.
+
+## Tables
+
+GFM tables (`| col | col |`) render with borders and a header row in both `.md` and `.mdx`. Use them for structured comparisons instead of nested bullet lists.
 
 ## Folder & discovery rules
 
