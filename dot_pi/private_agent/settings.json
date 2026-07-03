@@ -4,7 +4,7 @@
   "defaultThinkingLevel": "high",
   "quietStartup": true,
   "packages": [
-    "npm:@lnilluv/pi-ralph-loop",
+    "npm:pi-ralph",
     "npm:pi-ask-user",
     "npm:@majorgilles/pi-grill-me",
     "npm:pi-mcp-adapter",
@@ -16,7 +16,8 @@
     "npm:pi-searxng",
     "npm:pi-playwright",
     "npm:@kmmuntasir/pi-nested-subagents",
-    "npm:pi-diet-lsp"
+    "npm:pi-diet-lsp",
+    "npm:pi-memory-stone"
   ],
   "searxng": {
     "url": "http://localhost:8888"

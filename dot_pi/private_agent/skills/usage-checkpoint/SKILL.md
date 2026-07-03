@@ -63,7 +63,7 @@ handover docs exist. Set it now, not later.
    Template below). Even if handover docs don't exist yet, the prompt must
    include the path where they will be written.
 
-3. **Mark amber state** in RALPH_PROGRESS.md / FLEET_RESUME.md / wherever is canonical:
+3. **Mark amber state** in the canonical progress file (`.ralph/scratchpad.md` for pi-ralph / `FLEET_RESUME.md` for fleet / `RESUME.md` for one-shot):
    ```
    usage_amber: true
    amber_at_percent: <X>
@@ -114,17 +114,17 @@ Signals a task may overflow:
 
 ## Handover Docs — Context-Specific
 
-### Ralph loop
+### Ralph loop (pi-ralph, hat model)
 
-- Checkpoint-commit all dirty files on the current slice branch.
-- Update `RALPH_PROGRESS.md`:
-  ```yaml
-  paused: true
-  paused_at: <task_id of next unstarted task>
-  paused_reason: usage_limit
-  paused_block_start: <active block start timestamp>
-  resume_command: /ralph "$(cat <RALPH_PATH>)"
+- Checkpoint-commit all dirty files on the working branch (a hat's delegated worker should have committed its slice; commit anything loose).
+- Persist progress in the loop's disk state `.ralph/scratchpad.md` — mark the current task and append a resume note:
   ```
+  <!-- PAUSED: usage_limit -->
+  paused_at: <id of next unchecked task>
+  paused_block_start: <active block start timestamp>
+  ```
+- pi-ralph persists its own hat/loop state (`ralph-loop-state`) and restores an unexpired loop on `--resume`; the scratchpad is the durable state carrier across the fresh-session-per-hat boundary, so an accurate scratchpad IS the resume contract.
+- Resume: re-open the session with `--resume` (restores the loop), or relaunch `/ralph <preset> --path <spec>` — hat-1 (ingest) re-reads the spec and the scratchpad shows completed vs remaining tasks.
 
 ### Fleet captain
 
@@ -211,4 +211,4 @@ Auto-resumes on timer. Manual resume: <RESUME_COMMAND>
 `stay-within-limits` uses 95% and generic pause. This skill uses 80%/90% with
 orchestrator-specific state persistence, pre-scheduled timer, and overflow
 judgment. They compose: use this skill for structured long-running orchestrators;
-`stay-within-limits` for ad-hoc parallel work without a RALPH_PROGRESS.md artifact.
+`stay-within-limits` for ad-hoc parallel work without a canonical progress artifact (`.ralph/scratchpad.md` / `FLEET_RESUME.md`).

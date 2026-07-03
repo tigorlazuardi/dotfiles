@@ -1,0 +1,144 @@
+# Debug Preset (Ingest variant)
+# Scientific method: Investigator → Tester → Fixer → Verifier
+# Hat-1 reads any existing bug report / repro doc before investigating.
+#
+# Usage: /ralph debug-ingest --path <bug-report.md>
+
+event_loop:
+  starting_event: "debug.start"
+  completion_promise: "DEBUG_COMPLETE"
+  max_iterations: 30
+  max_runtime_seconds: 7200
+
+hats:
+  investigator:
+    name: "🔍 Investigator (ingest)"
+    description: "Reads existing bug report / repro doc first, then finds root cause through systematic investigation."
+    triggers: ["debug.start", "hypothesis.rejected", "hypothesis.confirmed", "fix.verified"]
+    publishes: ["hypothesis.test", "fix.propose"]
+    default_publishes: "hypothesis.test"
+    instructions: |
+      ## INVESTIGATOR MODE
+
+      Find the root cause through systematic investigation.
+
+      ### Ingest first — if a bug report / repro doc exists, READ IT
+      If a bug report, reproduction steps, expected-vs-actual document, or design doc is
+      referenced in the task (via `--path` or named in the task description), READ it first
+      and treat its documented facts as given. Do not re-derive what's already documented:
+      observed symptoms, reproduction steps, environment details, and expected vs. actual
+      behaviour stated in the doc are your ground truth. Start your investigation from there.
+
+      ### Scientific Method
+      1. **Observe** — What exactly is the symptom? Reproduce it (or use the repro from the doc).
+      2. **Hypothesize** — What could cause this?
+      3. **Predict** — If hypothesis X is true, then Y should happen.
+      4. **Test** — Run experiment to test prediction.
+      5. **Narrow** — Eliminate hypotheses, focus on survivors.
+
+      When root cause is confirmed, publish fix.propose.
+
+      ### If Triggered by fix.verified
+      The bug is fixed and verified. Output DEBUG_COMPLETE on its own line.
+
+      ### DON'T
+      - ❌ Guess without evidence
+      - ❌ Fix symptoms without understanding cause
+      - ❌ Change code during investigation
+      - ❌ Re-derive facts already documented in an attached bug report
+
+  tester:
+    name: "🧪 Hypothesis Tester"
+    description: "Designs and runs experiments to test hypotheses."
+    triggers: ["hypothesis.test"]
+    publishes: ["hypothesis.confirmed", "hypothesis.rejected"]
+    default_publishes: "hypothesis.rejected"
+    instructions: |
+      ## HYPOTHESIS TESTER MODE
+
+      Design and run an experiment to test a hypothesis.
+
+      ### Process
+      1. Read the hypothesis from the investigator
+      2. Design minimal test that would confirm OR reject it
+      3. Run the test
+      4. Record results with evidence
+      5. Publish result
+
+      ### Good Tests
+      - Isolate the variable
+      - Have clear pass/fail criteria
+      - Are reproducible
+
+      ### DON'T
+      - ❌ Change production code
+      - ❌ Run tests that can't distinguish hypotheses
+      - ❌ Skip recording evidence
+
+  fixer:
+    name: "🔧 Bug Fixer"
+    description: "Implements minimal fix for confirmed root cause."
+    triggers: ["fix.propose", "fix.failed"]
+    publishes: ["fix.applied"]
+    default_publishes: "fix.applied"
+    instructions: |
+      ## BUG FIXER MODE
+
+      Implement the fix for a confirmed root cause.
+
+      ### Process
+      1. Review the confirmed root cause
+      2. Implement minimal change to fix it
+      3. Add regression test that would have caught this
+      4. Run full test suite
+      5. Commit with detailed message
+
+      ### DON'T
+      - ❌ Fix more than the reported bug
+      - ❌ Skip regression test
+      - ❌ Commit without full test pass
+
+      ### Delegate to a worker subagent (fault-tolerance routing)
+      You run in-process, so the `Agent` tool is available. Do NOT hand-write the code yourself.
+      Spawn a worker subagent sized to the task's fault-tolerance tier and hand it a tight spec:
+      - LOW tolerance (auth / secrets / DB migration / schema / public API / money / data-deletion / irreversible) → subagent_type `implementer-critical`.
+      - STANDARD → `implementer`.
+      - TRIVIAL (rename/format/<10 LOC) → `implementer-lite`.
+      Spawn with `run_in_background: false` so the hat blocks on the result (the hat's turn needs
+      the outcome before publishing its event). After the worker returns, persist what changed to
+      the scratchpad, then publish your event. Safety ratchet: you may UPGRADE the tier if the task
+      turns out riskier, never downgrade.
+
+  verifier:
+    name: "✅ Fix Verifier"
+    description: "Verifies the fix solves the original problem."
+    triggers: ["fix.applied"]
+    publishes: ["fix.verified", "fix.failed"]
+    default_publishes: "fix.verified"
+    instructions: |
+      ## FIX VERIFIER MODE
+
+      Verify the fix actually solves the original problem.
+
+      ### Checks
+      1. Original reproduction steps no longer trigger bug
+      2. All tests pass
+      3. New regression test exists and is meaningful
+      4. No new issues introduced
+
+      If all pass: publish fix.verified
+      (The investigator will then output DEBUG_COMPLETE.)
+
+      If failed: publish fix.failed with details.
+      (The fixer will attempt another fix.)
+
+      ### DON'T
+      - ❌ Skip running the original reproduction steps
+      - ❌ Approve with known issues
+
+      ### Delegate review to a reviewer subagent (fault-tolerance routing)
+      The `Agent` tool is available (in-process). Spawn a review subagent sized to tier:
+      - LOW tolerance diff (auth / secrets / migration / schema / public API / money) → subagent_type `deep-reviewer` (mandatory for these).
+      - STANDARD → `reviewer`.
+      Spawn with `run_in_background: false` so you block on the verdict. Fold the subagent's
+      findings into your decision, then publish fix.verified / fix.failed per the existing rules.
