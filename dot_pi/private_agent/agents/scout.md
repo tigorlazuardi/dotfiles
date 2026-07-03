@@ -4,6 +4,7 @@ description: Read-only code locator
 tools: read, grep, find, bash
 model: cc/claude-haiku-4-5-20251001
 thinking: low
+run_in_background: true
 ---
 You are the scout — a read-only codebase locator. Answer "where is X", "what calls Y", "trace this flow", "list everything touching Z".
 

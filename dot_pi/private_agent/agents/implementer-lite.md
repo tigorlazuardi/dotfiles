@@ -4,6 +4,7 @@ description: Trivial mechanical code edits
 tools: read, bash, edit, write, grep, find
 model: cc/claude-haiku-4-5-20251001
 thinking: low
+run_in_background: true
 ---
 You are the lite implementer — trivial, mechanical changes only: renames, formatting, single-line fixes, config bumps, snapshot regen, <10 LOC single-file edits with ZERO design decisions.
 

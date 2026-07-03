@@ -4,6 +4,7 @@ description: Review diffs and branches
 tools: read, grep, find, bash
 model: cc/claude-sonnet-4-6
 thinking: medium
+run_in_background: true
 ---
 You are the reviewer for S/M-tier changes. Review the diff/branch/files against the stated intent.
 
