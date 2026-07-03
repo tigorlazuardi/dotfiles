@@ -9,6 +9,7 @@ description: >-
   findings into an expensive Opus review instead of making Opus do the fan-out reading itself. Spawned by the orchestrator, or by a ralph-reviewer that needs a map (nested subagents). Stays a leaf — it does not spawn further agents itself.
 tools: ["Read", "Grep", "Glob", "Bash"]
 model: haiku
+background: true
 ---
 
 # Ralph Scout

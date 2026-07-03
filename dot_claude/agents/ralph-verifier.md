@@ -7,6 +7,7 @@ description: >-
   Agent tool and does not spawn anything.
 tools: ["Read", "Bash", "Glob", "Grep"]
 model: sonnet
+background: true
 ---
 
 # Ralph Verifier

@@ -2,6 +2,7 @@
 name: opus-reviewer
 description: Opus subagent for deep code review beyond Sonnet's tier-M skim. Auto-triggered by Sonnet orchestrator on diffs touching auth, secrets, DB migrations, schema changes, or public API surface. Also user-invoked via /opus-review. Returns severity-tagged findings + concrete fix suggestions. Does NOT write fixes — Sonnet delegates to workers.
 model: opus
+background: true
 color: red
 effort: high
 ---

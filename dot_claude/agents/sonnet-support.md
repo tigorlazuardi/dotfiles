@@ -2,6 +2,7 @@
 name: sonnet-support
 description: Sonnet supporting worker for non-code tasks the Opus orchestrator needs done — documentation generation, markdown formatting, PDF/HTML/text conversion, research synthesis, web fetches, summarization, transcript cleanup, content restructuring. Always fresh context, single-shot, dispose after. Use this instead of sonnet-implementer when the task is content/research rather than code changes.
 model: sonnet
+background: true
 color: green
 effort: low
 ---

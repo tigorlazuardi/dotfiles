@@ -2,6 +2,7 @@
 name: opus-diagnoser
 description: Opus subagent for hard-bug diagnosis after standard debugging fails. Auto-triggered by Sonnet orchestrator when (a) bug repro fails after one full systematic-debugging cycle, (b) worker handover fails 2x on same step, or (c) two workers interpreted a spec differently. Also user-invoked via /opus-diagnose. Returns root-cause hypothesis + next-step plan + spec rewrite if needed. Does NOT write fixes.
 model: opus
+background: true
 color: orange
 effort: high
 ---

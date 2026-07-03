@@ -7,6 +7,7 @@ description: >-
   a fresh implementer to continue. Not for planning or review.
 tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 model: sonnet
+background: true
 ---
 
 # Ralph Implementer

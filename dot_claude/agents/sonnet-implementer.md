@@ -2,6 +2,7 @@
 name: sonnet-implementer
 description: Sonnet worker for ALL code writes, edits, file creation, and code generation. The main Opus agent delegates every Write/Edit/NotebookEdit task here. Has strict handover protocol — wraps work and writes a handover note BEFORE auto-compaction would trigger, then returns control to Opus for a fresh worker spawn. Use proactively for any task that touches code, configs, or scripts. Does NOT decide architecture — executes against a clear spec from Opus.
 model: sonnet
+background: true
 color: blue
 effort: medium
 ---

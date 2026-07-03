@@ -2,6 +2,7 @@
 name: haiku-implementer
 description: Haiku worker for TRIVIAL mechanical code changes — single-file typo fixes, renames, formatting, config-line bumps, snapshot regeneration, mechanical refactors with zero design decisions. Strict scope: < 10 LOC change OR single-file mechanical edit. Anything requiring judgment or touching multiple files → orchestrator routes to sonnet-implementer instead. Same handover protocol as sonnet-implementer if context tightens, but should rarely trigger given task size.
 model: haiku
+background: true
 color: green
 effort: low
 ---

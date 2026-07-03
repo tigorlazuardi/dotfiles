@@ -2,6 +2,7 @@
 name: opus-planner
 description: Opus subagent for heavy planning — Tier L SCOPE.md drafting, ADR authoring, architectural decisions that outlive a single slice, second-opinion on approach before Sonnet orchestrator commits. Sonnet orchestrator spawns this when a slice locks decisions (data model, public API shape, cross-cutting refactor strategy) or when user invokes /opus-plan. Returns plan + rationale + open questions. Does NOT write code or spawn write workers.
 model: opus
+background: true
 color: purple
 effort: high
 ---

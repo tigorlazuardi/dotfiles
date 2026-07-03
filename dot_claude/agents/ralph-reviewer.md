@@ -6,6 +6,7 @@ description: >-
   for S/M tasks, model: opus for L tasks and for circuit-breaker decisions.
 tools: ["Read", "Bash", "Glob", "Grep", "Agent"]
 model: sonnet
+background: true
 ---
 
 # Ralph Reviewer
