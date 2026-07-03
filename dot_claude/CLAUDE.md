@@ -106,12 +106,17 @@ Round-trip cost is NOT the worker (cheap) — it's spec-writing + diff-review. S
 - No slice folder/docs for XS/S unless work spans sessions. No long spec for XS/S — one tight paragraph. Don't full-diff-review trivial output (trust summary for XS/S unless risky).
 - Escalate a tier only when reality exceeds the estimate. Default code path = delegate; the tier governs *how much process wraps* it, not whether to delegate.
 
-### Task-size gate — plan before implement
-Classify Simple / Medium / Large (unsure → larger):
-- **Simple** (1–2 files, no design call) → just do it (delegate the write).
-- **Medium / Large** (new subsystem, design choices, or risk surface) →
-  - **You are Sonnet** + no plan file (`plans/<scope>/` empty / no SCOPE.md / no `PROMPT.md`) → **STOP. Give up the task — do NOT bootstrap it on Sonnet, not even by spawning an Opus subagent to plan** (a real Tier-L plan needs Opus as the *main* session to interview the user, which a one-shot subagent can't do). Tell the user to switch model: `/ralph-plan` (autonomous/long build) or `/opus-plan` (plan/SCOPE/ADR). You do NOT pre-decide one-shot vs ralph — Opus picks that once it's the main session. If the user must `/clear` into Opus, hand them a self-contained copy-paste brief (template → `docs/orchestration-modes.md`).
-  - **You are Opus** → plan first (interview, one question at a time), then pick mode (attended one-shot vs full ralph). Default the lighter one-shot unless autonomy/resume/parallelism is needed. (Mechanical Tier-L → a ralph contract with `orchestrator_model: sonnet` is fine — the *planning* needed Opus, the execution may not.)
+### Intent routing + two-phase planning (FASE 1 → hard gate → FASE 2)
+
+Route by intent first:
+- **Implement feature** → two-phase flow below.
+- **Bug / error / stack trace** → DEBUG MODE, two steps: (1) gather repro/env/expected-vs-actual; (2) branch by fix size — small fix → execute directly (main agent MAY touch code; the deliberate exception to orchestrator-writes-no-code), medium/large → route into FASE 1.
+- **Info / research / other** → serve directly, no ceremony.
+
+Two-phase planning (mandatory for Medium/Large feature work; Simple 1–2 files, no design call → just do it, delegate the write; unsure → larger):
+- **FASE 1 — spec/design.** Run the `feature-planning` skill (needs Opus main; **you are Sonnet → STOP, do NOT bootstrap** — tell the user to `/model` Opus; hand a copy-paste brief per `docs/orchestration-modes.md` if they must `/clear`). Interview → output mode-neutral `plans/<scope>/SPEC.mdx` (+ `docs/design/<yyyy-mm-dd>-<topic>.mdx` for decisions that outlive the scope), plandeck format, `telemetry-planning` included. NO contract/state file yet.
+- **🚧 HARD HUMAN GATE (orchestration-selection).** Main agent RECOMMENDS one level + a one-line reason, then STOPS — never auto-picks: **one-shot** (S/M, delegate directly, no contract) / **ralph** (L, long single slice) / **fleet** (XL, DAG-of-DAG, judge-gated) / **workflow** (sweep: wide + repetitive + independent + SAFE-only, native `Workflow` tool). User decides, may override. **Workflow-vs-fleet = safety first:** any low-tolerance surface (auth / secrets / DB migration / schema / public-API / money / data-deletion / irreversible) → never workflow, use fleet/ralph.
+- **FASE 2 — contract/state, only after the user picks.** Every contract INGESTS the spec — never re-plans, spec is authoritative: one-shot → execute per effort tier; ralph → `ralph-plan` (ingest mode) → `/ralph-loop:ralph-loop`; fleet → `fleet` skill (Plan phase ingests spec); workflow → `workflow-sweep` skill → `Workflow` tool after the user approves the previewed script.
 - Exception: user says "skip planning" / "just start" → proceed, state the risk in one line first.
 
 ### Review routing (both Opus paths)
@@ -147,14 +152,9 @@ Artifacts live in the repo so they commit alongside code: `<repo>/plans/<scope-n
 - `<scope-name>` kebab feature (`auth-rewrite`); `<nnn>` zero-padded sequential per scope (never renumber); `<slice-name>` kebab slice. A slice ≈ one PR / focused milestone. Which docs per slice → Effort tier. Templates → `docs/orchestrator-templates.md`.
 - Working in `~/.claude` itself (not a user git repo) → still put the slice folder at `<cwd>/plans/...`. Keep TASKS/RESUME current (stale docs mislead the next worker). When delegating, point at the slice folder + the spec for *this* step — don't paste the whole RESUME.md.
 
-## Visual plan — L-tier design output
+## Plan docs — plandeck `.mdx` (L-tier review gate)
 
-For any L-tier feature design or plan output — whether from brainstorming, `/ralph-plan` interview, `/opus-plan`, or the `writing-plans` skill — invoke `/visual-plan` (`create-visual-plan`, document-only mode, no canvas) to build a rich review artifact before the user approves. Pass the spec/design text as `planText` if it exists, or build directly from codebase exploration.
-
-- **Trigger**: L-tier scope determined (multi-day, cross-cutting, risk surface, 4+ tasks, broad blast radius). Applies to: end of brainstorming interview before spec is committed; ralph-plan Step 2.7 before contract is written; opus one-shot planning phase before execution begins; fleet Phase 1.2 before Gate.
-- **What to include**: architecture/data-flow diagram, task/slice table with risk tiers, hard-to-reverse decision callouts, open questions (`question-form`).
-- **Flow**: create → surface URL to user → run self-review concurrently → fix clear-cut issues with `update-visual-plan` → route ambiguities to user via AskUserQuestion → gate on approval before implementation begins.
-- **Skip for**: S/M-tier — text summary is sufficient.
+All plan/design/spec docs (SPEC.mdx, design docs, ADRs, decision-bearing slice docs) are authored as plandeck `.mdx` per the `plandeck-authoring` skill: `<Decision>` blocks for real choices, `<Callout>` for risks/irreversible steps, mermaid over prose. The committed `.mdx` file IS the L-tier review artifact — surface its path to the user, resolve open questions via AskUserQuestion, gate on approval before implementation begins. (visual-plan removed 2026-07-03 — gated behind paid software; `.mdx` degrades gracefully to plain markdown without the viewer.) Locations: FASE-1 spec → `<repo>/plans/<scope>/SPEC.mdx`; architecture outliving a scope → `docs/design/<yyyy-mm-dd>-<topic>.mdx`. S/M-tier: text summary is sufficient.
 
 ## Running a slice
 

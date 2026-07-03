@@ -20,8 +20,9 @@ long as the timer and handover exist.
 Any long-running orchestrator: ralph-loop, fleet captain, attended oneshot.
 
 Check usage:
-- **Before each new wave** of parallel subagents — mandatory.
-- **After a large wave finishes** (≥ 3 agents) — mandatory.
+- **Before dispatching each runnable batch** of parallel subagents (e.g. fleet's
+  runnable-DAG set for that scheduling pass) — mandatory.
+- **After each batch/DAG returns** (≥ 3 agents, or any DAG completion) — mandatory.
 - **Before any task the orchestrator judges as expensive** — judgment call; see
   Overflow Judgment below.
 - **At any explicit `/usage-checkpoint` invocation**.
@@ -72,7 +73,8 @@ handover docs exist. Set it now, not later.
 4. **Announce to user** (one line): `Amber: <X>% used, wakeup timer set for
    <reset_time>, continuing.`
 
-5. **Continue working** — spawn waves normally, apply overflow judgment (below).
+5. **Continue working** — dispatch runnable batches normally, apply overflow
+   judgment (below).
 
 ---
 
@@ -85,7 +87,7 @@ handover docs exist. Set it now, not later.
 1. **Finish in-flight agents** — do not interrupt. Accept handovers, record
    results. Do not re-delegate any subagent's work to a new agent.
 
-2. **Stop spawning** — no new waves, no new subagent calls.
+2. **Stop spawning** — no new batches, no new subagent calls.
 
 3. **Write handover docs** (context-specific, see below).
 
@@ -97,14 +99,14 @@ handover docs exist. Set it now, not later.
 ### Overflow Judgment (applies from 80% onward)
 
 Before starting any task, ask: "If this task costs as much as the previous
-wave, will it push us to 100% before handover docs can be written?"
+batch, will it push us to 100% before handover docs can be written?"
 
 If yes: **write handover docs first, then attempt the task**. This way, even
 if the task hits the limit mid-run, the timer + docs exist and the next session
 can resume cleanly.
 
 Signals a task may overflow:
-- Previous wave of similar size consumed ≥ 5% each.
+- Previous batch of similar size consumed ≥ 5% each.
 - Task requires ≥ 3 parallel agents.
 - Task is a large file rewrite or a long research sweep.
 
@@ -159,8 +161,8 @@ If percentUsed ≥ 90% OR block start unchanged from <PREV_BLOCK_START>:
 Otherwise:
   Resume <ORCHESTRATOR_TYPE> from <HANDOVER_DOC_PATH>.
   Resume command: <RESUME_COMMAND>
-  Wave throttle: ≤ 3 parallel agents.
-  Overflow judgment: check usage before each wave.
+  Batch throttle: ≤ 3 parallel agents.
+  Overflow judgment: check usage before dispatching each batch.
   Next task: <ONE_LINE_SUMMARY>
 ```
 
@@ -186,7 +188,7 @@ Auto-resumes on timer. Manual resume: <RESUME_COMMAND>
 1. Re-check usage. If ≥ 90% OR block start unchanged → reschedule wakeup, stop.
 2. New block start timestamp = new window = safe.
 3. Read handover doc. Cold-start from `paused_at` or first pending slice.
-4. Apply wave throttle (≤ 3 parallel default). Apply overflow judgment.
+4. Apply batch throttle (≤ 3 parallel default). Apply overflow judgment.
 5. Re-enter check cadence normally.
 
 ---

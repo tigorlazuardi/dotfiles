@@ -1,0 +1,82 @@
+{
+  "_template": "fleet-dag",
+  "_doc": "Level-2 orchestrator state for ONE DAG inside a fleet run. Holds a task-DAG (many tasks with internal dependsOn[]), NOT a single-slice progress log. Reports to the captain (status only — technical escalation stops here). Location: <repo>/plans/fleet/<yyyy-mm-dd>-<epic>/dags/<dagId>.json (relative to project repo root, committed there). A DAG can run for hours — persist after every task-step so resume continues mid-DAG. Design ref: docs/design/2026-07-03-pi-parity-orchestration.mdx §4, ~/.pi/agent/docs/design/2026-07-03-fleet-dag-rework.md (§State Schema, Level-2).",
+  "_instantiate": "Created by the fleet planner alongside state.json (one per DAG), then owned/updated by fleet-orchestrator every task-step + every assumption/escalation. Planner defines a real executable checkCommand per task (layer-1 objective truth-signal); the LAST task in the DAG also carries the DAG-level integration checkCommand. Strip every _doc/_example/_*-prefixed key before writing the instantiated file.",
+
+  "dagId": "<dagId>",
+  "schemaVersion": 2,
+  "branch": "fleet/<epic>/<dagId>",
+  "updatedAt": null,
+
+  "reportsTo": "captain",
+  "_escalation_boundary": "Technical escalation stops at the orchestrator. Only DAG STATUS goes up to the captain. Orchestrator resolves ambiguity itself and records it in assumptions[].",
+
+  "assignment": {
+    "_doc": "DAG-level effective assignment (mirrors L1 effective* at dispatch) + upgrade audit trail. Per-task implementer/reviewer live inside tasks[]; this block is the DAG-wide default + safety-ratchet trail.",
+    "implementer": "implementer",
+    "reviewer": "reviewer",
+    "upgradedFromPlan": false,
+    "upgradeReason": null
+  },
+
+  "tasks": [
+    {
+      "_example": true,
+      "taskId": "t1",
+      "dependsOn": [],
+      "_dependsOn_doc": "Pure task-level dependency (task-DAG internal, cap parallelism at 4 within a DAG). Downstream task blocked until upstream edgeGateStatus is passed.",
+      "implementer": "implementer-critical",
+      "_implementer_doc": "= effective tier from L1 (safety-ratchet, upgrade-only).",
+      "reviewer": "deep-reviewer",
+      "_reviewer_doc": "Only used when the DAG orchestrator is Sonnet (separate fleet-reviewer per task). When the orchestrator is Opus, it doubles as reviewer inline; this field is then advisory only.",
+      "thinking": "high",
+      "_thinking_doc": "Per-task reasoning-effort override of the DAG default.",
+      "edgeGateStatus": "open",
+      "_edgeGateStatus_enum": "open | passed | blocked",
+      "_edgeGateStatus_doc": "Downstream task stays blocked until upstream reviewVerdict is pass AND acceptanceResult is pass.",
+      "commitSha": null,
+      "_commitSha_doc": "null initially. Partial work is checkpoint-committed to the DAG branch per task -> resume = checkout branch@commitSha + continue.",
+      "artifactPointer": null,
+      "_artifactPointer_doc": "null initially. Pointer to the task artifact (state/commit/output) the judge can reference.",
+      "checkCommand": "npm test -- billing",
+      "_checkCommand_doc": "Real executable truth-signal command. Planner defines this per task (layer-1 objective validation). The LAST task in the DAG also carries the DAG-level integration checkCommand.",
+      "acceptanceResult": null,
+      "_acceptanceResult_enum": "pass | fail",
+      "_acceptanceResult_doc": "null initially. Recorded ONLY from an actual run of checkCommand by fleet-reviewer (or the Opus orchestrator doubling as reviewer) — never inferred from reading code.",
+      "reviewVerdict": null,
+      "_reviewVerdict_enum": "pass | fail | needs-fix",
+      "_reviewVerdict_doc": "null initially. pass REQUIRES acceptanceResult: pass (green executable), not just code-reading."
+    }
+  ],
+
+  "assumptions": [
+    {
+      "_example": true,
+      "id": "a1",
+      "at": null,
+      "context": "what was ambiguous (spec gap / two valid designs)",
+      "decision": "what the orchestrator chose",
+      "rationale": "why",
+      "reversible": true,
+      "durable": false,
+      "_durable_doc": "true -> also pushed to knowledgeDelta[] -> .claude/rules or .claude/skills (durable convention). false -> stays here as judgment audit only.",
+      "reviewedByUser": false
+    }
+  ],
+
+  "escalations": [
+    {
+      "_example": true,
+      "at": null,
+      "from": "implementer",
+      "reason": "need_decision",
+      "_reason_enum": "need_decision | interview_request | progress_update",
+      "question": "the exact ambiguity",
+      "resolvedBy": "orchestrator",
+      "answer": "the decision",
+      "ledToAssumption": "a1"
+    }
+  ],
+
+  "knowledgeDelta": []
+}

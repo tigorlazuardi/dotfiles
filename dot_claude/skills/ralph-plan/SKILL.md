@@ -36,6 +36,23 @@ Look at the model identity in your system context. If the model id does **not** 
 
 Only continue past this point when you have confirmed you are Opus.
 
+## Step 0.5 — Spec detection (FASE-1 ingest)
+
+Before interviewing, look for an approved FASE-1 spec: `plans/<scope>/SPEC.mdx` in the project repo,
+or a spec path the user points at directly.
+
+- **Spec EXISTS → INGEST MODE.** The spec is authoritative and final. Do **not** re-run the full
+  Step-1 interview, do **not** re-plan or reinterpret requirements. Read the spec plus any referenced
+  `docs/design/*.mdx`, then ask ONLY about genuine gaps left open by the spec (a missing
+  done-condition command, an unstated budget posture, an unclear branch/repo target). Once gaps are
+  closed, proceed straight to Step 2 tiering, treating the spec as the source of goal, scope, risk
+  surface, and decomposition.
+- **Spec ABSENT → this is a FASE-1 situation.** Run the full Step-1 interview as below, but FIRST
+  write the interview outcome as `plans/<scope>/SPEC.mdx` (a plandeck `.mdx` doc per the
+  `plandeck-authoring` skill: Decision/Callout/mermaid blocks), THEN derive the contract from that
+  written spec rather than from memory of the conversation. The contract's `PROMPT.md` must reference
+  the spec path so the loop can consult it on every iteration.
+
 ## Step 1 — Interview (ask a lot; one question at a time)
 
 This is the part that justifies using Opus. Do not rush to a plan. Drive a real dialogue, one
@@ -112,18 +129,25 @@ gitignored files (`.env`, `node_modules`, `.venv`) aren't copied — so fill the
 `<install-cmd>` and a per-worktree isolation scheme (unique ports/DB schema) so concurrent tasks don't
 collide. The template has slots for both.
 
-## Step 2.7 — Visual plan (L-tier feature scope)
+## Step 2.7 — L-tier review gate (plandeck)
 
-If the overall feature is **L-tier** (multi-day, cross-cutting, 4+ tasks, touches risk surface, or hard to verify), invoke the `/visual-plan` skill — specifically `create-visual-plan` in document-only mode (architecture/backend, no canvas) — before writing the contract files. This gives the user a rich review artifact before anything is committed.
+If the overall feature is **L-tier** (multi-day, cross-cutting, 4+ tasks, touches risk surface, or
+hard to verify), the review artifact is the committed `plans/<scope>/SPEC.mdx` itself — no separate
+visual-plan tool, no URL. Before writing the contract files, add into that spec `.mdx` (if not already
+present, per `plandeck-authoring`):
 
-The visual plan must cover:
-- A `diagram` block of the full task DAG: nodes per task, dep arrows, batch groupings (parallel batches in same column), wave ordering
-- A table of tasks: id, batch, `orchestrator-model`, reviewer tier (Opus/Sonnet), `parallel_group`, key deps, done-condition summary
-- Risk surface callout: which tasks are L-tier, why, and what happens if they go wrong
-- Implementation strategy rationale (Sonnet vs Opus orchestrator choice, why split if split)
-- Open questions block (`question-form`) for anything still unresolved
+- A task/batch table: id, batch, `orchestrator-model`, reviewer tier (Opus/Sonnet), `parallel_group`,
+  key deps, done-condition summary
+- A `mermaid` DAG diagram: nodes per task, dep arrows, batch groupings (parallel batches in same
+  column), wave ordering
+- A risk-surface `Callout`: which tasks are L-tier, why, and what happens if they go wrong
+- An implementation-strategy `Decision` block: Sonnet vs Opus orchestrator choice, why split if split
+- An open-questions `Callout` (question-form) for anything still unresolved
 
-After `create-visual-plan` returns the plan URL: surface it to the user and ask them to review. Run the self-review pass concurrently (do not make the user wait). Apply clear-cut fixes with `update-visual-plan` contentPatches; route real ambiguities into the `question-form` or ask the user directly. **Do not proceed to Step 3 until the user approves the plan and all open questions are resolved.**
+Surface the file path to the user and ask them to review it (Plandeck viewer, or plain markdown if
+the viewer isn't available — the `.mdx` degrades gracefully). Resolve open questions via
+AskUserQuestion or direct discussion, updating the spec file as answers land. **Do not proceed to
+Step 3 until the user approves the spec and all open questions are resolved.**
 
 Skip this step for S/M-tier feature scope — a terse written summary before handoff is enough.
 
