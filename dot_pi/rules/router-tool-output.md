@@ -1,4 +1,5 @@
 ---
+description: Local model-router (omniroute) tool-output corruption gotcha — if a tool returns nonsensical output, suspect the router layer first; verify backend directly; do not reintroduce 9router without re-testing.
 paths:
   - .pi/agent/models.json
   - .pi/agent/settings.json

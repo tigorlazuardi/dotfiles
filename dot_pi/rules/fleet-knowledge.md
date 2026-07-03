@@ -1,4 +1,5 @@
 ---
+description: Fleet knowledge-transfer + resume mechanics — seedKnowledge/knowledgeDelta capture flow, repo-level persistence via support worker, snapshot propagation, tiered writeDirectly, two-level resume state schema, and the testing-toolchain-before-Build captain contract.
 paths:
   - workflows/src/control_plane.js
   - workflows/src/slice_orchestrator.js

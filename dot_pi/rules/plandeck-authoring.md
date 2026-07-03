@@ -1,4 +1,5 @@
 ---
+description: Authoring docs/plans browsed through Plandeck — plans MUST be .mdx with Decision/Callout/mermaid/CodeTabs/HtmlBlock blocks; discovery + rendering constraints.
 paths:
   - "docs/**/*.md"
   - "docs/**/*.mdx"
