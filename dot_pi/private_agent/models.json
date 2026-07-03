@@ -7,22 +7,44 @@
       "apiKey": "omniroute-no-api-key",
       "models": [
         {
+          "id": "cc/claude-fable-5",
+          "reasoning": true,
+          "contextWindow": 1000000,
+          "maxTokens": 64000,
+          "input": [
+            "text",
+            "image"
+          ]
+        },
+        {
           "id": "cc/claude-opus-4-8",
           "reasoning": true,
           "contextWindow": 1000000,
-          "maxTokens": 64000
+          "maxTokens": 64000,
+          "input": [
+            "text",
+            "image"
+          ]
         },
         {
           "id": "cc/claude-sonnet-4-6",
           "reasoning": true,
           "contextWindow": 256000,
-          "maxTokens": 64000
+          "maxTokens": 64000,
+          "input": [
+            "text",
+            "image"
+          ]
         },
         {
           "id": "cc/claude-haiku-4-5-20251001",
           "reasoning": true,
           "contextWindow": 200000,
-          "maxTokens": 64000
+          "maxTokens": 64000,
+          "input": [
+            "text",
+            "image"
+          ]
         }
       ]
     }
