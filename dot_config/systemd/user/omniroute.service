@@ -1,6 +1,7 @@
 [Unit]
 Description=Omniroute service
 After=network-online.target
+After=graphical-session.target
 
 [Service]
 Type=simple
