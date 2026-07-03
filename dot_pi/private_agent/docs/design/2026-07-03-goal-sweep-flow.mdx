@@ -1,0 +1,116 @@
+---
+title: Goal sweep flow — wide, safe-only fan-out as a FASE-2 option
+date: 2026-07-03
+status: accepted
+---
+
+# Goal sweep flow — wide, safe-only fan-out as a FASE-2 option
+
+<Callout type="success" title="Status: accepted — executed this session">
+Adopts `@quintinshaw/pi-dynamic-workflows` as the "goal" execution flow. Trigger disabled, AGENTS.md updated, `goal-sweep` skill authored. This doc is the contract of record.
+</Callout>
+
+## Problem
+
+The flow taxonomy had three execution modes — one-shot, ralph, fleet — all oriented at building or fixing a coherent unit of work. None fit **wide, repetitive, safe instrumentation sweeps**: add OTel traces to every handler, migrate every log line to a new standard, add failable error-feedback to every UI interaction, run an a11y pass across every component. That work is breadth, not depth; it benefits UX/DX long-term but carries no business risk.
+
+Ralph is one deep sequential slice. Fleet is big interdependent work. A safe breadth sweep wants massive parallel fan-out of the same pattern — a different shape.
+
+## Constraint
+
+Same as the ralph migration: **no subprocess**. No bare-`pi` loop, no `--no-extensions`. The flow must run in-process so subagents + pi-rules + all extensions stay live.
+
+## Candidate audit
+
+<Callout type="info" title="Three goal-shaped plugins evaluated against the no-subprocess constraint">
+Only one runs its subagents in-process.
+</Callout>
+
+| Plugin | Subagent mechanism | No-subprocess? |
+|---|---|---|
+| `pi-taskflow` (heggria) | `spawn("pi", args)` + runner via `execPath` | ❌ spawns pi subprocess |
+| `@mediadatafusion/pi-workflow-suite` | `spawn(process.execPath, [script])` | ❌ spawns subprocess |
+| `@quintinshaw/pi-dynamic-workflows` | `createAgentSession()` host SDK — in-process | ✅ in-process |
+
+<Decision title="Adopt @quintinshaw/pi-dynamic-workflows as the goal flow" status="accepted">
+Source-verified: runs subagents via `createAgentSession` / `createCodingTools` from `@earendil-works/pi-coding-agent` — fresh in-memory Pi sessions, no pi subprocess. The only `child_process` use is `execFile("git", ["worktree", ...])` for parallel-edit isolation, which is git, not pi. Added to settings `packages` + installed this session.
+</Decision>
+
+Key mechanics (verified in package source + README):
+
+- **"Code mode for subagents"** — the main agent writes a JS orchestration script that fans out `agent()` / `parallel()` / `pipeline()` / `phase()` subagents (≤16 concurrent / 1000 total) in a Node `vm` sandbox.
+- **Context stays clean** — intermediate results live in script variables, not the chat.
+- **Model routing** — `tier` small/medium/big or exact `model`, per agent.
+- **`agentType`** — an agent can bind to `.pi/agents/<name>.md` → **our fault-tolerance worker pool is reachable** from inside a sweep.
+- **`isolation: "worktree"`** — parallel workers edit the same files on throwaway branches without clobbering.
+- **Journaled resume** — an interrupted run replays finished agents from a journal, no re-run tokens.
+
+## Positioning
+
+<Callout type="warn" title="Goal is SAFE-only. Never low-tolerance.">
+Goal exists for wide, repetitive, relatively-safe work with no business impact. It is NOT an option for anything low-tolerance (auth / secrets / DB migration / schema / public-API / money / data-deletion / irreversible).
+</Callout>
+
+| | Ralph | Fleet | Goal |
+|---|---|---|---|
+| Shape | one deep slice, sequential | big, interdependent DAG-of-DAG | wide parallel fan-out |
+| Low-tolerance OK? | yes (full routing) | yes (judge-gated) | **no — safe-only** |
+| Worker tier | full range | full range | **capped: lite/standard + reviewer** |
+| Selesai via | completion_promise / terminal hat | judge verdict per DAG | acceptance/verify per node |
+| Best for | minor feature, long single path | major greenfield | OTel/log/UX/a11y sweeps |
+
+## Decisions locked this session
+
+<Decision title="Trigger OFF total — explicit invoke only" status="accepted">
+`~/.pi/workflows/settings.json` → `keywordTriggerEnabled: false`. The default keyword auto-arm (typing "workflow" auto-starts a run) is disabled so goal never fires by accident and never collides with the two-phase flow. Goal runs ONLY via explicit `/workflows run` the main agent calls consciously in FASE 2.
+</Decision>
+
+<Decision title="Skill goal-sweep — scaffold spec-ingesting scripts" status="accepted">
+Mirrors `ralph-preset`. Authors the JS orchestration script from the approved FASE-1 spec: discovery ingests the spec, every worker prompt BAKES the conventions (metric naming, log format, error-feedback contract) so parallel branches don't improvise, worker tier is capped non-critical, low-tolerance discovery triggers an escape hatch. Authors the script only; does NOT start the run.
+</Decision>
+
+<Decision title="Goal vs Fleet disambiguation — safety-first" status="accepted">
+Both fan out in parallel, so decide by SAFETY FIRST. Any low-tolerance surface in scope → fleet or ralph (never goal). Else, if the work is wide + repetitive + independent same-pattern → goal. Heavy inter-dependency → fleet. Goal is breadth-of-safe-work; fleet is depth-of-interdependent-work.
+</Decision>
+
+<Decision title="Orchestration-selection is a HARD HUMAN GATE" status="accepted">
+The main agent RECOMMENDS an orchestrator + one-line reason, then STOPS. It must not auto-pick and start FASE 2. The user decides explicitly and may override. This gate applies to all orchestrators (one-shot / ralph / fleet / goal), none skipped. FASE 2 does not begin until the user chooses. Goal is only ever entered through this gate — it is a FASE-2 option, never a FASE-1 skip.
+</Decision>
+
+## Two-phase discipline (unchanged)
+
+Goal changes nothing about the mandatory two-phase flow — it only adds a FASE-2 option.
+
+```
+INTENT: implement feature
+  → FASE 1: spec + design (grill if ambiguous)      ← never skipped
+  → 🚧 HARD HUMAN GATE: main agent recommends, USER picks
+       (one-shot / ralph / fleet / goal)
+  → FASE 2: derive the chosen level's artifacts
+       goal → scaffold script (goal-sweep skill) → /workflows run <spec>
+```
+
+The spec-ingest guarantee is identical in spirit to ralph's ingest hat-1: the sweep reads the approved spec and bakes its conventions into every branch. No re-planning, no per-branch improvisation.
+
+## Why goal fits the OTel-sweep example
+
+A request like "capture OTel performance metrics for every vendor + database, one Grafana dashboard per domain" is half breadth (instrument N vendors/DBs, N dashboards — parallel, same pattern) and half shared-convention (metric naming, collector arch, label standard must be consistent). Goal handles the breadth; the two-phase gate handles the convention:
+
+- **FASE 1** sets the shared contract (metric names, OTel collector arch, label dimensions, per-domain scope).
+- **FASE 2 goal** fans out, but every `agent()` prompt bakes that contract → dashboards query-able, metrics consistent.
+
+If the instrumentation turned out to touch a low-tolerance surface (e.g. wiring into auth middleware), the safety gate rejects goal and re-routes to ralph/fleet.
+
+## Work delivered
+
+1. `/workflows` keyword trigger disabled (`keywordTriggerEnabled: false`, chezmoi-tracked).
+2. AGENTS.md — goal added to two-phase FASE list, execution modes, flow-offer taxonomy, goal-vs-fleet disambiguation, goal safety gate; orchestration-selection promoted to an explicit hard human gate.
+3. Skill `~/.pi/agent/skills/goal-sweep/SKILL.md` — spec-ingesting script scaffolder.
+4. This design doc.
+5. chezmoi sync + commit + push.
+
+## Boundaries (tracked)
+
+- Goal has **no escalate-to-critical path** by design — a low-tolerance branch stops and surfaces, it never upgrades in place. Escalation means leaving goal, not staying in it.
+- The `vm` sandbox blocks `Date.now()`/`Math.random()`/`fs`/network inside the script, so scripts must be deterministic (this is what makes resume reliable).
+- Worktree isolation needs a git work tree; it degrades fail-open to a temp dir otherwise.

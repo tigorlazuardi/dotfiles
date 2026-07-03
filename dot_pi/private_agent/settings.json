@@ -13,6 +13,7 @@
     "npm:pi-prompt-template-model",
     "npm:pi-patty-bg-tasks",
     "npm:@koltmcbride/pi-loop",
+    "npm:@quintinshaw/pi-dynamic-workflows",
     "npm:pi-searxng",
     "npm:pi-playwright",
     "npm:@kmmuntasir/pi-nested-subagents",
