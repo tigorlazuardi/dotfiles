@@ -220,3 +220,18 @@ When all batches are `done`:
    End the promise turn with `base ← head` + the offered command (or compare URL). The PR/MR is the
    human approval gate — do NOT merge to base yourself.
 7. Emit the promise as the final line: `<promise>RALPH SLICE FINISHED</promise>`.
+
+## Advisory judge (optional)
+
+<!--
+  This section is OPTIONAL. Omit it entirely if you are not using an advisory judge for this slice.
+  The judge is ADVISORY ONLY in ralph — it is NOT a gate and CANNOT override acceptance.command or the loop.
+  See SKILL.md §Step 4.7 for when and how to invoke.
+-->
+
+<!-- Include this block only if you plan to invoke the judge for this slice: -->
+
+- **Invoke condition:** `<describe when the orchestrator should optionally call the judge, e.g. "after all tasks done and verify-command green, before writing merge-handoff summary" or "if no-progress guard trips and circuit-breaker alone is insufficient">`
+- **Judge spawn:** `model: opus`, pass task list with `acceptanceResult`s + diffs + slice acceptance criteria.
+- **Report pointer:** record in RALPH_PROGRESS.md as `advisoryJudge.reportPointer: <path-or-id>`.
+- **Action on verdict:** `<what the orchestrator does with the advisory report — surface to user, log, trigger cleanup, etc.>` The loop and `acceptance.command` continue normally regardless of judge verdict.

@@ -188,6 +188,30 @@ A hole in the contract is paid for many times over in the loop. Re-read the fini
 
 Fix anything found; no need to re-review.
 
+## Step 4.7 — Optional advisory judge (OPTIONAL; never replaces the loop)
+
+**Ralph's truth signal remains `acceptance.command` (run-until-pass) + tiered review — unchanged.** The loop iterates until acceptance passes; that is the final authority, not the judge.
+
+Optionally, the contract may invoke the `judge` agent (Opus) as an **advisory early-exit signal**. This is useful when the orchestrator suspects a slice is semantically done or stuck and wants a holistic read before burning more iterations. The judge produces a prompt-file handoff + report pointer (its ralph-mode deliverable); it does **not** produce a gate verdict that overrides the loop.
+
+**Critical constraints:**
+
+- In ralph, the judge is **ADVISORY ONLY**. It cannot force-pass or force-fail a slice. It cannot exit the loop. It cannot override `acceptance.command`.
+- Contrast with fleet, where the judge IS the gate authority (bounded 2× retry, DAG cannot pass without judge verdict). That is explicitly NOT how ralph works.
+- If you choose to include a judge call in a ralph contract, wire it as a soft signal: the orchestrator MAY act on it (e.g. surface the report to the user, trigger early cleanup) but MUST NOT skip the acceptance check or short-circuit the loop in response.
+- A ralph contract without a judge is fully valid and complete. The judge slot in the template is optional — omit it freely.
+
+**When to invoke (suggested heuristics, not rules):**
+
+- Orchestrator is on iteration N+3 with no progress and the circuit-breaker has already run — a judge holistic read may diagnose the stall better than another retry.
+- All tasks are `done` and the verify-command is green, but the orchestrator wants a semantic cross-task coherence check before writing the merge-handoff summary.
+
+**How to invoke (if included in a contract):**
+
+Spawn `judge` with `model: opus` (fresh context, state-file-only per judge's agent file). Pass it: the slice's task list with their `acceptanceResult`s, relevant diffs or artifact pointers, and the slice acceptance criteria. The judge returns a verdict (`pass | fail | needs-fix`) + report pointer. Record the report pointer in RALPH_PROGRESS.md as `advisoryJudge.reportPointer`. **Do not record a `judge.verdict` block that looks like a gate** — label it advisory so any reader knows it is not authoritative.
+
+The loop continues normally after the judge reports. Only `acceptance.command` and the tiered reviewer chain are the truth signal.
+
 ## Step 5 — Hand off (this skill is terminal)
 
 Do not start the loop. End by printing, for each slice, a copy-paste handoff. Remind the user that
