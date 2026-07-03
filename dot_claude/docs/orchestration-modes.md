@@ -28,7 +28,7 @@ A subagent spawns its own subagents only if its frontmatter `tools` list include
 - **Fork** can't spawn another fork, but can spawn other types (they count toward depth).
 - **Cost.** A nested subagent starts cold and reloads the full CLAUDE.md/memory hierarchy (except Explore/Plan). Keep CLAUDE.md lean partly for this reason.
 
-Ralph tree (all foreground; depth 1–3, well under the background-5 cap):
+Ralph tree (top-level workers spawn background from the orchestrator — global CLAUDE.md background-by-default; inner nesting blocks its own parent normally; depth 1–3, well under the background-5 cap):
 
 ```
 ralph-loop / main (orchestrator: sonnet, or opus for a low-tolerance slice)   depth 0
