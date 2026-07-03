@@ -40,6 +40,22 @@
     "setup": "pending"
   },
 
+  "verification": {
+    "_doc": "Real-reflection readiness (Phase 1.5 / fleet-plan Step 4.5). Captain re-probes this on every boot AND resume before dispatching -- unmet [REQUIRED] items in SETUP.md block Build.",
+    "dbMode": "container",
+    "_dbMode_enum": "cloud-ephemeral | container | ci-service | unit-only",
+    "uiMode": "e2e",
+    "_uiMode_enum": "e2e | component-browser | typecheck-only",
+    "ciMonitor": {
+      "enabled": false,
+      "tool": null,
+      "_tool_enum": "gh | glab | null",
+      "authed": false
+    },
+    "runner": null,
+    "_runner_doc": "test/build/lint command(s) confirmed real + invocable, mis 'pnpm test' / 'go test ./...'"
+  },
+
   "dags": [
     {
       "id": "d1",
@@ -52,6 +68,10 @@
       "_orchestratorModel_doc": "← failureTolerance: low→opus, standard/trivial→sonnet",
       "thinking": "high",
       "_thinking_doc": "per-DAG reasoning effort level (mis 'high'/'medium'/'low'), planner map by kompleksitas",
+      "needsDb": true,
+      "_needsDb_doc": "true kalau DAG ini (task mana pun di dalamnya) nulis/baca data real. Captain probe DB reachable sebelum dispatch. Task boleh override.",
+      "needsBrowser": false,
+      "_needsBrowser_doc": "true kalau DAG ini render UI dan butuh browser/E2E smoke. Captain probe browser installed sebelum dispatch. Task boleh override.",
       "assignment": {
         "plannedImplementer": "implementer-critical",
         "plannedReviewer": "deep-reviewer",
@@ -81,6 +101,10 @@
       "_orchestratorModel_doc": "← failureTolerance: low→opus, standard/trivial→sonnet",
       "thinking": "medium",
       "_thinking_doc": "per-DAG reasoning effort level (mis 'high'/'medium'/'low'), planner map by kompleksitas",
+      "needsDb": false,
+      "_needsDb_doc": "true kalau DAG ini (task mana pun di dalamnya) nulis/baca data real. Captain probe DB reachable sebelum dispatch. Task boleh override.",
+      "needsBrowser": true,
+      "_needsBrowser_doc": "true kalau DAG ini render UI dan butuh browser/E2E smoke. Captain probe browser installed sebelum dispatch. Task boleh override.",
       "assignment": {
         "plannedImplementer": "implementer",
         "plannedReviewer": "reviewer",

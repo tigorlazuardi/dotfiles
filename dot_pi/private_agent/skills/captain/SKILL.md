@@ -24,6 +24,9 @@ committed there, NOT `~/.pi`). Check:
 1. `state.json` exists (L1 captain state, produced by `fleet-plan` skill).
 2. `state.json` has `dags[]`, `dagStatus`, `runName`, `baseBranch`, `integrationBranch`.
 3. `dags/<dagId>.json` exist for each DAG (L2 orchestrator state, produced by `fleet-plan`).
+4. If L1 has a `verification` block with unmet **[REQUIRED]** items still open in `SETUP.md`,
+   STOP — point the user at `SETUP.md` and do not dispatch. A DAG whose environment can't give
+   real reflection (`needsDb`/`needsBrowser`/`ciMonitor` unmet) must never be dispatched.
 
 If any missing → STOP. Tell user to run the `fleet-plan` skill first. Do not proceed.
 
@@ -49,8 +52,14 @@ You do NOT:
 ## 2. Boot sequence (first run, `resume=false`)
 
 1. Read L1 `state.json`. Load `dags[]`, `dagStatus`, `failedDags[]`, `knowledge[]`.
-2. Announce run to user: runName, total DAGs, dependency graph summary.
-3. Enter the **scheduling loop** (§3).
+2. **Readiness re-probe (real reflection).** Read `verification` block + per-DAG
+   `needsDb`/`needsBrowser` tags. For every DAG in the runnable set at boot, check the env
+   actually supplies what it needs: `needsDb` → DB reachable now, `needsBrowser` → browser
+   installed now, `ciMonitor` configured → auth still valid. Any pending DAG whose requirement
+   is unmet → STOP, point the user at `SETUP.md`, do NOT dispatch it (dispatching would let it
+   fake-green on typecheck/lint alone).
+3. Announce run to user: runName, total DAGs, dependency graph summary.
+4. Enter the **scheduling loop** (§3).
 
 ---
 
@@ -163,7 +172,12 @@ stopFlag set → immediately write `state.json` to disk. Do not batch. Persist f
 When invoked with `resume=true` (same runName):
 
 1. Read L1 `state.json`. Do NOT re-run planning.
-2. For each DAG:
+2. **Readiness re-probe (real reflection), every resume, no exceptions.** Re-check the env still
+   supplies what `pending`/`running` DAGs need: `needsDb` → DB reachable, `needsBrowser` →
+   browser installed, `ciMonitor` → auth still valid. Missing → STOP, point the user at
+   `SETUP.md`, do NOT dispatch (or re-dispatch) DAGs that would fake-green. This runs on EVERY
+   resume, not just the first boot — env can drift between sessions/machines.
+3. For each DAG:
    - `status: "passed"` → skip. Already done.
    - `status: "running"` → re-enter: re-spawn the `fleet-orchestrator`. It reads L2, checks
      `commitSha` per task, continues from where work was committed. The orchestrator's safety
@@ -171,8 +185,8 @@ When invoked with `resume=true` (same runName):
      from L2, never re-judges tier.
    - `status: "pending"` → recompute runnable set; spawn if unblocked.
    - `status: "failed"` / `"blocked-hard"` → keep as-is. Re-add to `failedDags[]` if not already.
-3. Reload `knowledge[]` from L1.
-4. Re-enter scheduling loop.
+4. Reload `knowledge[]` from L1.
+5. Re-enter scheduling loop.
 
 **Safety ratchet on resume:** read `effectiveImplementer` / `effectiveReviewer` from L2 state.
 Never silently downgrade a low-tolerance DAG. A DAG that was `failureTolerance: "low"` with
@@ -258,3 +272,4 @@ Approval in one context does NOT carry over. Ask per action.
 | User steers worker | `steer_subagent(orchestrator_agent_id, message)` |
 | Durable knowledge found | Promote to `.pi/rules`/`.pi/skills` (implicit permission in fleet) |
 | Destructive/irreversible action | STOP — get human approval |
+| Readiness probe fails (needsDb/needsBrowser/ciMonitor unmet) | STOP, point user at SETUP.md, no dispatch |

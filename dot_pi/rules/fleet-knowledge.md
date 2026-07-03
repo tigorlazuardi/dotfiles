@@ -17,12 +17,22 @@ A fleet slice's acceptance is `slice.acceptance` — an EXACT command that prove
 
 **The captain must guarantee the testing tools are clear and usable.** Concretely, before approving the Gate / dispatching Build:
 - Confirm the repo has a working, runnable test (and build/lint where relevant) toolchain, and that each slice's `acceptance` command resolves to a real, invocable command — not a guess.
-- If testing tooling is MISSING or unusable (no test runner, no config, no CI command, framework not installed), the captain **must RECOMMEND a testing toolchain to the user** — propose a concrete stack appropriate to the language/framework (e.g. Vitest+RTL for the React stack, `go test` for Go, pytest for Python), state why, and get the user's pick. Then **bootstrap it FIRST** — as its own setup step or a dedicated wave-0 slice that installs/configures the chosen runner and lands a smoke test — before any feature slice runs. Do not silently pick a framework, and do not let feature slices each improvise their own ad-hoc verification.
+- If testing tooling is MISSING or unusable (no test runner, no config, no CI command, framework not installed), the captain **must RECOMMEND a testing toolchain to the user** — propose a concrete stack appropriate to the language/framework (e.g. Vitest+RTL for the React stack, `go test` for Go, pytest for Python), state why, and get the user's pick. Then **bootstrap it FIRST** — as its own setup step or a dedicated setup DAG (no dependencies, runs first) that installs/configures the chosen runner and lands a smoke test — before any feature slice runs. Do not silently pick a framework, and do not let feature slices each improvise their own ad-hoc verification.
 - Capture the chosen test/build/lint commands as `seedKnowledge` (a rule) so every slice uses the same invocation.
 
 Why: `slice_orchestrator` tells the impl agent "run the acceptance check, it MUST pass" and falls back to "run the project test/build/lint and report" when `acceptance` is blank. If the toolchain does not exist, that fallback produces a fake or improvised signal and `passed` becomes meaningless. Bootstrapping testing up front makes every slice's acceptance trustworthy and consistent.
 
 This is a captain/planning-time responsibility (settled during /grill-me + Plan), NOT something a background slice discovers mid-run — the planner can flag missing tooling via `needsClarification`, but the preferred outcome is an explicit bootstrap slice in the DAG.
+
+### Real reflection is non-negotiable (fake vs real)
+
+A toolchain that only typechecks/lints/unit-tests gives **fake reflection** — backend code never touches a real DB, UI code never renders in a browser, and a green slice can hide broken behavior. **Real reflection** means the acceptance command actually exercises the real dependency the task touches:
+- A task that writes/reads data (`needsDb: true`) must run against a real DB (ephemeral cloud branch, local container, or CI service) — never fall back to unit-only mocks as its acceptance.
+- A task that renders UI (`needsBrowser: true`) must run an E2E or component-browser-mode check — never fall back to build+typecheck alone.
+- No task's `acceptance`/`checkCommand` may degrade to typecheck-only or lint-only when the task writes data or renders UI. If it does, `passed` is meaningless even though the command ran green.
+- If a needed harness (integration DB, browser/E2E) is absent, building it is itself a dedicated setup DAG (no dependencies, runs first) — not an afterthought.
+- Missing/insufficient provisioning is recorded in `SETUP.md` (copy-paste checklist of `[REQUIRED]` items only the user can do). **Build stays blocked until SETUP.md is green.**
+- The captain re-probes readiness (`needsDb`/`needsBrowser`/`ciMonitor` still satisfied) on **every boot and resume**, not just once at Gate — env can drift between sessions/machines.
 
 ## Schema
 

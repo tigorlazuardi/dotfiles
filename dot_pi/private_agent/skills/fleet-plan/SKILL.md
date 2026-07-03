@@ -88,6 +88,11 @@ contract to a stranger and trust the outcome. Cover at minimum:
   vs Opus? (Greenfield usually has more unknowns → more low-tolerance DAGs → more Opus usage.)
 - **Resume / rate-limit expectations.** Is this multi-day? Will sessions be interrupted? State
   files go in the project repo for cross-machine resume.
+- **Verification capability (real reflection).** Does CI config actually RUN tests (not just
+  lint), or is the pipeline dormant/gated off? Does an integration test harness exist? Is a real
+  DB reachable (connection string, local container, ephemeral cloud branch)? Is there a
+  browser/E2E harness for UI work? Can the captain monitor CI results itself (`gh`/`glab` authed,
+  token scope)? Read the repo to confirm — don't assume. Feeds Step 4.5.
 
 Use the repo and any available docs tools to come prepared. Don't make the user tell you what
 you can read yourself. For greenfield: be especially thorough on architecture questions — the
@@ -169,9 +174,10 @@ State your routing choices and one-line reasons in FLEET.md's Implementation Str
 
 ---
 
-## Step 4 — The 5 deliverables
+## Step 4 — The deliverables
 
-You must produce exactly these five artifacts. Leave no `<...>` placeholder unfilled.
+You must produce these artifacts (five always, plus SETUP.md when provisioning is required —
+see Step 4.5). Leave no `<...>` placeholder unfilled.
 
 ### Deliverable (a) — FLEET.md captain contract
 
@@ -196,8 +202,10 @@ Instantiate from `templates/fleet-captain.state.template.json` (in the pi config
 `~/.pi/agent/templates/fleet-captain.state.template.json`). Location in project repo:
 `plans/fleet/<yyyy-mm-dd>-<epic>/state.json`. Fill:
 - `runName`, `baseBranch`, `integrationBranch`, `branchStrategy`
+- `verification` block (from Step 4.5): `dbMode`, `uiMode`, `ciMonitor`, `runner`
 - `dags[]` — every DAG with `dependsOn`, `failureTolerance`, `orchestratorModel`, `thinking`,
-  and `assignment` (planned* + effective* both set to the mapping above)
+  `assignment` (planned* + effective* both set to the mapping above), and `needsDb`/
+  `needsBrowser` booleans (per-DAG default; a task may override)
 - `dagStatus` — one entry per DAG, all `status: "pending"`, `level2` pointer set
 - `failedDags: []`, `stopFlag.stopped: false`
 - `phases` — all `"pending"` (filled by captain at runtime)
@@ -226,6 +234,59 @@ its `checkCommand` (or as an appended step) — a command that proves the whole 
 integrates correctly (e.g. a cross-module integration test, an end-to-end smoke test for that
 workstream). The judge reads `acceptanceResult` values — it does not run commands — so the
 executor must provide a green signal before the judge evaluates.
+
+### Deliverable (f) — SETUP.md (conditional)
+
+Produced by Step 4.5. Location: `plans/fleet/<yyyy-mm-dd>-<epic>/SETUP.md`. A copy-paste
+checklist of **[REQUIRED]** provisioning only the user can do, plus the captain's
+readiness-probe checklist (what it re-checks on every boot/resume). **Only when provisioning is
+required** — if the audit in Step 4.5 found verification capability already sufficient, skip
+this file and instead note "no provisioning required" in FLEET.md.
+
+---
+
+## Step 4.5 — Verification readiness preflight (real reflection)
+
+A DAG that only typechecks/lints/unit-tests gives its implementer **fake reflection** — backend
+code never touches a real DB, UI code never renders in a browser, and a green DAG can hide broken
+behavior. Before the Gate, guarantee the run environment can give **real reflection**, and guide
+the user to provision what's missing. Mandatory; do not skip to Step 5 without it.
+
+**1. Audit what verification capability exists** (read, don't assume). Report as a table:
+
+| Capability | Present? | Detail |
+|---|---|---|
+| CI actually runs tests | ? | pipeline config path, gated or dormant? |
+| Integration test harness | ? | project/config name, or none |
+| DB reachable | ? | connection string / local container / none |
+| Browser/E2E harness | ? | Playwright/Cypress/etc, or none |
+| CI monitoring | ? | `gh`/`glab` authed? token scope? |
+
+**2. Offer pragmatic options — do not prescribe one.** Present alternatives, ask the user's
+current state first:
+- **Real DB for backend DAGs/tasks**: ephemeral cloud branch (Neon/PlanetScale, if API key) ·
+  local container (Podman/Docker) · Postgres-as-CI-service (`services:`) · unit-only (weakest).
+- **UI DAG/task depth**: E2E smoke (Playwright, truest, heaviest) · component browser-mode tests
+  (middle) · build+typecheck (lightest).
+- **CI monitoring**: give the captain read access (token) so it can treat a red pipeline as a
+  blocker · or local-only (no remote monitoring).
+- If a needed harness is absent (no integration DB, no browser harness), **building it is itself
+  a dedicated setup DAG (no dependencies, runs first)** — not an afterthought bolted onto a
+  feature DAG.
+
+**3. Encode real reflection into every task's `checkCommand`.** Tag DAGs `needsDb`/
+`needsBrowser` (may override per task) so the captain can verify the env supplies each before
+dispatching. A task that writes data or renders UI must NEVER have its `checkCommand` degrade to
+typecheck/lint-only.
+
+**4. Write `SETUP.md`** into `plans/fleet/<yyyy-mm-dd>-<epic>/` — a copy-paste checklist of
+**[REQUIRED]** provisioning only the user can do (credentials, containers, browser deps, CI vars,
+monitoring token) plus a captain readiness-probe checklist. **Build stays blocked until the
+required items are green** — the captain re-probes readiness on every boot and resume (see
+`captain` skill §0/§2/§6), not just once at Gate.
+
+If no provisioning is required (verification capability already sufficient), skip writing
+SETUP.md and record "no provisioning required" in FLEET.md instead.
 
 ---
 
@@ -257,6 +318,7 @@ cross-machine resume:
 <repo>/plans/fleet/<yyyy-mm-dd>-<epic>/
   FLEET.md                          # captain contract (Deliverable a)
   state.json                        # L1 captain state (Deliverable c)
+  SETUP.md                          # verification-readiness checklist (Deliverable f, conditional)
   dags/
     <dagId>-contract.md             # per-DAG contract (Deliverable b, one per DAG)
     <dagId>.json                    # L2 orchestrator state (Deliverable d, one per DAG)
@@ -286,6 +348,12 @@ Re-read every file with fresh eyes and fix inline:
 - **No loop language.** No "retry until passes", no "acceptance command loop", no waves.
 - **L2 state matches contract.** Every task in `<dagId>-contract.md` has a corresponding entry
   in `<dagId>.json` with the same `taskId` and `checkCommand`.
+- **Real reflection, not fake.** Every data-writing or UI-rendering task has a `checkCommand`
+  that actually exercises that behavior (real DB / real render) — never typecheck-only or
+  lint-only for those tasks.
+- **Verification tags consistent.** L1 `verification` block is filled (`dbMode`, `uiMode`,
+  `ciMonitor`, `runner`); per-DAG `needsDb`/`needsBrowser` tags match what their tasks'
+  `checkCommand`s actually require.
 
 Fix anything found; no need to re-review after fixing.
 
