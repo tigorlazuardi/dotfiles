@@ -9,7 +9,6 @@
     "npm:@majorgilles/pi-grill-me",
     "npm:pi-mcp-adapter",
     "npm:pi-rules",
-    "npm:@monotykamary/pi-vcc",
     "npm:pi-prompt-template-model",
     "npm:pi-patty-bg-tasks",
     "npm:@koltmcbride/pi-loop",
@@ -18,11 +17,20 @@
     "npm:pi-playwright",
     "npm:@kmmuntasir/pi-nested-subagents",
     "npm:pi-diet-lsp",
-    "npm:pi-memory-stone"
+    "npm:@yandy0725/pi-memory",
+    "npm:pi-observational-memory"
   ],
   "searxng": {
     "url": "http://localhost:8888"
   },
   "lastChangelogVersion": "0.80.3",
-  "theme": "dark"
+  "theme": "dark",
+  "observational-memory": {
+    "model": {
+      "provider": "omniroute",
+      "id": "cc/claude-haiku-4-5-20251001",
+      "thinking": "low"
+    },
+    "debugLog": false
+  }
 }
