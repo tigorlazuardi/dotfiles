@@ -1,0 +1,26 @@
+Host gitlab.ai.bareksa.dev
+    HostName gitlab.ai.bareksa.dev
+    Port 2222
+    User git
+    IdentityFile ~/.ssh/id_ed25519
+
+Host triv
+    HostName 10.0.91.19
+    User tigor
+    IdentityFile ~/.ssh/id_ed25519
+
+Host legal
+    HostName 100.126.131.200
+    User legal
+    Port 2222
+    IdentityFile ~/.ssh/id_ed25519
+
+Host homeserver
+    HostName 192.168.100.5
+    User homeserver
+    IdentityFile ~/.ssh/id_ed25519
+
+Host homeserver-ts
+    HostName homeserver.tail4d07a7.ts.net
+    User homeserver
+    IdentityFile ~/.ssh/id_ed25519
