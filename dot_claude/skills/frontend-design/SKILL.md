@@ -9,6 +9,8 @@ One door for frontend work. Two halves fused: STRUCTURE first (scannability, hie
 
 ## Routing — load specialized skills as the task demands
 
+- `frontend-guidelines` — user's durable rules (light-mode default, library-first, feedback + error paths, testing-is-done). ALWAYS load; on any conflict with this skill, guidelines WIN (notably: default theme stays light regardless of aesthetic direction).
+- `frontend-stack` — concrete React stack (Tailwind + shadcn/ui + Radix + Framer Motion). Load when building React UI.
 - `ui-color-theming` — palettes, tokens, dark/light mode, HSL/OKLCH, CSS variables.
 - `ui-spacing` — padding/margins/gaps, cramped layouts, button padding.
 - `ui-depth` — flat UI, shadows, elevation, layering.
