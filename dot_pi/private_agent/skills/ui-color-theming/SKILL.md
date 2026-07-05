@@ -7,6 +7,8 @@ description: Practical UI color palette workflow — HSL/OKLCH shade math, neutr
 
 Colors = shades. Three roles cover everything: neutrals (background, text, borders), one brand/primary (main actions, character), few semantic (states). Source: Sajid (tool linked in video description).
 
+Policy (per `frontend-guidelines`, wins on conflict): SHIP light mode as the default theme, but design BOTH modes from the start — the dark-first authoring order below is just a workflow for deriving shades, not the shipping default. Both token sets defined before shipping; manual toggle defaults to light.
+
 ## Color format: HSL minimum, OKLCH preferred
 
 Hex/RGB unreadable as palettes — near-identical shades look unrelated in code. HSL makes shade math obvious: hue 0–360, saturation 0–100%, lightness = the shade knob. OKLCH is better: lightness increments look perceptually natural (HSL dark/light extremes lose saturation). OKLCH ranges: L 0–1, C (chroma) 0–0.4 — UI work rarely needs above ~0.15–0.2, H 0–360. Tailwind v4 defaults to OKLCH.

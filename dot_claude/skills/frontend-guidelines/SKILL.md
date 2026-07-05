@@ -7,13 +7,14 @@ description: General, stack-agnostic guidelines for building any frontend UI for
 
 Durable principles for any frontend this user builds. These hold regardless of framework. The concrete React stack lives in the `frontend-stack` skill; when that applies it maps each principle below to a specific tool. When it conflicts with the generic `frontend-design` skill, THESE win (notably: default theme stays light).
 
-## 1. Light mode default
+## 1. Light mode default, dark mode designed in
 
-Dark-by-default looks bad in demos. Ship light as the default, always.
+Dark-by-default looks bad in demos. Ship light as the default, always — but dark mode SUPPORT is part of the design, not an afterthought.
 
 - Do not apply a dark class/theme on first render.
 - If a theme system exists: default to light, and disable "follow system" — a dark-set laptop will otherwise force dark mid-demo.
-- A manual dark toggle is fine, but only if the user asks. Default state stays light.
+- Define color tokens for BOTH modes from the start (see `ui-color-theming` for the flip workflow) — retrofitting dark onto hardcoded light values is a rewrite.
+- Include a manual dark toggle; its default state stays light.
 
 ## 2. Library-first
 
