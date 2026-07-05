@@ -109,6 +109,7 @@ Before ANY frontend work — designing/building/reviewing UI components, pages, 
 - `ui-spacing` — padding/margins/gaps, cluttered or cramped layouts, button padding.
 - `ui-depth` — flat/boring UI, shadows, elevation, layering, hierarchy.
 - `ui-responsive-layout` — page layout, flexbox vs grid, breakpoints, sidebars/headers.
+- `ui-design-principles` — page/section design from scratch, hierarchy, design-system tokens, cluttered/unscannable UI.
 
 Load only the ones matching the task (styling task ≠ psychology skill), but never start frontend work with zero of them loaded. Orchestrator delegating frontend → the worker spec MUST name which of these skills the worker loads.
 
