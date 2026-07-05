@@ -24,3 +24,8 @@ Host homeserver-ts
     HostName homeserver.tail4d07a7.ts.net
     User homeserver
     IdentityFile ~/.ssh/id_ed25519
+
+Host xprivate
+    HostName god-eater.grandboard.id
+    User xprivate
+    IdentityFile ~/.ssh/id_ed25519
