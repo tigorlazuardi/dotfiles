@@ -101,6 +101,17 @@ Classify each slice/task: **low** (auth / secrets / DB migration / schema / publ
 ## Stack conventions
 - Per-repo, in each project `./AGENTS.md`. DO NOT put here.
 
+## Frontend/UI work — load UI skills first (every agent)
+
+Before ANY frontend work — designing/building/reviewing UI components, pages, styling, theming, layout, onboarding/signup/pricing flows — load the matching UI skills BEFORE touching code, and reference them in worker specs when delegating:
+- `ux-psychology` — conversion/decision flows (onboarding, signup, forms, pricing, paywalls, drop-off).
+- `ui-color-theming` — palettes, design tokens, dark/light mode, HSL/OKLCH, CSS color variables.
+- `ui-spacing` — padding/margins/gaps, cluttered or cramped layouts, button padding.
+- `ui-depth` — flat/boring UI, shadows, elevation, layering, hierarchy.
+- `ui-responsive-layout` — page layout, flexbox vs grid, breakpoints, sidebars/headers.
+
+Load only the ones matching the task (styling task ≠ psychology skill), but never start frontend work with zero of them loaded. Orchestrator delegating frontend → the worker spec MUST name which of these skills the worker loads.
+
 ## Telemetry is part of "done" (every plan)
 
 Whenever you plan a feature, service, endpoint, job, migration, or any program, the `telemetry-planning` skill MUST run as part of the plan — not as an afterthought, not as a follow-up ticket. Observability (tracing + logs + metrics) is part of the implementation and the acceptance criteria. OpenTelemetry is the default standard. Sensitive data: redact content but keep the field name visible. Four tiers — **A** always redact (secrets: tokens, passwords, API keys, JWTs, auth headers, private keys, card PAN/CVV); **B** keep visible by default (account handles: email-as-login, username, opaque account/customer/tenant id — they are the support-debug join key, redacting them breaks complaint triage); **C** redact by default (KYC-only PII with no ops use: full name, DOB, gov IDs, address, partial card, geo); **D** ask the user per-field for context-dependent fields (phone, IP, free-text input, namespace fields, any override on B/C). Histograms: set explicit buckets that match the domain (default OTel buckets are almost always wrong). Cardinality: low by default; when a label is high-value-but-high-cardinality (e.g. `tenant_id`), OFFER the trade-off to the user explicitly. The moment a project's telemetry stack is clear, capture it as a project rule/skill via `/promote-rules`/`/promote-skills` so the next session does not re-derive it. Full guidance + bucket examples + cardinality offer template → `~/.pi/agent/skills/telemetry-planning/SKILL.md`.
