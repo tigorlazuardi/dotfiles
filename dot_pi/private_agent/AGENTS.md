@@ -101,17 +101,9 @@ Classify each slice/task: **low** (auth / secrets / DB migration / schema / publ
 ## Stack conventions
 - Per-repo, in each project `./AGENTS.md`. DO NOT put here.
 
-## Frontend/UI work — load UI skills first (every agent)
+## Frontend work — one door: `frontend-design` (every agent)
 
-Before ANY frontend work — designing/building/reviewing UI components, pages, styling, theming, layout, onboarding/signup/pricing flows — load the matching UI skills BEFORE touching code, and reference them in worker specs when delegating:
-- `ux-psychology` — conversion/decision flows (onboarding, signup, forms, pricing, paywalls, drop-off).
-- `ui-color-theming` — palettes, design tokens, dark/light mode, HSL/OKLCH, CSS color variables.
-- `ui-spacing` — padding/margins/gaps, cluttered or cramped layouts, button padding.
-- `ui-depth` — flat/boring UI, shadows, elevation, layering, hierarchy.
-- `ui-responsive-layout` — page layout, flexbox vs grid, breakpoints, sidebars/headers.
-- `ui-design-principles` — page/section design from scratch, hierarchy, design-system tokens, cluttered/unscannable UI.
-
-Load only the ones matching the task (styling task ≠ psychology skill), but never start frontend work with zero of them loaded. Orchestrator delegating frontend → the worker spec MUST name which of these skills the worker loads.
+Before ANY frontend work — designing/building/reviewing UI components, pages, styling, theming, layout, onboarding/signup/pricing flows — load the `frontend-design` skill FIRST. It is the single entry point: structure + aesthetics fused, plus routing to the specialized skills (`frontend-guidelines` — always, wins on conflict; `frontend-stack` for React; `ui-color-theming`, `ui-spacing`, `ui-depth`, `ui-responsive-layout`, `ux-psychology` per task) — follow its routing list. Never start frontend work without it. Orchestrator delegating frontend → the worker spec MUST instruct the worker to load `frontend-design` (plus the routed skills relevant to the task).
 
 ## Telemetry is part of "done" (every plan)
 
