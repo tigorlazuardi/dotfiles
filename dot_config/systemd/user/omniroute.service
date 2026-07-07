@@ -5,8 +5,12 @@ After=graphical-session.target
 
 [Service]
 Type=simple
-ExecStartPre=/usr/bin/bun install -g omniroute
-ExecStart=%h/.bun/bin/omniroute --tray --no-open
+# mise-managed: omniroute dipin di ~/.config/mise/config.toml ("npm:omniroute").
+# Shim dir di depan PATH -> `omniroute` resolve ke mise shim, dan child node juga.
+Environment=PATH=%h/.local/share/mise/shims:%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+# Ensure tool ter-install sebelum start (idempotent, gagal = diabaikan pakai '-').
+ExecStartPre=-/usr/bin/env mise install
+ExecStart=/usr/bin/env omniroute --tray --no-open
 Restart=always
 RestartSec=5s
 
