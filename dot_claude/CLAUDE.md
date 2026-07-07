@@ -46,6 +46,13 @@ Whenever you plan a feature, service, endpoint, job, migration, or any program, 
 
 Before ANY frontend work — designing/building/reviewing UI components, pages, styling, theming, layout, onboarding/signup/pricing flows — load the `frontend-design` skill FIRST. It is the single entry point: structure + aesthetics fused, plus routing to the specialized skills (`frontend-guidelines` — always, wins on conflict; `frontend-stack` for React; `ui-color-theming`, `ui-spacing`, `ui-depth`, `ui-responsive-layout`, `ux-psychology` per task) — follow its routing list. Never start frontend work without it. Orchestrator delegating frontend → the worker spec MUST instruct the worker to load `frontend-design` (plus the routed skills relevant to the task).
 
+### Dev journal — cross-check + capture (main session)
+
+Journal = private git repo `tigorlazuardi/journal` cloned at `$HOME/journal` (cross-machine sync via git); workflow in `dev-journal` skill. Missing locally → offer clone.
+- **Task start (substantive coding/design work, any repo):** load `dev-journal` skill, read L0 `index.md` (one file, cheap) → relevant precedent → surface one line ("kamu pernah X, hasilnya Y"). No hit → proceed silently.
+- **Notable moment** (feature shipped, fix with interesting root cause, design decision, incident, new tech, milestone) → OFFER one line: "Journal ini?" Approve → skill writes entry + updates indexes. Rejected → no re-nag.
+- **CV/portfolio/"pernah gak saya..." questions** → load skill, recall mode.
+
 ### Promoting durable concepts (offer, don't absorb)
 Durable concept surfaces mid-work → don't just absorb (session memory dies at compaction). OFFER to promote it into a committed artifact. Watch for: persistent convention/constraint ("always X", "never Y"); lesson/gotcha/vendor quirk; a decision a cold session would forget. Route (offer once, name the command, don't re-nag):
 - Scope expressible as **file paths** → `/promote-rules` (`<project>/.claude/rules/<name>.md`, `paths:` frontmatter).

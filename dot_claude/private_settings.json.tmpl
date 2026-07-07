@@ -2,6 +2,7 @@
   "permissions": {
     "defaultMode": "bypassPermissions"
   },
+  "model": "claude-fable-5[1m]",
   "hooks": {
     "SessionStart": [
       {
@@ -11,6 +12,25 @@
             "command": "\"{{ lookPath `node` }}\" \"{{ .chezmoi.homeDir }}/.claude/hooks/caveman-activate.js\"",
             "timeout": 5,
             "statusMessage": "Loading caveman mode..."
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '{{ .chezmoi.homeDir }}/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/journal-nudge.py\"",
+            "timeout": 10
           }
         ]
       }
@@ -26,6 +46,36 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/usage-guard.py\"",
+            "timeout": 15,
+            "statusMessage": "Checking usage limits..."
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/journal-nudge.py\"",
+            "timeout": 10,
+            "statusMessage": "Dev-journal check..."
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/usage-guard.py\"",
+            "timeout": 15,
+            "statusMessage": "Checking usage limits..."
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
@@ -33,13 +83,14 @@
     "command": "bash \"{{ .chezmoi.homeDir }}/.claude/hooks/caveman-statusline.sh\""
   },
   "enabledPlugins": {
+    "caveman@caveman": true,
+    "claude-mem@thedotmack": true,
     "context7@claude-plugins-official": true,
     "playwright@claude-plugins-official": true,
-    "caveman@caveman": true,
     "ralph-loop@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
-    "claude-mem@thedotmack": true
+    "superpowers@claude-plugins-official": true,
+    "gopls-lsp@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "caveman": {
@@ -64,6 +115,5 @@
   "effortLevel": "medium",
   "skipDangerousModePermissionPrompt": true,
   "theme": "auto",
-  "model": "opus",
   "agentPushNotifEnabled": true
 }
