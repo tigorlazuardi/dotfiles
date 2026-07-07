@@ -36,8 +36,8 @@ sops = "latest"
 # aqua backend = binary release resmi, TANPA npm. Backend npm kena
 # ignore-scripts=true di .npmrc → postinstall skip → "native binary
 # not installed". Aqua sidesteps seluruh jalur npm.
-claude-code = "latest"
-"github:tigorlazuardi/plandeck" = "v0.1.13"
+claude-code = { version = "latest", minimum_release_age = "0s" }
+"github:tigorlazuardi/plandeck" = { version = "latest", minimum_release_age = "0s" }
 herdr = "latest"
 
 # fish: static build ada di GitHub release (fish 4+), tapi chsh butuh root.
