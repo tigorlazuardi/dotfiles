@@ -1,0 +1,43 @@
+# ============================================================
+# mise global tools — VPS/rootless Linux ONLY.
+# macOS pakai brew, Arch pakai yay, NixOS pakai nix — di mesin
+# itu file ini di-exclude via .chezmoiignore.
+# Semua install ke ~/.local/share/mise, zero sudo.
+# Trigger install: run_onchange_after script (hash file ini).
+# ============================================================
+
+[tools]
+# runtime (dibutuhkan claude hooks + npm backend)
+node = "lts"
+
+# core CLI
+jq = "latest"
+ripgrep = "latest"
+fd = "latest"
+bat = "latest"
+eza = "latest"
+fzf = "latest"
+zoxide = "latest"
+direnv = "latest"
+
+# git tooling
+lazygit = "latest"
+gh = "latest"
+delta = "latest"
+gitleaks = "latest"
+
+# editor + secrets
+neovim = "stable"
+age = "latest"
+sops = "latest"
+
+# agent
+"npm:@anthropic-ai/claude-code" = "latest"
+
+# fish: static build ada di GitHub release (fish 4+), tapi chsh butuh root.
+# Kalau mau: uncomment + exec fish dari .bashrc.
+# "ubi:fish-shell/fish-shell" = "latest"
+
+[settings]
+# jangan nanya konfirmasi di script non-interaktif
+yes = true

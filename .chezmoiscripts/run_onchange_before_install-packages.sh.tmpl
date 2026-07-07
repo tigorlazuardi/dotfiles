@@ -161,9 +161,35 @@ yay -S --needed --noconfirm --answerdiff=None --answerclean=None \
   sqlfluff \
   || warn "Beberapa AUR package gagal install. Cek output di atas."
 
-{{   else -}}
-warn "Linux distro {{ .chezmoi.osRelease.id }} belum di-handle. Install manual."
+{{   else if eq .chezmoi.osRelease.id "nixos" -}}
+log "NixOS detected — packages dikelola nix config, skip."
 exit 0
+
+{{   else -}}
+# ============================================================
+# Generic Linux (VPS tanpa sudo) — bootstrap mise, ROOTLESS.
+# Semua ke ~/.local, zero root. Tool install-nya sendiri jalan
+# di run_onchange_after_mise-install.sh (setelah config.toml
+# ke-apply oleh chezmoi).
+# ============================================================
+log "Generic Linux ({{ .chezmoi.osRelease.id }}) — rootless mode, bootstrap mise..."
+
+MISE_BIN="$HOME/.local/bin/mise"
+if command -v mise >/dev/null 2>&1; then
+  log "mise sudah ada: $(mise --version)"
+elif [ -x "$MISE_BIN" ]; then
+  log "mise sudah ada: $("$MISE_BIN" --version)"
+else
+  log "Installing mise ke ~/.local/bin (rootless)..."
+  curl -fsSL https://mise.run | MISE_INSTALL_PATH="$MISE_BIN" sh
+  log "mise installed: $("$MISE_BIN" --version)"
+fi
+
+# Activation buat login shell bash (VPS default). Idempotent.
+if [ -f "$HOME/.bashrc" ] && ! grep -q "mise activate" "$HOME/.bashrc"; then
+  printf '\n# mise (rootless tool manager) — added by chezmoi\neval "$(%s activate bash)"\n' "$MISE_BIN" >> "$HOME/.bashrc"
+  log "mise activation ditambahkan ke ~/.bashrc"
+fi
 {{   end -}}
 
 {{ else -}}

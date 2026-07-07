@@ -7,6 +7,9 @@
 
 set -eu
 
+# VPS rootless: claude + jq datang dari mise shims. No-op di macOS/Arch/NixOS.
+export PATH="$HOME/.local/share/mise/shims:$HOME/.local/bin:$PATH"
+
 CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 SETTINGS="$CLAUDE_DIR/settings.json"
 
