@@ -3,7 +3,7 @@
 # Runs on chezmoi apply when the settings template changes.
 #
 # Hash trigger (forces re-run when content changes):
-# settings: {{ include "dot_claude/private_settings.json.tmpl" | sha256sum }}
+# settings: {{ include "dot_claude/private_settings.json" | sha256sum }}
 
 set -eu
 

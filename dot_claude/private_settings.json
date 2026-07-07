@@ -9,7 +9,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"{{ lookPath `node` }}\" \"{{ .chezmoi.homeDir }}/.claude/hooks/caveman-activate.js\"",
+            "command": "node \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/caveman-activate.js\"",
             "timeout": 5,
             "statusMessage": "Loading caveman mode..."
           }
@@ -20,7 +20,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash '{{ .chezmoi.homeDir }}/.claude/hooks/herdr-agent-state.sh' session",
+            "command": "bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/herdr-agent-state.sh\" session",
             "timeout": 10
           }
         ]
@@ -40,7 +40,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"{{ lookPath `node` }}\" \"{{ .chezmoi.homeDir }}/.claude/hooks/caveman-mode-tracker.js\"",
+            "command": "node \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/caveman-mode-tracker.js\"",
             "timeout": 5,
             "statusMessage": "Tracking caveman mode..."
           }
@@ -80,7 +80,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "bash \"{{ .chezmoi.homeDir }}/.claude/hooks/caveman-statusline.sh\""
+    "command": "bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/caveman-statusline.sh\""
   },
   "enabledPlugins": {
     "caveman@caveman": true,
