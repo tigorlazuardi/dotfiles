@@ -45,6 +45,138 @@
             "text",
             "image"
           ]
+        },
+        {
+          "id": "cx/gpt-5.4",
+          "name": "Gpt 5.4",
+          "api": "openai-completions",
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 200000,
+          "maxTokens": 128000,
+          "reasoning": true
+        },
+        {
+          "id": "cx/gpt-5.4-high",
+          "name": "Gpt 5.4 High",
+          "api": "openai-completions",
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 200000,
+          "maxTokens": 128000,
+          "reasoning": true
+        },
+        {
+          "id": "cx/gpt-5.4-low",
+          "name": "Gpt 5.4 Low",
+          "api": "openai-completions",
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 200000,
+          "maxTokens": 128000,
+          "reasoning": true
+        },
+        {
+          "id": "cx/gpt-5.4-medium",
+          "name": "Gpt 5.4 Medium",
+          "api": "openai-completions",
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 200000,
+          "maxTokens": 128000,
+          "reasoning": true
+        },
+        {
+          "id": "cx/gpt-5.4-mini",
+          "name": "Gpt 5.4 Mini",
+          "api": "openai-completions",
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 409600,
+          "maxTokens": 131072,
+          "reasoning": true
+        },
+        {
+          "id": "cx/gpt-5.4-xhigh",
+          "name": "Gpt 5.4 Xhigh",
+          "api": "openai-completions",
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 200000,
+          "maxTokens": 128000,
+          "reasoning": true
+        },
+        {
+          "id": "cx/gpt-5.5",
+          "name": "Gpt 5.5",
+          "api": "openai-completions",
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 400000,
+          "maxTokens": 128000,
+          "reasoning": true
+        },
+        {
+          "id": "cx/gpt-5.5-high",
+          "name": "Gpt 5.5 High",
+          "api": "openai-completions",
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 400000,
+          "maxTokens": 128000,
+          "reasoning": true
+        },
+        {
+          "id": "cx/gpt-5.5-low",
+          "name": "Gpt 5.5 Low",
+          "api": "openai-completions",
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 400000,
+          "maxTokens": 128000,
+          "reasoning": true
+        },
+        {
+          "id": "cx/gpt-5.5-medium",
+          "name": "Gpt 5.5 Medium",
+          "api": "openai-completions",
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 400000,
+          "maxTokens": 128000,
+          "reasoning": true
+        },
+        {
+          "id": "cx/gpt-5.5-xhigh",
+          "name": "Gpt 5.5 Xhigh",
+          "api": "openai-completions",
+          "input": [
+            "text",
+            "image"
+          ],
+          "contextWindow": 400000,
+          "maxTokens": 128000,
+          "reasoning": true
         }
       ]
     }

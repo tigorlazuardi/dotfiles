@@ -1,6 +1,6 @@
 {
   "defaultProvider": "omniroute",
-  "defaultModel": "cc/claude-opus-4-8",
+  "defaultModel": "cx/gpt-5.5",
   "defaultThinkingLevel": "high",
   "quietStartup": true,
   "packages": [
@@ -18,7 +18,8 @@
     "npm:@kmmuntasir/pi-nested-subagents",
     "npm:pi-diet-lsp",
     "npm:@yandy0725/pi-memory",
-    "npm:pi-observational-memory"
+    "npm:pi-observational-memory",
+    "npm:@calesennett/pi-codex-usage"
   ],
   "searxng": {
     "url": "http://localhost:8888"
@@ -28,9 +29,13 @@
   "observational-memory": {
     "model": {
       "provider": "omniroute",
-      "id": "cc/claude-haiku-4-5-20251001",
+      "id": "cx/gpt-5.4-mini",
       "thinking": "low"
     },
     "debugLog": false
+  },
+  "pi-codex-usage": {
+    "usageMode": "left",
+    "refreshWindow": "7d"
   }
 }
