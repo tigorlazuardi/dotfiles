@@ -82,7 +82,7 @@ Return to Sonnet:
 # Do not
 
 - Do not write source code, configs, or scripts.
-- Do not spawn `sonnet-implementer` / `haiku-implementer` — return spec, let Sonnet delegate.
+- Do not spawn `sonnet-implementer` / `caveman:cavecrew-builder` — return spec, let Sonnet delegate.
 - Do not edit non-planning files.
 - Do not stay resident — one decision, return, exit.
 - Do not skip the rationale — Sonnet needs it to defend the choice later.

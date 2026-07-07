@@ -95,7 +95,7 @@ Every FASE-2 contract **INGESTS** `SPEC.mdx` — it never re-plans or reinterpre
 authoritative across all four executors. This is the anti-duplication guarantee.
 
 - **One-shot (S/M)** → main session executes directly, per the effort tier (XS/S/M/L per
-  CLAUDE.md), delegating all writes to workers (`sonnet-implementer` / `haiku-implementer`). No
+  CLAUDE.md), delegating all writes to workers (`sonnet-implementer` / `caveman:cavecrew-builder`). No
   contract file.
 - **Ralph (L)** → invoke `ralph-plan`. It detects `plans/<scope>/SPEC.mdx`, ingests it (skip the
   full interview, ask only about gaps), and derives `PROMPT.md` + `STATE.md` from the spec.

@@ -110,7 +110,7 @@ return await agent(
 - `budget` — cap on agent count / cost for the run; set it up front for a sweep of known size.
 - Agent opts: `label`, `phase`, `schema` (validated structured return), `model` (`sonnet` /
   `haiku` only — see rule 3), `effort`, `isolation` (`"worktree"` for parallel edits), `agentType`
-  (binds tools+role, e.g. `sonnet-implementer` / `haiku-implementer`).
+  (binds tools+role, e.g. `sonnet-implementer` / `caveman:cavecrew-builder`).
 - **Resume**: runs are journaled; `resumeFromRunId` replays completed steps and continues from the
   first incomplete one — do not hand-roll your own resume bookkeeping.
 - **Sandbox**: scripts run in a `vm` with no `Date.now()` / `Math.random()` / filesystem / network
@@ -133,7 +133,7 @@ into every prompt string.
 
 ### 3. Worker tier CAPPED
 `model` is capped to `'sonnet'` or `'haiku'` only. `agentType` limited to `sonnet-implementer` /
-`haiku-implementer`, or the default workflow subagent if no custom agentType is needed. **NEVER
+`caveman:cavecrew-builder`, or the default workflow subagent if no custom agentType is needed. **NEVER
 `model: 'opus'`.** No escalate-to-critical path inside the sweep — if a branch turns out to need
 heavier judgment, that is the escape hatch (rule 4) firing, not a tier bump.
 

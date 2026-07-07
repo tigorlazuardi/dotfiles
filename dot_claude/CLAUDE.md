@@ -73,7 +73,7 @@ Main session writes ONLY markdown of those kinds. All other writes — code, con
 ### Delegates to workers
 - **All code writes/edits/generation** → `sonnet-implementer` (source, new files, configs, scripts, templates).
 - **Generated documentation** (READMEs, changelogs, API docs, format conversion, research synthesis, web fetches, summarization) → `sonnet-support`.
-- **Trivial mechanical code** → `haiku-implementer` (< 10 LOC, single file, zero design decisions). Expands mid-run → worker stops + reports; respawn as `sonnet-implementer`. Default to sonnet when in doubt.
+- **Trivial mechanical code** → `caveman:cavecrew-builder` (1–2 file surgical edit, no Bash, zero design decisions; hard-refuses 3+ files). Expands mid-run → worker stops + reports; respawn as `sonnet-implementer`. Default to sonnet when in doubt.
 - **Bulk discovery / context search** → `Explore` / `general-purpose`. Returns synthesis; raw output never hits the orchestrator.
 
 ## Opus-on-demand — escalation triggers
@@ -141,7 +141,7 @@ Two-phase planning (mandatory for Medium/Large feature work; Simple 1–2 files,
 | **Sonnet (main)** | — | Default orchestrator. Plan S/M, review XS/S/M, decide, integrate, read-only investigation, markdown docs. |
 | **Opus** | `Agent({ model: "opus" })` subagent, OR main in attended one-shot | Subagent: trigger list (plan L, deep review, diagnosis, ADR), cold briefing. Main: attended one-shot per `docs/orchestration-modes.md`. |
 | **Sonnet workers** | `sonnet-implementer`, `sonnet-support` | Substantive code, multi-file edits, generated docs, research. |
-| **Haiku** | `haiku-implementer` | Trivial mechanical — < 10 LOC, single file, zero design. |
+| **Haiku** | `caveman:cavecrew-builder` | Trivial mechanical — 1–2 file surgical edit, no Bash, zero design. |
 
 Default to Sonnet when uncertain. Opus is opt-in via trigger list / explicit mode — not a fallback for "ragu-ragu".
 

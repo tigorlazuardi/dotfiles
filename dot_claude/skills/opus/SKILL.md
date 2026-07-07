@@ -65,7 +65,7 @@ Prior decisions: <relevant ADRs or decisions from conversation>
 
 Plan the work, then delegate via subagents. You have access to:
 - **sonnet-implementer** — all code writes/edits/generation, multi-file changes
-- **haiku-implementer** — trivial mechanical edits < 10 LOC, single file, zero design
+- **caveman:cavecrew-builder** — trivial mechanical edits, 1–2 files, no Bash, zero design
 - **Explore / general-purpose** — read-only codebase search, returns synthesis
 - **sonnet-support** — docs, research, web fetches, summarization
 
