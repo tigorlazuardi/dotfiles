@@ -23,7 +23,7 @@ Any document that is a **plan** — captures decisions, warnings, or architectur
 | `<Callout>` | `type` = `info`/`warn`/`success`/`danger`, `title` | Highlighted note |
 | `<CodeTabs>` | children: fenced-code blocks with `tab="..."` meta (optional `default`) | Tabbed code snippets |
 | `<Decision>` | `title`, `status` = `proposed`/`accepted`/`rejected` | Architecture decision record |
-| `<HtmlBlock>` | wraps one ```html fence | Sandboxed HTML preview (`sandbox=""`, scripts disabled) |
+| `<HtmlBlock>` | `height`; wraps one ```html fence | Sandboxed HTML preview (`sandbox=""`, scripts disabled) |
 
 Example:
 

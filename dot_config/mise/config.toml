@@ -33,6 +33,7 @@ sops = "latest"
 
 # agent
 "npm:@anthropic-ai/claude-code" = "latest"
+"github:tigorlazuardi/plandeck" = "v0.1.13"
 
 # fish: static build ada di GitHub release (fish 4+), tapi chsh butuh root.
 # Kalau mau: uncomment + exec fish dari .bashrc.
