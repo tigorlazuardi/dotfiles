@@ -30,7 +30,7 @@ gitleaks = "latest"
 neovim = "stable"
 age = "latest"
 sops = "latest"
-"npm:omniroute" = "v3.8.42"
+"npm:omniroute" = "v3.8.43"
 
 # agent
 # aqua backend = binary release resmi, TANPA npm. Backend npm kena
@@ -38,6 +38,7 @@ sops = "latest"
 # not installed". Aqua sidesteps seluruh jalur npm.
 claude-code = "latest"
 "github:tigorlazuardi/plandeck" = "v0.1.13"
+herdr = "latest"
 
 # fish: static build ada di GitHub release (fish 4+), tapi chsh butuh root.
 # Kalau mau: uncomment + exec fish dari .bashrc.
