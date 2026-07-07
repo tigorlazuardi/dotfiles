@@ -14,6 +14,7 @@ set -gx BUN_INSTALL "$HOME/.bun"
 # tetap fresh dari config.fish setiap shell start.
 # Order: bun > npm global > cargo > existing PATH.
 fish_add_path -g \
+    $HOME/.local/share/mise/shims \
     $BUN_INSTALL/bin \
     $HOME/.local/npm/bin \
     $HOME/.local/bin \
