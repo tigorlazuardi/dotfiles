@@ -50,10 +50,11 @@ describe the goal, done-condition, scope, risk surface, and decomposition — do
 one-shot/ralph/fleet/workflow-specific structure. Any executor must be able to ingest this spec
 unmodified.
 
-- Author `SPEC.mdx` per the `plandeck-authoring` skill (Decision / Callout / mermaid blocks —
+- Author `SPEC.mdx` per the `astro-docs-authoring` skill (Decision / Aside / mermaid blocks —
   invoke that skill for the authoring convention).
 - Architecture decisions that outlive this scope (not just this feature) → additional
-  `docs/design/<yyyy-mm-dd>-<topic>.mdx`, same authoring convention.
+  `docs/src/content/docs/design/<yyyy-mm-dd>-<topic>.mdx` in the repo's Starlight site
+  (scaffold via `astro-docs-setup` if absent), same authoring convention.
 - Do **not** create a contract file (PROMPT.md, FLEET.md, ralph preset, orchestration script) and
   do **not** create a state file (STATE.md, state.json) in FASE 1. Those are FASE 2 artifacts,
   built only after the gate.

@@ -29,12 +29,12 @@ git log --oneline -5 2>/dev/null || echo "no git"
 
 **Classify tier.** Assess: is this L-tier? (multi-day, cross-cutting, touches risk surface — auth/payments/migrations/data deletion/public API, or hard to verify, or broad blast radius). If yes, run Step 1.5 before spawning the executor.
 
-### 1.5. Plandeck plan doc (L-tier only)
+### 1.5. MDX plan doc (L-tier only)
 
-For L-tier tasks: spawn a **plan-only** Opus subagent whose sole job is to produce a plandeck `.mdx` plan doc — it does NOT execute anything. Brief it with all context from Step 1 and instruct it to:
+For L-tier tasks: spawn a **plan-only** Opus subagent whose sole job is to produce an `.mdx` plan doc — it does NOT execute anything. Brief it with all context from Step 1 and instruct it to:
 1. Explore the repo to ground the plan in real files/symbols.
 2. Decompose into steps, identify hard-to-reverse decisions, assign risk tiers.
-3. Follow the `plandeck-authoring` skill to write the plan doc: `Decision` blocks for hard-to-reverse choices, a mermaid work-graph diagram, a step table with risk tiers, and an open-questions `Callout`. Write it to `plans/<scope>/SPEC.mdx` (or `docs/design/<yyyy-mm-dd>-<topic>.mdx` if this is pure architecture, no scope folder yet).
+3. Follow the `astro-docs-authoring` skill to write the plan doc: `Decision` blocks for hard-to-reverse choices, a mermaid work-graph diagram, a step table with risk tiers, and an open-questions `Aside`. Write it to `plans/<scope>/SPEC.mdx` (or `docs/src/content/docs/design/<yyyy-mm-dd>-<topic>.mdx` if this is pure architecture, no scope folder yet).
 4. Return: the file path + a terse plan summary.
 
 After the subagent returns: surface the file path to the user so they can review the committed `.mdx`. Route real ambiguities to the user via AskUserQuestion. **Do NOT spawn the executor (Step 2) until the user approves the plan and all open questions are resolved.**

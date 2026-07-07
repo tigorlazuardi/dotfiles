@@ -1,13 +1,13 @@
 ---
 name: codebase-pattern-preview
-description: Interview the user about their stack, then produce an MDX preview that shows the CONCRETE patterns a codebase will use — how DB access works (e.g. Drizzle, go-jet), where business logic lives, where the HTTP router lives, function input/output signatures, example handlers, contracts, and error handling — authored for Plandeck so a human reviews the plan before code exists. After the patterns are implemented, generate matching `.agents/rules` and `.agents/skills` in THAT codebase to enforce the style in future sessions. Use when bootstrapping or planning any codebase (backend, library, service, full-stack), when the user wants to "see the patterns / shape / example code" before building, or asks how DB access / API / function signatures should look. Language- and framework-agnostic; pairs with `plandeck-authoring`.
+description: Interview the user about their stack, then produce an MDX preview that shows the CONCRETE patterns a codebase will use — how DB access works (e.g. Drizzle, go-jet), where business logic lives, where the HTTP router lives, function input/output signatures, example handlers, contracts, and error handling — authored in the Astro/Starlight MDX dialect so a human reviews the plan before code exists. After the patterns are implemented, generate matching `.agents/rules` and `.agents/skills` in THAT codebase to enforce the style in future sessions. Use when bootstrapping or planning any codebase (backend, library, service, full-stack), when the user wants to "see the patterns / shape / example code" before building, or asks how DB access / API / function signatures should look. Language- and framework-agnostic; pairs with `astro-docs-authoring`.
 ---
 
 # Codebase pattern preview
 
-Goal: before writing real code, show the human the EXACT patterns the codebase will follow — concrete example code, not prose. Output is an MDX doc reviewed in Plandeck. After sign-off and implementation, capture the same patterns as `.agents/rules` / `.agents/skills` inside that repo so future sessions enforce them.
+Goal: before writing real code, show the human the EXACT patterns the codebase will follow — concrete example code, not prose. Output is an MDX doc in the Astro/Starlight dialect, reviewed via the repo docs site (`astro dev`) or as plain text. After sign-off and implementation, capture the same patterns as `.agents/rules` / `.agents/skills` inside that repo so future sessions enforce them.
 
-This is language- and framework-agnostic. Do NOT assume a stack — interview first. Authoring rules (MDX blocks, Mermaid, discovery, read-only) come from the `plandeck-authoring` skill.
+This is language- and framework-agnostic. Do NOT assume a stack — interview first. Authoring rules (MDX blocks, Mermaid, discovery, read-only) come from the `astro-docs-authoring` skill.
 
 ## Step 1 — Interview (always first)
 
@@ -27,7 +27,7 @@ Confirm user-facing vs backoffice-facing only if relevant. Prefer asking one foc
 
 ## Step 2 — Write the MDX preview
 
-Write one `.mdx` (or a small set) into a Plandeck-served, non-ignored, non-dotted folder. Tell the user the path and that they can open it with the Plandeck CLI. Contents, in order:
+Write one `.mdx` (or a small set) into `plans/` (non-ignored, non-dotted). Tell the user the path (promote/draft-place into the docs site for a rendered preview). Contents, in order:
 
 1. **Overview** — stack summary in one paragraph (from the interview).
 2. **Folder / package layout** — fenced tree showing where router, business logic, DB access, contracts, tests live.
@@ -38,9 +38,9 @@ Write one `.mdx` (or a small set) into a Plandeck-served, non-ignored, non-dotte
 7. **HTTP handler example** (if router) — request shape, calls service, success response, error → response mapping.
 8. **Contract / types** — core data shape (zod / struct / pydantic) with a sample payload.
 9. **Decisions** — every real pattern choice as a `<Decision status="proposed">` (ADR trail).
-10. **Open questions** — `<Callout type="warn">` for anything still undecided.
+10. **Open questions** — `<Aside type="caution">` for anything still undecided.
 
-Use `<CodeTabs>` to show variants side by side (schema / query / sample; success / error response; two-language comparison). Prefer Mermaid over prose for any flow.
+Use `<Tabs>`/`<TabItem>` to show variants side by side (schema / query / sample; success / error response; two-language comparison). Prefer Mermaid over prose for any flow.
 
 ## Step 3 — After implementation: enforce via rules/skills
 
@@ -80,20 +80,24 @@ flowchart LR
 ```
 
 ## DB access (Drizzle)
-<CodeTabs>
-```ts tab="schema" default
-export const users = pgTable("users", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  email: text("email").notNull().unique(),
-});
-```
-```ts tab="repo"
-// repo functions: ctx first, return Result, no throw
-export async function findUserByEmail(
-  ctx: Ctx, email: string,
-): Promise<Result<User | null, DbError>> { /* db.query... */ }
-```
-</CodeTabs>
+<Tabs>
+  <TabItem label="schema">
+    ```ts
+    export const users = pgTable("users", {
+      id: uuid("id").primaryKey().defaultRandom(),
+      email: text("email").notNull().unique(),
+    });
+    ```
+  </TabItem>
+  <TabItem label="repo">
+    ```ts
+    // repo functions: ctx first, return Result, no throw
+    export async function findUserByEmail(
+      ctx: Ctx, email: string,
+    ): Promise<Result<User | null, DbError>> { /* db.query... */ }
+    ```
+  </TabItem>
+</Tabs>
 
 ## Signature convention
 ```ts
@@ -113,20 +117,26 @@ async function createUser(ctx, input) {
 ```
 
 ## Handler example
-<CodeTabs>
-```ts tab="handler"
-app.post("/users", async (c) => {
-  const res = await createUser(ctx, await c.req.json());
-  return res.ok ? c.json(res.value, 201) : toHttp(c, res.error);
-});
-```
-```json tab="success"
-{ "id": "u_1", "email": "a@b.com" }
-```
-```json tab="error"
-{ "error": "email taken", "code": "CONFLICT" }
-```
-</CodeTabs>
+<Tabs>
+  <TabItem label="handler">
+    ```ts
+    app.post("/users", async (c) => {
+      const res = await createUser(ctx, await c.req.json());
+      return res.ok ? c.json(res.value, 201) : toHttp(c, res.error);
+    });
+    ```
+  </TabItem>
+  <TabItem label="success">
+    ```json
+    { "id": "u_1", "email": "a@b.com" }
+    ```
+  </TabItem>
+  <TabItem label="error">
+    ```json
+    { "error": "email taken", "code": "CONFLICT" }
+    ```
+  </TabItem>
+</Tabs>
 
 ## Decisions
 <Decision title="DB access only in db/repo, never in services/handlers" status="proposed">
@@ -140,7 +150,7 @@ Explicit error flow; handler maps Result.error to HTTP.
 ## Flow summary
 
 1. Interview the stack (Step 1) — one question at a time.
-2. Write the `.mdx` preview into a Plandeck folder; tell the user the path + that the Plandeck CLI renders it.
-3. Human reviews, flips `<Decision>` statuses, answers `<Callout>` questions.
+2. Write the `.mdx` preview into `plans/`; tell the user the path (promote/draft-place into the docs site for a rendered preview).
+3. Human reviews, flips `<Decision>` statuses, answers `<Aside>` questions.
 4. Implement the approved patterns.
 5. Capture them as `.agents/rules` / `.agents/skills` in that repo so future sessions enforce the style.

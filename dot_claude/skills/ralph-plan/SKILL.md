@@ -48,8 +48,8 @@ or a spec path the user points at directly.
   closed, proceed straight to Step 2 tiering, treating the spec as the source of goal, scope, risk
   surface, and decomposition.
 - **Spec ABSENT → this is a FASE-1 situation.** Run the full Step-1 interview as below, but FIRST
-  write the interview outcome as `plans/<scope>/SPEC.mdx` (a plandeck `.mdx` doc per the
-  `plandeck-authoring` skill: Decision/Callout/mermaid blocks), THEN derive the contract from that
+  write the interview outcome as `plans/<scope>/SPEC.mdx` (an `.mdx` doc per the
+  `astro-docs-authoring` skill: Decision/Aside/mermaid blocks), THEN derive the contract from that
   written spec rather than from memory of the conversation. The contract's `PROMPT.md` must reference
   the spec path so the loop can consult it on every iteration.
 
@@ -129,12 +129,12 @@ gitignored files (`.env`, `node_modules`, `.venv`) aren't copied — so fill the
 `<install-cmd>` and a per-worktree isolation scheme (unique ports/DB schema) so concurrent tasks don't
 collide. The template has slots for both.
 
-## Step 2.7 — L-tier review gate (plandeck)
+## Step 2.7 — L-tier review gate (spec `.mdx`)
 
 If the overall feature is **L-tier** (multi-day, cross-cutting, 4+ tasks, touches risk surface, or
 hard to verify), the review artifact is the committed `plans/<scope>/SPEC.mdx` itself — no separate
 visual-plan tool, no URL. Before writing the contract files, add into that spec `.mdx` (if not already
-present, per `plandeck-authoring`):
+present, per `astro-docs-authoring`):
 
 - A task/batch table: id, batch, `orchestrator-model`, reviewer tier (Opus/Sonnet), `parallel_group`,
   key deps, done-condition summary

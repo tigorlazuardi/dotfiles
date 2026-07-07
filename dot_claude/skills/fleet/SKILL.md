@@ -122,8 +122,8 @@ The planner outputs, per §Step 4/6 of the pi `fleet-plan` mechanics adapted her
 - **`FLEET.md`** — the captain contract, self-contained, ingests the spec: epic goal,
   done-condition, DAG-of-DAG overview table, per-DAG summary (id, dependsOn, failureTolerance,
   orchestratorModel, thinking, judge setup), branch strategy, resume note, knowledge-promotion
-  note. Author as plandeck `.mdx`-style content if the folder is plandeck-served (see
-  `plandeck-authoring`); plain markdown is fine otherwise.
+  note. Author in the Astro/Starlight MDX dialect (see `astro-docs-authoring`); plain
+  markdown is fine otherwise.
 - **Per-DAG contracts** — `dags/<dagId>-contract.md`, one per DAG, standalone (the orchestrator
   re-reads it on every resume with no other memory): DAG goal, full task list (id, dependsOn,
   tier, thinking, checkCommand, done-condition), edge-gate rule, review topology, **NO loop

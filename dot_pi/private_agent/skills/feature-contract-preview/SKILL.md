@@ -1,6 +1,6 @@
 ---
 name: feature-contract-preview
-description: When implementing a single feature (not bootstrapping a codebase), first write a concise MDX contract preview for Plandeck — requirement / acceptance criteria, API I/O shape (request, response, error cases), data contract (fields + types), and expected output — and STOP at the contract level, no code-level detail. The user prefers reviewing expected output, requirements, and contracts, not example code. Use when adding or changing a feature, endpoint, or flow in an existing codebase and the user wants to review the contract before implementation. For full codebase bootstrap with code-level patterns, use `codebase-pattern-preview` instead; pairs with `plandeck-authoring`.
+description: When implementing a single feature (not bootstrapping a codebase), first write a concise MDX contract preview (Astro/Starlight dialect) — requirement / acceptance criteria, API I/O shape (request, response, error cases), data contract (fields + types), and expected output — and STOP at the contract level, no code-level detail. The user prefers reviewing expected output, requirements, and contracts, not example code. Use when adding or changing a feature, endpoint, or flow in an existing codebase and the user wants to review the contract before implementation. For full codebase bootstrap with code-level patterns, use `codebase-pattern-preview` instead; pairs with `astro-docs-authoring`.
 ---
 
 # Feature contract preview
@@ -9,7 +9,7 @@ When implementing ONE feature in an existing codebase, write a short MDX contrac
 
 The user reads expected output + requirements + contract to decide. Do not include code-level snippets, function bodies, or internal logic. JSON shapes and type/field tables are fine (they describe the contract, not the code).
 
-Authoring rules (MDX blocks, Mermaid, discovery, read-only) come from `plandeck-authoring`. Write into a Plandeck-served, non-ignored, non-dotted folder, then tell the user the path so they can open it with the Plandeck CLI.
+Authoring rules (MDX blocks, Mermaid, discovery, read-only) come from `astro-docs-authoring`. Write into `plans/` (non-ignored, non-dotted), then tell the user the path; promote to the docs site per `astro-docs-authoring` when it outlives the scope.
 
 ## What the preview MUST contain (and nothing more)
 
@@ -21,11 +21,11 @@ One short `.mdx` per feature, in order:
    - request shape (method + path, params/body fields + types),
    - success response shape,
    - error cases (each error: when it happens + the response shape/code).
-   Use `<CodeTabs>` with `request` / `success` / `error` tabs showing JSON shapes only.
+   Use `<Tabs>`/`<TabItem>` with `request` / `success` / `error` tabs showing JSON shapes only.
 4. **Data contract** — the core entities/fields this feature touches: field name, type, required?, notes. A table, not code.
 5. **Expected output / behavior** — what the user/caller observes for each main case, including the not-happy paths (empty, error, unauthorized).
 6. **Decisions** — any real choice as `<Decision status="proposed">` (the human flips to accepted/rejected).
-7. **Open questions** — `<Callout type="warn">` for anything needing the human's call before implementation.
+7. **Open questions** — `<Aside type="caution">` for anything needing the human's call before implementation.
 
 Do NOT include: folder structure, function signatures, example implementation code, library wiring, test code. Those belong to implementation (or to `codebase-pattern-preview` for a bootstrap). If a flow needs explaining, use a Mermaid diagram, not code.
 
@@ -65,18 +65,24 @@ Lets a signed-in user save a product to their wishlist.
 - Guests get a 401, not a silent failure.
 
 ## API I/O — POST /api/wishlist
-<CodeTabs>
-```json tab="request" default
-{ "productId": "p_123" }
-```
-```json tab="success"
-{ "id": "w_1", "productId": "p_123", "addedAt": "2026-01-01T00:00:00Z" }
-```
-```json tab="error"
-{ "error": "Not signed in", "code": "UNAUTHENTICATED" }   // 401
-{ "error": "Product not found", "code": "NOT_FOUND" }     // 404
-```
-</CodeTabs>
+<Tabs>
+  <TabItem label="request">
+    ```json
+    { "productId": "p_123" }
+    ```
+  </TabItem>
+  <TabItem label="success">
+    ```json
+    { "id": "w_1", "productId": "p_123", "addedAt": "2026-01-01T00:00:00Z" }
+    ```
+  </TabItem>
+  <TabItem label="error">
+    ```json
+    { "error": "Not signed in", "code": "UNAUTHENTICATED" }   // 401
+    { "error": "Product not found", "code": "NOT_FOUND" }     // 404
+    ```
+  </TabItem>
+</Tabs>
 
 ## Error flow
 | Trigger | Where caught | Disposition | Surfaced as | Logged? |
@@ -103,13 +109,13 @@ Lets a signed-in user save a product to their wishlist.
 Simpler UX; avoids a needless error path for a benign action.
 </Decision>
 
-<Callout type="warn" title="Needs your call">
+<Aside type="caution" title="Needs your call">
 Wishlist cap per user? Unlimited for now unless you say otherwise.
-</Callout>
+</Aside>
 ````
 
 ## Flow
 
-1. Write the `.mdx` contract preview into the Plandeck folder; tell the user the path + that the Plandeck CLI renders it.
-2. Human reviews, flips `<Decision>` statuses, answers `<Callout>` questions.
+1. Write the `.mdx` contract preview into `plans/`; tell the user the path (renders on GitHub; promote to the docs site for a live render).
+2. Human reviews, flips `<Decision>` statuses, answers `<Aside>` questions.
 3. Only after sign-off, implement the feature.
