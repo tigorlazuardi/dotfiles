@@ -189,6 +189,12 @@ def main():
             "chain 5h wakeups; write handover docs and inform the user."
         )
 
+    # Weekly-bound below RED: reset is days away, a wakeup cannot resume before
+    # it, and interactive sessions have no loop to guard. Blocking the Stop just
+    # nags. Stay silent (fail-open) until RED, where stop+handover truly matters.
+    if weekly_bound and phase != "red":
+        return
+
     if event == "Stop":
         print(json.dumps({"decision": "block", "reason": detail}))
     else:  # SubagentStop and anything else: inject context, never block
