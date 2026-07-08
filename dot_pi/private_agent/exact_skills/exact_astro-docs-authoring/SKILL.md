@@ -57,11 +57,24 @@ In `plans/**` (never built) the imports are optional — tags degrade to literal
 |---|---|---|
 | `<Aside>` | `type` = `note`/`tip`/`caution`/`danger`, `title` | Highlighted note, risk, irreversible-step warning |
 | `<Decision>` | `title`, `status` = `proposed`/`accepted`/`rejected`/`superseded` | Architecture decision record |
-| `<Tabs>` + `<TabItem label>` | `label`, optional `icon` | Tabbed code/content variants |
+| `<Grid>` | `minWidth` (default `18rem`) | Side-by-side cells that reflow vertical when narrow AND always stack in print. **Print-friendly** — use this for reports instead of Tabs. (local, placed by astro-docs-setup) |
+| `<Tabs>` + `<TabItem label>` | `label`, optional `icon` | Tabbed variants. **Design docs only** — NOT print-friendly (only the active tab prints). In reports use `<Grid>`. |
 | `<Steps>` | wraps an ordered list | Sequential procedures |
 | `<FileTree>` | wraps a nested list | Directory layouts |
 | `<Badge>` | `text`, `variant` | Inline status markers |
-| `<UiMock>` | `title`, `height` | Figma-style browser frame around inline HTML mock (local, placed by astro-docs-setup) |
+| `<UiMock>` | `title`, `height` | Figma-style browser frame around inline HTML mock (local, placed by astro-docs-setup). Design docs only. |
+
+### Print-friendly (reports) vs expressive (design docs) — the core split
+
+Two doc classes, two rulebooks. Motto for reports: **Print Friendly.**
+
+- **Reports** (`reports/**`) — a reader prints/saves them to PDF. So:
+  - **No `<Tabs>`** — a tab hides content; only the open tab prints. Use `<Grid>` (side-by-side when it fits, stacks vertical when narrow or printing) for "A vs B" comparisons.
+  - **Mermaid orientation for print** — see the Mermaid section: `flowchart TD` (vertical) by default so a long chain fits the page width; `LR` only for a genuinely short diagram.
+  - Avoid content that only works by horizontal scroll — a print has no scrollbar. Keep tables narrow, code lines short.
+- **Design docs** (`design/**`) — screen-first, expressiveness allowed. `<Tabs>`, `<UiMock>`, wide tables/diagrams are fine **as long as overflow is contained** in a scrollable element (`overflow: auto` box) so the page body never scrolls horizontally. Both-axis scroll inside a container is acceptable here; it is NOT in reports.
+
+This split resolves the old HTMLBlock tension: rich/interactive/wide belongs in design docs; reports stay static and printable.
 
 Record **every real architecture/design choice** as a `<Decision>` block — an ADR trail, not buried prose:
 
@@ -140,9 +153,15 @@ Spec touches UI → include an HTML mock inside `<UiMock>` (local component from
 Starlight renders fences via Expressive Code. Language after the fence for highlighting. Useful meta:
 
 ````md
-```ts title="src/server.ts"
-import { serve } from "bun";
-serve({ port: 3000 });
+```go title="app/cron/usecase/sync_order.go" showLineNumbers startLineNumber=189
+func (s *SyncOrder) publishOrderComplete(...) error {
+    // real code copied from the repo — gutter starts at 189
+}
+```
+
+```ts
+// illustrative example — no title, no line numbers
+const x = compute()
 ```
 
 ```diff lang="ts"
@@ -151,13 +170,23 @@ serve({ port: 3000 });
 ```
 ````
 
-- `title="..."` when the snippet is a real file — instant context for the reader.
+- **Line numbers — the codebase-vs-example rule (REQUIRED):**
+  - A snippet **copied from this repo's source** MUST carry line numbers anchored to the real file: `showLineNumbers startLineNumber=<first line>` **and** `title="<repo-relative path>"`. The reader can jump straight to the code. Use the line of the FIRST snippet line as `startLineNumber`.
+  - An **illustrative / example** snippet (payload shapes, pseudo-code, "here's the pattern") does NOT need line numbers — omit `showLineNumbers` (they'd be meaningless / misleading).
+  - Caveat for **abridged** real snippets (you elided middle lines with `// ...`): the gutter would lie past the first gap. Either keep it verbatim-contiguous so the gutter is honest, or drop `showLineNumbers` and put `path:line` in the `title` instead (e.g. `title="app/.../sync_order.go:189"`).
+- **Setup**: line numbers need `@expressive-code/plugin-line-numbers` wired in `astro.config.mjs` with `defaultProps: { showLineNumbers: false }` (default OFF so examples stay clean; codebase snippets opt in per block). astro-docs-setup scaffolds this.
+- `title="..."` when the snippet is a real file — instant context for the reader (path, and `:line` if abridged).
 - Line highlighting: `{4, 7-9}` after the language; `ins={2}` / `del={5}` for change emphasis.
-- Old Plandeck meta `showLineNumbers=` / `startLine=` no longer exists — drop it.
 
 ## Mermaid diagrams
 
-**Prefer a diagram over a long textual description** of any flow / architecture / sequence — reach for ` ```mermaid ` before prose. Caveat: Starlight does not render mermaid out of the box; without a rehype plugin the block shows as a highlighted code fence in the built site (GitHub renders it fine, llms.txt keeps the source — still a net win). If the repo wants rendered diagrams on the site, add `rehype-mermaid` via astro-docs-setup.
+**Prefer a diagram over a long textual description** of any flow / architecture / sequence — reach for ` ```mermaid ` before prose. Rendering is handled by the `astro-mermaid` integration (client-side, theme-aware, bundled — no CDN, no build browser), scaffolded by astro-docs-setup. GitHub also renders the fence, and llms.txt keeps the source.
+
+**Orientation — print-friendly (matters for reports):**
+
+- Default to **`flowchart TD`** (top-down, vertical). A vertical diagram fits the page width and prints cleanly no matter how long the chain gets.
+- Use **`flowchart LR`** (left-right, horizontal) ONLY for a genuinely short diagram (≈2–4 nodes) that fits the page width. A long `LR` chain overflows the print width and gets clipped.
+- Rule of thumb: **short → LR is fine; long chain → TD.** In reports, when unsure, pick TD (Print Friendly). Design docs can lean on `LR` more freely (the on-screen container scrolls horizontally).
 
 ## Tables
 

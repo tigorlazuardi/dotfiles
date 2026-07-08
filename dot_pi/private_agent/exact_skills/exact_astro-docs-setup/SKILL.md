@@ -1,6 +1,6 @@
 ---
 name: astro-docs-setup
-description: Scaffold a per-repo Astro + Starlight design-docs site (once per repo). Trigger when the user asks to "set up docs", "scaffold the docs site", "add astro docs", when a FASE-1 spec produces a design doc but the repo has no docs site yet, or when migrating a repo off Plandeck. Creates docs/ (merge-offer on conflict, fallback docs-site/), a required landing page, the Decision.astro + UiMock.astro components, a content-only print/Save-as-PDF button, starlight-llms-txt config, and CI for GitHub Pages, Cloudflare Pages, or GitLab Pages. For WRITING docs afterwards, use astro-docs-authoring instead.
+description: Scaffold a per-repo Astro + Starlight design-docs site (once per repo). Trigger when the user asks to "set up docs", "scaffold the docs site", "add astro docs", when a FASE-1 spec produces a design doc but the repo has no docs site yet, or when migrating a repo off Plandeck. Creates docs/ (merge-offer on conflict, fallback docs-site/), a required landing page, the Decision.astro + UiMock.astro + Grid.astro (print-friendly side-by-side) components, a content-only print/Save-as-PDF button, client-side mermaid rendering (astro-mermaid, CI-safe), opt-in code line numbers, starlight-llms-txt config, and CI for GitHub Pages, Cloudflare Pages, or GitLab Pages. For WRITING docs afterwards, use astro-docs-authoring instead.
 ---
 
 # Astro docs site — per-repo scaffold
@@ -21,8 +21,10 @@ Ask the user: **GitHub Pages** vs **Cloudflare Pages** vs **GitLab Pages** (vs s
 
 ```bash
 npm create astro@latest docs -- --template starlight --no-git --install --skip-houston
-cd docs && npm install starlight-llms-txt
+cd docs && npm install starlight-llms-txt astro-mermaid mermaid @expressive-code/plugin-line-numbers
 ```
+
+`astro-mermaid` + `mermaid` render diagrams client-side (no CDN, no build-time browser — CI/alpine-safe). `@expressive-code/plugin-line-numbers` adds opt-in code-block line numbers. All wired in `astro.config.mjs` below.
 
 Then remove the template's example content (`src/content/docs/guides/`, example assets) and create `src/content/docs/design/` and `src/content/docs/reports/`.
 
@@ -67,6 +69,8 @@ Adjust the `/REPO/reports/` link to the actual `base` (drop the prefix if no `ba
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import starlightLlmsTxt from 'starlight-llms-txt';
+import mermaid from 'astro-mermaid';
+import { pluginLineNumbers } from '@expressive-code/plugin-line-numbers';
 
 export default defineConfig({
   // GitHub Pages project site: site = https://OWNER.github.io, base = '/REPO'.
@@ -74,10 +78,20 @@ export default defineConfig({
   site: 'https://OWNER.github.io',
   base: '/REPO',
   integrations: [
+    // astro-mermaid MUST come BEFORE starlight in the integrations array.
+    // Client-side render (bundled mermaid, no CDN, no build browser → CI/alpine-safe);
+    // autoTheme maps Starlight's data-theme light/dark to mermaid themes + live re-render.
+    mermaid({ theme: 'neutral', autoTheme: true }),
     starlight({
       title: 'REPO design docs',
       // Content-only print/PDF support (see "Print / Save-as-PDF" section).
       customCss: ['./src/styles/print.css'],
+      // Code-block line numbers: default OFF so example snippets stay clean;
+      // codebase snippets opt in per block with `showLineNumbers startLineNumber=N`.
+      expressiveCode: {
+        plugins: [pluginLineNumbers()],
+        defaultProps: { showLineNumbers: false },
+      },
       components: {
         PageTitle: './src/components/PageTitle.astro',
       },
@@ -209,6 +223,63 @@ const { title = 'UI mock', height = 'auto' } = Astro.props;
 ```
 
 `not-content` opts the frame out of Starlight's default content styling so the mock's own layout wins.
+
+### Grid.astro — print-friendly side-by-side (use instead of Tabs in reports)
+
+`<Tabs>` hides all but the active tab, so it prints blank — bad for reports (motto: **Print Friendly**). `<Grid>` lays children out side-by-side when they fit, reflows to a single vertical column when the viewport is narrow, and **always stacks vertically in print** so every cell lands in the PDF. mkdocs-material "grid cards" equivalent.
+
+```astro title="docs/src/components/Grid.astro"
+---
+interface Props {
+  /** Min cell width before wrapping to the next row. Default 18rem. */
+  minWidth?: string;
+}
+const { minWidth = '18rem' } = Astro.props;
+---
+
+<div class="doc-grid not-content" style={`--doc-grid-min: ${minWidth}`}>
+  <slot />
+</div>
+
+<style>
+  .doc-grid {
+    display: grid;
+    /* side-by-side when it fits; the min(…,100%) lets a cell shrink to full width
+       on narrow screens instead of overflowing */
+    grid-template-columns: repeat(auto-fit, minmax(min(var(--doc-grid-min, 18rem), 100%), 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+    align-items: start;
+  }
+  /* Print: never rely on horizontal room — one column, everything stacks. */
+  @media print {
+    .doc-grid { grid-template-columns: 1fr; }
+  }
+</style>
+```
+
+Usage — each direct child is a cell (wrap each side's heading + code fence in a `<div>`):
+
+```mdx
+import Grid from '../../../components/Grid.astro';
+
+<Grid>
+  <div>
+    **Current (has bug)**
+    ```json
+    { "notifType": 7 }
+    ```
+  </div>
+  <div>
+    **Expected**
+    ```json
+    { "notifType": 7, "order_id": 123 }
+    ```
+  </div>
+</Grid>
+```
+
+Reports use `<Grid>` for comparisons; `<Tabs>` stays available for design docs only.
 
 ### Print / Save-as-PDF — content-only export
 
