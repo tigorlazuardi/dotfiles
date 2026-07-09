@@ -31,9 +31,5 @@
       "thinking": "low"
     },
     "debugLog": false
-  },
-  "pi-codex-usage": {
-    "usageMode": "left",
-    "refreshWindow": "7d"
   }
 }
