@@ -122,3 +122,13 @@ LICENSE                                # repo license, bukan dotfile target
 {{ end -}}
 {{ end -}}
 .omniroute/.env
+
+# ============================================================
+# macOS-only — podman machine autostart (LaunchAgent + guard script)
+# ============================================================
+# LaunchAgents + guard hanya relevan di macOS. Ignore di OS lain biar
+# `chezmoi apply` gak nyoba bikin ~/Library/... di Linux/NixOS.
+{{ if ne .chezmoi.os "darwin" -}}
+Library/LaunchAgents/com.user.podman-machine-start.plist
+.local/bin/podman-machine-ensure.sh
+{{ end -}}
