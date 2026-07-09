@@ -30,7 +30,6 @@ gitleaks = "latest"
 neovim = "stable"
 age = "latest"
 sops = "latest"
-"npm:omniroute" = "v3.8.43"
 
 # agent
 # aqua backend = binary release resmi, TANPA npm. Backend npm kena
