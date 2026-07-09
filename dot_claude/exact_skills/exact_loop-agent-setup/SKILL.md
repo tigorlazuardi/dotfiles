@@ -33,6 +33,7 @@ one message — each answer can change how the next question is framed.
    | Target | Skill to load |
    | :-- | :-- |
    | Jira ticket auto-pickup | `loop-agent-jira` |
+   | Huly issue auto-pickup | `loop-agent-huly` |
 
    - **Known target** → load that skill FIRST. It pre-answers input source, claim protocol, and
      progress-reporting (topics 2, 3's claim half, and 5 below) and asks its own additional
