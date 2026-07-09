@@ -34,9 +34,9 @@
   "_faultTolerance_enum": "low | standard | trivial",
 
   "assignment": {
-    "implementer": "implementer",
+    "worker": "claude-worker",
     "reviewer": "reviewer",
-    "_default_mapping": "low -> implementer-critical + deep-reviewer ; standard -> implementer + reviewer ; trivial -> implementer-lite + reviewer",
+    "_default_mapping": "low -> <vertical>-frontier-worker + <vertical>-frontier-reviewer ; standard -> <vertical>-worker + <vertical>-reviewer ; trivial -> <vertical>-worker + <vertical>-reviewer",
     "_ratchet": "upgrade-only, never downgrade. low-tolerance never silently downgraded on resume.",
     "upgradedFromPlan": false,
     "upgradeReason": null

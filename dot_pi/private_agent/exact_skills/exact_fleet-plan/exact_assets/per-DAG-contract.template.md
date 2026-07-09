@@ -1,11 +1,11 @@
 <!--
   per-DAG-contract.template.md — Contract for ONE DAG orchestrator inside a fleet run.
-  Opus (the planner) fills every <...> placeholder and deletes guidance comments like this one.
-  This file is re-read by the fleet-orchestrator agent on every resume — it must stand alone
+  A frontier-model planner fills every <...> placeholder and deletes guidance comments like this
+  one. This file is re-read by the fleet-orchestrator agent on every resume — it must stand alone
   without FLEET.md. The orchestrator has no other memory except this file, the L2 state file,
   and the project repo.
   CRITICAL: fleet orchestrators execute each DAG ONCE. There is NO iteration loop.
-  Gate = judge post-DAG (authority, Opus, bounded 2× at captain level). Not acceptance.command.
+  Gate = judge post-DAG (authority, frontier-model, bounded 2× at captain level). Not acceptance.command.
 -->
 
 # DAG Contract — <dagId>: <dag-name>
@@ -61,24 +61,24 @@ This DAG is done when **all** of the following are true:
 
 <!-- Fill one of the two blocks below; delete the other. -->
 
-<!-- Block A: Sonnet orchestrator (separate reviewer per task) -->
-**Sonnet orchestrator → separate reviewer per task.** The orchestrator dispatches implementers
-and then spawns a separate `<reviewer|deep-reviewer>` per task. Reviewer executes
-`checkCommand`, records `acceptanceResult`, returns verdict. Orchestrator does NOT review its
-own work. Edge-gate opens only when `reviewVerdict: pass` AND `acceptanceResult: pass`.
+<!-- Block A: worker-model orchestrator (separate reviewer per task) -->
+**Worker-model orchestrator → separate reviewer per task.** The orchestrator dispatches workers
+and then spawns a separate `<vertical>-reviewer|<vertical>-frontier-reviewer` per task. Reviewer
+executes `checkCommand`, records `acceptanceResult`, returns verdict. Orchestrator does NOT
+review its own work. Edge-gate opens only when `reviewVerdict: pass` AND `acceptanceResult: pass`.
 
-<!-- Block B: Opus orchestrator (inline reviewer) -->
-**Opus orchestrator → inline reviewer.** The orchestrator (Opus) doubles as reviewer after
-each implementer returns. Opus executes `checkCommand`, records `acceptanceResult`, decides
-`reviewVerdict`. A separate reviewer agent is NOT spawned (Opus is authoritative for both
-orchestration and review on this low-tolerance DAG). Edge-gate opens only when `reviewVerdict:
-pass` AND `acceptanceResult: pass`.
+<!-- Block B: frontier-model orchestrator (inline reviewer) -->
+**Frontier-model orchestrator → inline reviewer.** The orchestrator (frontier model) doubles as
+reviewer after each worker returns. It executes `checkCommand`, records `acceptanceResult`,
+decides `reviewVerdict`. A separate reviewer agent is NOT spawned (the frontier model is
+authoritative for both orchestration and review on this low-tolerance DAG). Edge-gate opens only
+when `reviewVerdict: pass` AND `acceptanceResult: pass`.
 
 ---
 
 ## NO iteration loop (fleet ≠ ralph)
 
-This DAG executes **ONCE**. There is no loop. If a task fails twice (implementer fails twice
+This DAG executes **ONCE**. There is no loop. If a task fails twice (worker fails twice
 on the same task after judge-instructed fix attempts), record the failure in L2 state and
 report to the captain as `DAG_FAILED`. Do NOT loop. The judge will assess after the DAG
 completes; retry decisions belong to the captain (bounded 2× at the DAG level).
@@ -96,11 +96,11 @@ completes; retry decisions belong to the captain (bounded 2× at the DAG level).
 - **taskId:** `<t1>`
 - **dependsOn:** `[]`
 - **parallel group:** `<G1>` _(tasks sharing a group run in parallel in separate branches)_
-- **tier:** `<implementer-critical|implementer|implementer-lite>`
+- **tier:** `<vertical>-frontier-worker|<vertical>-worker>`
 - **thinking:** `<high|medium|low>`
-- **reviewer:** `<deep-reviewer|reviewer>` _(or "inline-opus" if Opus-orch)_
+- **reviewer:** `<vertical>-frontier-reviewer|<vertical>-reviewer>` _(or "inline-frontier" if frontier-model orch)_
 - **checkCommand:** `<exact executable command that proves this task's work>`
-- **Do:** <what the implementer must implement — specific, not vague>
+- **Do:** <what the worker must implement — specific, not vague>
 - **Done when:** <concrete verifiable criterion + which command proves it>
 - **Touches:** <files/modules/areas — used to detect false parallelism between grouped tasks>
 
@@ -109,9 +109,9 @@ completes; retry decisions belong to the captain (bounded 2× at the DAG level).
 - **taskId:** `<t2>`
 - **dependsOn:** `["t1"]`
 - **parallel group:** `<G2>`
-- **tier:** `<implementer-critical|implementer|implementer-lite>`
+- **tier:** `<vertical>-frontier-worker|<vertical>-worker>`
 - **thinking:** `<high|medium|low>`
-- **reviewer:** `<deep-reviewer|reviewer>`
+- **reviewer:** `<vertical>-frontier-reviewer|<vertical>-reviewer>`
 - **checkCommand:** `<exact executable command>`
 - **Do:** <...>
 - **Done when:** <...>
@@ -153,29 +153,29 @@ record in L2 state `assumptions[]` and report `DAG_FAILED` to captain.
 For each task in dependency order (unblock tasks whose `dependsOn[]` are all `edgeGateStatus:
 passed`):
 
-1. **Implement.** Spawn `<implementer-tier>` with `thinking: <level>`. Give it: the task spec,
+1. **Implement.** Spawn `<worker-tier>` with `thinking: <level>`. Give it: the task spec,
    done-condition, `checkCommand`, branch path, and the instruction to commit work to
    `<integration-branch>/<dagId>` before reporting back. If resuming a handed-over task, pass
    the handover doc too.
 
-2. **Read implementer `RESULT`:**
-   - **`HANDOVER`** — implementer hit context budget, wrapped up cleanly. NOT a failure. Save
-     handover doc to `dags/<dagId>/handovers/<taskId>-<seq>.md`, spawn fresh implementer for
+2. **Read worker `RESULT`:**
+   - **`HANDOVER`** — worker hit context budget, wrapped up cleanly. NOT a failure. Save
+     handover doc to `dags/<dagId>/handovers/<taskId>-<seq>.md`, spawn fresh worker for
      the same task with the handover doc. Repeat until `PASS` or `FAIL`.
    - **`PASS` / `FAIL`** — proceed to step 3.
 
 3. **Verify + review.**
-   - _(Sonnet orchestrator)_ Spawn `<reviewer>` with `model: <reviewer-model>`. Give it: diff,
+   - _(Worker-model orchestrator)_ Spawn `<reviewer>` with `model: <reviewer-model>`. Give it: diff,
      `checkCommand`, done-condition, and task spec. Reviewer MUST run `checkCommand` and record
      the result as `acceptanceResult`. Reviewer returns `reviewVerdict: pass | fail | needs-fix`.
-   - _(Opus orchestrator)_ Orchestrator runs `checkCommand` directly, records `acceptanceResult`,
+   - _(Frontier-model orchestrator)_ Orchestrator runs `checkCommand` directly, records `acceptanceResult`,
      then makes inline review decision (`reviewVerdict`).
 
 4. **Edge-gate decision:**
    - `reviewVerdict: pass` AND `acceptanceResult: pass` → update L2 `edgeGateStatus: "passed"`.
      Commit L2 state. Unblock any downstream tasks that were waiting.
-   - Otherwise → if first attempt: send failure + reviewer notes back to implementer, retry once
-     (implementer attempt 2). If second attempt fails: record in L2 state, proceed with remaining
+   - Otherwise → if first attempt: send failure + reviewer notes back to worker, retry once
+     (worker attempt 2). If second attempt fails: record in L2 state, proceed with remaining
      tasks if possible, then report `DAG_FAILED` when all tasks processed.
    - **Never attempt more than twice per task.** The judge decides what happens after that.
 
@@ -184,10 +184,10 @@ passed`):
 
 ### Handover (context management)
 
-An implementer nearing its context limit wraps up into a handover doc and returns `RESULT:
+A worker nearing its context limit wraps up into a handover doc and returns `RESULT:
 HANDOVER`. This is context management, NOT a failure — it does not increment the task's attempt
 count. The orchestrator saves the handover doc (path: `dags/<dagId>/handovers/<taskId>-<seq>.md`),
-spawns a fresh implementer for the same task with that doc as starting context. Repeat until
+spawns a fresh worker for the same task with that doc as starting context. Repeat until
 `PASS` or `FAIL`.
 
 ### Assumptions (decide yourself — do not escalate technical questions to captain)
@@ -210,8 +210,8 @@ continue without information that only the captain or human can provide) justify
 
 ## Judge handoff
 
-After this DAG completes (all tasks attempted), the **captain** spawns a post-DAG judge (Opus,
-state-file-only) with:
+After this DAG completes (all tasks attempted), the **captain** spawns a post-DAG judge
+(frontier-model, state-file-only) with:
 - This contract (`dags/<dagId>-contract.md`) — for the DAG goal and done-condition.
 - The L2 state file (`dags/<dagId>.json`) — for all task results and `acceptanceResult` values.
 
@@ -231,7 +231,7 @@ The orchestrator does NOT know the retry count — that is captain's concern.
 ## Escalation boundary
 
 ```
-implementer escalates → orchestrator  (resolves, records in L2 assumptions[])
+worker escalates → orchestrator      (resolves, records in L2 assumptions[])
 orchestrator escalates → captain      ONLY for: DAG_COMPLETE | DAG_FAILED | unresolvable hard-stop
 captain escalates → human             ONLY when fleet cannot continue without human input
 ```

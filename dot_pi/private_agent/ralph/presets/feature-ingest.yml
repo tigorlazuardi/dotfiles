@@ -80,10 +80,11 @@ hats:
 
       ### Delegate to a worker subagent (fault-tolerance routing)
       You run in-process, so the `Agent` tool is available. Do NOT hand-write the code yourself.
+      Resolve `<vertical>` from the main session's model family: Claude main session → `claude`,
+      Codex main session → `codex`. Nested/background subagent calls stay on the same vertical.
       Spawn a worker subagent sized to the task's fault-tolerance tier and hand it a tight spec:
-      - LOW tolerance (auth / secrets / DB migration / schema / public API / money / data-deletion / irreversible) → subagent_type `implementer-critical`.
-      - STANDARD → `implementer`.
-      - TRIVIAL (rename/format/<10 LOC) → `implementer-lite`.
+      - LOW tolerance (auth / secrets / DB migration / schema / public API / money / data-deletion / irreversible) → subagent_type `<vertical>-frontier-worker` (frontier model).
+      - STANDARD or TRIVIAL (rename/format/<10 LOC) → subagent_type `<vertical>-worker` (worker model).
       Spawn with `run_in_background: false` so the hat blocks on the result (the hat's turn needs
       the outcome before publishing its event). After the worker returns, persist what changed to
       the scratchpad, then publish your event. Safety ratchet: you may UPGRADE the tier if the task
@@ -133,9 +134,12 @@ hats:
       - ❌ Tell the Builder to batch, combine, or do multiple tasks at once — the one-task-per-iteration workflow is intentional and non-negotiable
 
       ### Delegate review to a reviewer subagent (fault-tolerance routing)
-      The `Agent` tool is available (in-process). Spawn a review subagent sized to tier:
-      - LOW tolerance diff (auth / secrets / migration / schema / public API / money) → subagent_type `deep-reviewer` (mandatory for these).
-      - STANDARD → `reviewer`.
+      The `Agent` tool is available (in-process). Resolve `<vertical>` from the main session's
+      model family the same way: Claude main session → `claude`, Codex main session → `codex`;
+      nested calls stay on the same vertical.
+      Spawn a review subagent sized to tier:
+      - LOW tolerance diff (auth / secrets / migration / schema / public API / money) → subagent_type `<vertical>-frontier-reviewer` (frontier model, mandatory for these).
+      - STANDARD → subagent_type `<vertical>-reviewer` (worker model).
       Spawn with `run_in_background: false` so you block on the verdict. Fold the subagent's
       findings into your decision, then publish approved / changes-requested per the existing rules.
 

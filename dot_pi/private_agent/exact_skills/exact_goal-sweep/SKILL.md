@@ -63,18 +63,27 @@ export const meta = {
   phases: [{ title: 'Discover' }, { title: 'Instrument' }, { title: 'Verify' }],
 }
 
+// Vertical is NEVER hardcoded and NEVER defaults silently — it must come from a required
+// script arg (pass it via `/workflows run` args, e.g. { vertical: 'codex' }). Goal is
+// standard tier only, never frontier, for either vertical.
+if (args.vertical !== 'claude' && args.vertical !== 'codex') {
+  throw new Error(`args.vertical must be 'claude' or 'codex', got: ${JSON.stringify(args.vertical)}`)
+}
+const workerAgentType = `${args.vertical}-worker`
+const reviewerAgentType = `${args.vertical}-reviewer`
+
 phase('Discover')
 const targets = await agent('List every handler file under src/services/.', { tier: 'small' })
 
 phase('Instrument')
 const results = await parallel(
   targets.split('\n').filter(Boolean).map((file) =>
-    () => agent(INSTRUMENT_PROMPT(file), { agentType: 'implementer', isolation: 'worktree' }),
+    () => agent(INSTRUMENT_PROMPT(file), { agentType: workerAgentType, isolation: 'worktree' }),
   ),
 )
 
 phase('Verify')
-return await agent(VERIFY_PROMPT(results), { agentType: 'reviewer', tier: 'big' })
+return await agent(VERIFY_PROMPT(results), { agentType: reviewerAgentType, tier: 'big' })
 ```
 
 - `agent(prompt, opts)` — spawn one isolated subagent; returns its text (or a validated object with

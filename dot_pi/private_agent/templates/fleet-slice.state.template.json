@@ -12,8 +12,8 @@
   "_escalation_boundary": "Technical escalation STOPS at the orchestrator. Only DAG STATUS goes up to captain. Orchestrator resolves ambiguity itself + records in assumptions[].",
 
   "assignment": {
-    "_doc": "DAG-level effective assignment (mirrors Level-1 effective* at dispatch) + upgrade audit trail. Per-task implementer/reviewer live inside tasks[]; this block is the DAG-wide default + safety-ratchet jejak.",
-    "implementer": "implementer",
+    "_doc": "DAG-level effective assignment (mirrors Level-1 effective* at dispatch) + upgrade audit trail. Per-task worker/reviewer live inside tasks[]; this block is the DAG-wide default + safety-ratchet jejak.",
+    "worker": "claude-worker",
     "reviewer": "reviewer",
     "upgradedFromPlan": false,
     "upgradeReason": null
@@ -25,9 +25,9 @@
       "taskId": "t1",
       "dependsOn": [],
       "_dependsOn_doc": "Pure task-level dependency (task-DAG internal). Downstream task blocked until upstream edge-gate passed.",
-      "implementer": "implementer-critical",
-      "_implementer_doc": "= effective tier from Level-1 (safety-ratchet, upgrade-only).",
-      "reviewer": "deep-reviewer",
+      "worker": "claude-frontier-worker",
+      "_worker_doc": "= effective tier from Level-1 (safety-ratchet, upgrade-only).",
+      "reviewer": "claude-frontier-reviewer",
       "_reviewer_doc": "Only used when orchestrator = Sonnet (separate reviewer per task). When orchestrator = Opus, orchestrator RANGKAP/doubles-as reviewer inline; this field then advisory.",
       "thinking": "high",
       "_thinking_doc": "Per-task reasoning level.",
@@ -72,7 +72,7 @@
     {
       "_example": true,
       "at": null,
-      "from": "implementer",
+      "from": "worker",
       "reason": "need_decision",
       "_reason_enum": "need_decision | interview_request | progress_update",
       "question": "the exact ambiguity",

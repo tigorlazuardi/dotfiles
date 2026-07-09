@@ -1,5 +1,5 @@
 # Specification-First Development (Ingest variant)
-# Ingester → Critic → Implementer → Verifier → Committer, looping per acceptance criterion.
+# Ingester → Critic → Worker → Verifier → Committer, looping per acceptance criterion.
 # Hat-1 reads an already-approved spec instead of creating one.
 #
 # Usage: /ralph spec-driven-ingest --path <spec.md>
@@ -73,14 +73,14 @@ hats:
 
       After 1 rejection, approve with notes rather than rejecting again.
 
-  implementer:
-    name: "⚙️ Implementer"
+  worker:
+    name: "⚙️ Worker"
     description: "Implements ONE task from the scratchpad. No creative interpretation."
     triggers: ["spec.approved", "spec.violated", "tasks.next"]
     publishes: ["implementation.done"]
     default_publishes: "implementation.done"
     instructions: |
-      ## IMPLEMENTER MODE — ONE TASK ONLY
+      ## WORKER MODE — ONE TASK ONLY
 
       Read the scratchpad. Find the NEXT unchecked task (`- [ ]`).
       Implement ONLY that single task against the spec.
@@ -106,10 +106,11 @@ hats:
 
       ### Delegate to a worker subagent (fault-tolerance routing)
       You run in-process, so the `Agent` tool is available. Do NOT hand-write the code yourself.
+      Resolve `<vertical>` from the main session's model family: Claude main session → `claude`,
+      Codex main session → `codex`. Nested/background subagent calls stay on the same vertical.
       Spawn a worker subagent sized to the task's fault-tolerance tier and hand it a tight spec:
-      - LOW tolerance (auth / secrets / DB migration / schema / public API / money / data-deletion / irreversible) → subagent_type `implementer-critical`.
-      - STANDARD → `implementer`.
-      - TRIVIAL (rename/format/<10 LOC) → `implementer-lite`.
+      - LOW tolerance (auth / secrets / DB migration / schema / public API / money / data-deletion / irreversible) → subagent_type `<vertical>-frontier-worker` (frontier model).
+      - STANDARD or TRIVIAL (rename/format/<10 LOC) → subagent_type `<vertical>-worker` (worker model).
       Spawn with `run_in_background: false` so the hat blocks on the result (the hat's turn needs
       the outcome before publishing its event). After the worker returns, persist what changed to
       the scratchpad, then publish your event. Safety ratchet: you may UPGRADE the tier if the task
@@ -139,15 +140,18 @@ hats:
       - ❌ Approve with known violations
 
       ### Delegate review to a reviewer subagent (fault-tolerance routing)
-      The `Agent` tool is available (in-process). Spawn a review subagent sized to tier:
-      - LOW tolerance diff (auth / secrets / migration / schema / public API / money) → subagent_type `deep-reviewer` (mandatory for these).
-      - STANDARD → `reviewer`.
+      The `Agent` tool is available (in-process). Resolve `<vertical>` from the main session's
+      model family the same way: Claude main session → `claude`, Codex main session → `codex`;
+      nested calls stay on the same vertical.
+      Spawn a review subagent sized to tier:
+      - LOW tolerance diff (auth / secrets / migration / schema / public API / money) → subagent_type `<vertical>-frontier-reviewer` (frontier model, mandatory for these).
+      - STANDARD → subagent_type `<vertical>-reviewer` (worker model).
       Spawn with `run_in_background: false` so you block on the verdict. Fold the subagent's
       findings into your decision, then publish verification.passed / spec.violated per the existing rules.
 
   committer:
     name: "📦 Committer"
-    description: "Commits the current task. Routes back to implementer if more tasks remain."
+    description: "Commits the current task. Routes back to worker if more tasks remain."
     triggers: ["verification.passed"]
     publishes: ["tasks.next", "tasks.done"]
     default_publishes: "tasks.done"
@@ -170,7 +174,7 @@ hats:
 
       ### Decision
       - If there are MORE unchecked tasks (`- [ ]`): publish `tasks.next`
-        (this sends the loop back to the Implementer for the next task)
+        (this sends the loop back to the Worker for the next task)
       - If ALL tasks are checked (`- [x]`), or if there is nothing to commit
         (working tree is clean): publish `tasks.done`
 

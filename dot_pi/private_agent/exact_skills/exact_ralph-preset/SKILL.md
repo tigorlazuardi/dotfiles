@@ -6,8 +6,9 @@ description: >-
   none of the stock -ingest presets (feature-ingest, spec-driven-ingest, refactor-ingest, debug-ingest)
   matches the task's hat flow. Trigger on "make a ralph preset", "custom ralph loop", "author a ralph
   contract", "the built-in presets don't fit this task". Produces a valid preset with an ingest hat-1
-  (reads the approved spec, does NOT re-plan) and delegate-aware Builder/Reviewer hats (spawn worker
-  subagents per fault-tolerance tier). This skill authors the CONTRACT only; it does NOT start the loop.
+  (reads the approved spec, does NOT re-plan) and delegate-aware Builder/Worker/Reviewer hats (spawn
+  worker subagents per fault-tolerance tier). This skill authors the CONTRACT only; it does NOT start
+  the loop.
 ---
 
 # Ralph Preset — scaffold a custom `pi-ralph` contract
@@ -79,7 +80,7 @@ allowed path — if the scratchpad write needs `write`, scope it narrowly and no
 tool the hat is allowed).
 
 ### 2. Code-writing hats DELEGATE to worker subagents
-pi-ralph is in-process, so the `Agent` tool is live. A Builder/Implementer/Fixer hat must NOT
+pi-ralph is in-process, so the `Agent` tool is live. A Builder/Worker/Fixer hat must NOT
 hand-write code. Append to its instructions:
 
 > ### Delegate to a worker subagent (fault-tolerance routing)
@@ -101,7 +102,7 @@ Append to any review/verify hat's instructions:
 > your decision, then publish approved / changes-requested.
 
 ### 4. One task per iteration
-Builder/Implementer hats implement exactly ONE scratchpad task per activation, then publish. This keeps
+Builder/Worker hats implement exactly ONE scratchpad task per activation, then publish. This keeps
 each fresh-session iteration bounded. The Committer/terminal hat checks the scratchpad and routes back
 for the next task or emits `completion_promise`.
 

@@ -10,22 +10,24 @@
 ## Main agent role — orchestrator / captain (mandatory)
 Main agent = orchestrator, captain, welcoming agent. It talks to the user, interviews, gets opinion, plans, delegates. It does NOT write code.
 
-- Main agent writes code ONLY when the user very explicitly asks the main agent to implement directly. Otherwise all code goes through subagents (e.g. `implementer`).
+- Main agent writes code ONLY when the user very explicitly asks the main agent to implement directly. Otherwise all code goes through subagents (e.g. `claude-worker` / `codex-worker`).
 - Main agent disk writes allowed: `.md` (markdown), `.mdx`, and — only on explicit user request — `.html`. These are for notes, state tracking, plan artifacts.
 - Everything else (source files, configs, scripts, code) → delegate to a worker subagent. Main agent never edits/creates those files itself unless the explicit-implement exception above is invoked.
 - When planning or interviewing, use `/grill` (pi-grill-me) to extract as much information from the user as possible before producing a plan.
 
 ## Model routing
-- Default: Opus 4.8 — reasoning, architecture, heavy work.
-- Sonnet 4.6 — general exec, multi-file edit, review.
-- Haiku 4.5 — trivial mechanical (rename, format, <10 LOC).
-- Kimi K2 (`moonshotai/kimi-k2.7-code`) — concept UI design, HTML output ready (aesthetic, not logic). Switch manual `Ctrl+P`.
-- Switch down when mechanical; switch up when low-tolerance (auth, migration, money).
+
+**Capability classes** (use these names in contracts, routing rules, and skill descriptions — never hard-code a specific model name where a class is meant):
+- **Frontier model** — Opus (any version), Fable, GPT 5.5. Use for: low-tolerance work, architecture, planning contracts, irreversible operations.
+- **Worker model** — Sonnet (any version), GPT 5.4. Use for: standard implementation, review, orchestration of known-scope DAGs.
+- **Scout model** — Haiku (any version), GPT 5.4-mini. Use for: read-only locator tasks, symbol/file mapping. Leaf nodes only.
+
+**Routing rule:** switch down when mechanical; switch up when low-tolerance (auth, migration, money). Runtime agent frontmatter owns concrete model IDs; `AGENTS.md`, orchestration contracts, and routing language use capability class names only.
 
 ## Orchestration workflow
 Main session = orchestrator. Its model (pick via `Ctrl+P`) IS the orchestrator tier — there is no orchestrator agent file.
 
-1. **Start on Opus** — interview, get opinion, plan. Output a plan / work doc before executing.
+1. **Start on a frontier model** — interview, get opinion, plan. Output a plan / work doc before executing.
 
 **Two-phase planning (mandatory for feature work):** planning is TWO sequential steps, not one.
 - **FASE 1 — spec/design.** When intent is "implement a feature", OFFER planning: interview, and run `/grill` when scope is ambiguous. Output = **spec + design docs** (`.mdx` per astro-docs-authoring rule/skill; design docs publish via per-repo Starlight site + llms.txt, scaffold with `astro-docs-setup`; lesson-learnt reports via `report-authoring`). NO contract/state yet. Then the main agent reads the spec and gives an **explicit orchestration-level recommendation** (one-shot / ralph / fleet / goal) with a one-line reason; the user picks.
@@ -33,19 +35,19 @@ Main session = orchestrator. Its model (pick via `Ctrl+P`) IS the orchestrator t
 - **FASE 2 — contract/state.** Only AFTER the user explicitly chooses the level, derive the level's artifacts: one-shot → delegate to workers directly (no contract file); ralph → main agent derives the ralph **contract** (a preset `.yml`) from the spec+design, then `/ralph <preset> --path <spec>` (the loop builds its **state** = `.ralph/scratchpad.md` at runtime); fleet → `fleet-plan` → `captain`; goal → main agent writes a spec-ingesting orchestration script (scaffold via the `goal-sweep` skill), then `/workflows run <prompt>`.
 - The orchestration-level decision happens in the main agent PRE-loop; a ralph Planner/ingest hat lives only INSIDE the loop and never makes the level decision — different phases, no collision.
 2. **Pick execution mode** by the task:
-   - **Opus one-shot orchestrator** — keep main on Opus, delegate to workers, review tight. For low / super-low error-tolerance work.
-   - **Sonnet orchestrator** — switch main to Sonnet, delegate to workers. For high error-tolerance, mechanical, easy-to-verify work.
+   - **Frontier-model orchestrator** — keep main on a frontier model, delegate to workers, review tight. For low / super-low error-tolerance work.
+   - **Worker-model orchestrator** — switch main to a worker model, delegate to workers. For high error-tolerance, mechanical, easy-to-verify work.
    - **ralph loop** (`/ralph`, **pi-ralph** by samfp — NOT @lnilluv) — L / minor feature, long autonomous single-slice tasks. **In-process** (no subprocess, no `--no-extensions`): each iteration is a fresh turn in the SAME session via `sendMessage(triggerTurn)`, so subagents + pi-rules + all extensions stay LIVE inside the loop. Execution model = **hat roles**: the agent wears one role per iteration (e.g. Planner/Builder/Reviewer/Committer); a hat publishes an event that selects the next hat. **Fresh session per hat** (`newSession()` each transition) → context resets every iteration, so a 100-iteration loop keeps ~constant context. State carries via the disk scratchpad `.ralph/scratchpad.md`, NOT conversation history. Contract = a **preset `.yml`** (hats + gate + guardrails) chosen/authored by the main agent pre-loop; completion via `completion_promise` string / terminal hat / `max_iterations` / `max_runtime_seconds` / `max_activations` / stale-cycle. Design → `docs/design/2026-07-03-ralph-migration-dev-lifecycle.mdx`.
-   - **fleet** (`fleet-plan` skill → `captain` skill) — XL / major / usually greenfield. DAG-of-DAG: captain spawns per-DAG orchestrators + post-DAG judges (Opus, state-file-only, gate authority). NO iteration loop; judge gates each DAG (bounded 2x). Resume-driven (rate-limit survival). Plan with `fleet-plan` (Opus-only), execute with `captain`. Design → `docs/design/2026-07-03-fleet-dag-rework.md`.
-   - **goal sweep** (`@quintinshaw/pi-dynamic-workflows`, `/workflows run`) — wide, repetitive, SAFE-only sweep work (OTel traces everywhere, logs to a new standard, failable error-feedback on all UI interactions, a11y/telemetry sweeps). **In-process** (`createAgentSession` host SDK, no pi subprocess; `git worktree` is the only child_process). "Code mode for subagents": the main agent writes a JS orchestration script that fans out `agent()`/`parallel()` subagents (≤16 concurrent / 1000 total), intermediate results held in script variables so the main context stays clean. **NEVER low-tolerance** — worker tier is CAPPED at `implementer-lite`/`implementer` + `reviewer`, never `implementer-critical`/`deep-reviewer`. If a slice turns out low-tolerance → wrong flow, escape to ralph/fleet, raise to user. Keyword auto-trigger is OFF (`keywordTriggerEnabled: false`); goal runs ONLY via explicit `/workflows run` the main agent calls in FASE 2. Design → `docs/design/2026-07-03-goal-sweep-flow.mdx`.
-3. **Delegate to workers** (pi-subagents `Agent` tool) — model is pinned per worker, so a Sonnet orchestrator can still spawn an Opus `deep-reviewer` for the low-tolerance bits, and an Opus orchestrator can still spawn a cheap Haiku `scout`.
+   - **fleet** (`fleet-plan` skill → `captain` skill) — XL / major / usually greenfield. DAG-of-DAG: captain spawns per-DAG orchestrators + post-DAG judges (frontier model, state-file-only, gate authority). NO iteration loop; judge gates each DAG (bounded 2x). Resume-driven (rate-limit survival). Plan with `fleet-plan` (frontier-model-only), execute with `captain`. Design → `docs/design/2026-07-03-fleet-dag-rework.md`.
+   - **goal sweep** (`@quintinshaw/pi-dynamic-workflows`, `/workflows run`) — wide, repetitive, SAFE-only sweep work (OTel traces everywhere, logs to a new standard, failable error-feedback on all UI interactions, a11y/telemetry sweeps). **In-process** (`createAgentSession` host SDK, no pi subprocess; `git worktree` is the only child_process). "Code mode for subagents": the main agent writes a JS orchestration script that fans out `agent()`/`parallel()` subagents (≤16 concurrent / 1000 total), intermediate results held in script variables so the main context stays clean. **NEVER low-tolerance** — worker tier is CAPPED at standard (`<vertical>-worker` + `<vertical>-reviewer`), never frontier (`<vertical>-frontier-worker` / `<vertical>-frontier-reviewer`). If a slice turns out low-tolerance → wrong flow, escape to ralph/fleet, raise to user. Keyword auto-trigger is OFF (`keywordTriggerEnabled: false`); goal runs ONLY via explicit `/workflows run` the main agent calls in FASE 2. Design → `docs/design/2026-07-03-goal-sweep-flow.mdx`.
+3. **Delegate to workers** (pi-subagents `Agent` tool) — model is pinned per worker, so a worker-model orchestrator can still spawn `claude-frontier-reviewer` for the low-tolerance bits, and a frontier-model orchestrator can still spawn `claude-scout`. Match the worker vertical to the main session vertical (see Worker pool below).
 
 ### Flow-offer taxonomy (mandatory)
 Every time you finish discussing a task with the user, OFFER the execution flow that matches its size — do not silently pick. Classify by size:
 - **One-shot (S/M)** — fixes / small feature. Delegate directly to workers, review tight. No contract file needed.
 - **Ralph (L)** — minor feature with a long implementation. **pi-ralph** hat-loop, in-process (subagents + rules stay live). Contract = a preset `.yml` (default: a fixed `-ingest` preset that READS the FASE-1 spec instead of re-planning; author a custom preset via the `ralph-preset` skill only when none fits). Builder/Reviewer hats DELEGATE to worker subagents per the fault-tolerance tier (same routing as one-shot). Completion via the preset's `completion_promise` gate, not an iteration count.
 - **Fleet (XL)** — major feature, almost always greenfield. `fleet-plan` → `captain` (DAG-of-DAG, judge-gated).
-- **Goal (sweep, not a size)** — wide, repetitive, SAFE-only instrumentation/sweep work (OTel traces, new log standard, failable UI error-feedback, a11y). `@quintinshaw/pi-dynamic-workflows` via `/workflows run`. Main agent writes a spec-ingesting orchestration script (scaffold via `goal-sweep` skill) that bakes FASE-1 conventions (metric naming, log format, error-feedback standard) into every `agent()` prompt — no per-branch improvisation. Worker tier CAPPED non-critical (`implementer-lite`/`implementer` + `reviewer`).
+- **Goal (sweep, not a size)** — wide, repetitive, SAFE-only instrumentation/sweep work (OTel traces, new log standard, failable UI error-feedback, a11y). `@quintinshaw/pi-dynamic-workflows` via `/workflows run`. Main agent writes a spec-ingesting orchestration script (scaffold via `goal-sweep` skill) that bakes FASE-1 conventions (metric naming, log format, error-feedback standard) into every `agent()` prompt — no per-branch improvisation. Worker tier CAPPED standard (`<vertical>-worker` + `<vertical>-reviewer`, never frontier).
 - **Goal vs Fleet disambiguation (safety-first).** Both fan out in parallel, so decide by SAFETY FIRST: does the scope touch any low-tolerance surface (auth / secrets / DB migration / schema / public-API / money / data-deletion / irreversible)? **Yes → fleet or ralph** (never goal). **No**, and the work is wide + repetitive + independent same-pattern tasks → **goal**. Heavy inter-dependency between parts → **fleet**. Goal is breadth-of-safe-work; fleet is depth-of-interdependent-work.
 - **Debug (special phase, not a size)** — two steps: (1) info + knowledge gathering (ask for repro / env / data / expected-vs-actual when not reachable yourself); (2) branch by fix size — **small fix → execute directly, a worker subagent is NOT required, and the main agent MAY touch code itself** (the deliberate exception to orchestrator-writes-no-code); medium / large → route into a planning flow (ralph or fleet).
 
@@ -67,29 +69,41 @@ Plugin `pi-patty-bg-tasks` = run a **bash command** in background, wake on compl
 - Full guidance → `~/.pi/agent/skills/background-tasks/SKILL.md`.
 
 ### Worker pool (`~/.pi/agent/agents/`)
-- `implementer` (Sonnet) — code writes/edits against a spec. Standard fault-tolerance.
-- `implementer-critical` (Opus) — LOW fault-tolerance implementation: auth / secrets / DB migration / schema / public-API / money-payment / data-deletion / irreversible. Stricter contract: no-assumption at trust/money boundaries (escalate, don't guess), defense-in-depth, idempotency, reversibility, mandatory edge + failure-path tests, telemetry. The IMPLEMENT-side mirror of `deep-reviewer`.
-- `implementer-lite` (Haiku) — trivial mechanical only; stops + reports if scope expands.
-- `reviewer` (Sonnet) — S/M diff review; escalates low-tolerance findings to `deep-reviewer`.
-- `deep-reviewer` (Opus) — auth / secrets / migration / schema / public-API / money review. **Mandatory** review for any worker diff touching those.
-- `scout` (Haiku, leaf) — read-only `file:line` locator; front-load maps before expensive reviews.
-- `planner` (Opus) — heavy plan / SCOPE / ADR when main is not Opus.
-- `support` (Sonnet) — docs, research, synthesis (no source edits).
+
+**Vertical selection (mandatory):** Claude main session → use `claude-*` workers. Codex main session → use `codex-*` workers. Nested calls stay the same vertical (e.g. `claude-reviewer` spawns `claude-scout` or `claude-frontier-reviewer`, not codex equivalents). Vertical is determined by the main session's model family, not by the task type.
+
+**Claude vertical** (default for Claude-family main sessions):
+- `claude-worker` (worker model — Sonnet 5) — code writes/edits against a spec. Standard fault-tolerance.
+- `claude-frontier-worker` (frontier model — Opus) — LOW fault-tolerance implementation: auth / secrets / DB migration / schema / public-API / money-payment / data-deletion / irreversible. Stricter contract: no-assumption at trust/money boundaries (escalate, don't guess), defense-in-depth, idempotency, reversibility, mandatory edge + failure-path tests, telemetry.
+- `claude-reviewer` (worker model — Sonnet 5) — S/M diff review; escalates low-tolerance findings to `claude-frontier-reviewer`.
+- `claude-frontier-reviewer` (frontier model — Opus) — auth / secrets / migration / schema / public-API / money review. **Mandatory** review for any worker diff touching those.
+- `claude-scout` (scout model — Haiku, leaf) — read-only `file:line` locator; front-load maps before expensive reviews.
+
+**Codex vertical** (for Codex/GPT-family main sessions):
+- `codex-worker` (worker model — GPT 5.4) — code writes/edits against a spec. Standard fault-tolerance.
+- `codex-frontier-worker` (frontier model — GPT 5.5) — LOW fault-tolerance implementation (same contract as `claude-frontier-worker`).
+- `codex-reviewer` (worker model — GPT 5.4) — S/M diff review; escalates low-tolerance findings to `codex-frontier-reviewer`.
+- `codex-frontier-reviewer` (frontier model — GPT 5.5) — auth / secrets / migration / schema / public-API / money review. **Mandatory** review for any worker diff touching those.
+- `codex-scout` (scout model — GPT 5.4-mini, leaf) — read-only `file:line` locator.
+
+**Shared workers (vertical-agnostic):**
+- `planner` (frontier model — Opus) — heavy plan / SCOPE / ADR when main is not a frontier model.
+- `support` (worker model — Sonnet) — docs, research, synthesis (no source edits).
 - `ui-designer` (Kimi K2, leaf) — concept UI, ready HTML.
 
 ### Fault-tolerance routing (implement + review)
-Classify each slice/task: **low** (auth / secrets / DB migration / schema / public-API / money-payment / data-deletion / irreversible), **standard**, or **trivial**. Routing follows the class on BOTH sides:
-- low → `implementer-critical` (implement) + `deep-reviewer` (review).
-- standard → `implementer` + `reviewer`.
-- trivial → `implementer-lite` + `reviewer`.
-- **Safety ratchet (upgrade-only):** tier order `implementer-lite < implementer < implementer-critical` and `reviewer < deep-reviewer`. The orchestrator may UPGRADE a slice's tier when it turns out riskier than planned, but must NEVER downgrade. A low-tolerance slice must never be silently downgraded — including on resume after a rate-limit/process death. In fleet/ralph, the planner sets the class at Plan time and it persists in state (see pi config `docs/design/2026-07-03-fleet-dag-rework.md` — supersedes the older `2026-07-01-fleet-ralph-state-schema.md` — + `templates/*.state.template.json`); resume reads the effective assignment, no re-judgment.
+Classify each slice/task: **low** (auth / secrets / DB migration / schema / public-API / money-payment / data-deletion / irreversible), **standard**, or **trivial**. Routing follows the class on BOTH sides. Use the worker and reviewer in the current vertical (see Worker pool above):
+- low → `<vertical>-frontier-worker` (implement) + `<vertical>-frontier-reviewer` (review).
+- standard → `<vertical>-worker` + `<vertical>-reviewer`.
+- trivial → `<vertical>-worker` + `<vertical>-reviewer`.
+- **Safety ratchet (upgrade-only):** tier order `<vertical>-worker < <vertical>-frontier-worker` and `<vertical>-reviewer < <vertical>-frontier-reviewer`. The orchestrator may UPGRADE a slice's tier when it turns out riskier than planned, but must NEVER downgrade. A low-tolerance slice must never be silently downgraded — including on resume after a rate-limit/process death. In fleet/ralph, the planner sets the class at Plan time and it persists in state (see pi config `docs/design/2026-07-03-fleet-dag-rework.md` — supersedes the older `2026-07-01-fleet-ralph-state-schema.md` — + `templates/*.state.template.json`); resume reads the effective assignment, no re-judgment.
 
-### Escalation triggers (route to Opus tier)
-- Diff touches auth / secrets / DB migration / schema / public API → `deep-reviewer` (review) AND `implementer-critical` (implement).
+### Escalation triggers (route to frontier tier)
+- Diff touches auth / secrets / DB migration / schema / public API → `<vertical>-frontier-reviewer` (review) AND `<vertical>-frontier-worker` (implement).
 - Worker handover fails 2x on same step, or two workers read a spec differently → `planner` rewrites the spec.
-- Irreversible/destructive action proposed in an autonomous loop → gate via Opus review before exec.
+- Irreversible/destructive action proposed in an autonomous loop → gate via frontier review before exec.
 - Steering: redirect a running worker with `steer_subagent` instead of killing + respawning.
-- **Goal sweep safety gate.** Before OFFERING goal in FASE 2, the main agent must confirm the scope is free of any low-tolerance surface. Any auth / migration / money / schema / secrets / data-deletion slice → REJECT goal, offer ralph/fleet instead. If a low-tolerance concern surfaces mid-sweep → stop that branch, raise to the user, do not auto-handle inside goal. Goal worker tier is capped at `implementer-lite`/`implementer` + `reviewer` (never critical/deep-reviewer).
+- **Goal sweep safety gate.** Before OFFERING goal in FASE 2, the main agent must confirm the scope is free of any low-tolerance surface. Any auth / migration / money / schema / secrets / data-deletion slice → REJECT goal, offer ralph/fleet instead. If a low-tolerance concern surfaces mid-sweep → stop that branch, raise to the user, do not auto-handle inside goal. Goal worker tier is capped at standard (`<vertical>-worker` + `<vertical>-reviewer`, never frontier).
 
 ## Safety (mandatory)
 - Confirm before destructive: `rm -rf`, `git push --force`, DB drop/migrate, overwrite file not self-made, write `.env`/secrets.
@@ -133,7 +147,7 @@ Testing tools must be clear + usable before Build (captain contract): a slice's 
 
 Captain stays conversational during fleet (mandatory): the main agent / captain must remain reachable while a fleet run is in flight. The user can ask it at any time for status (which DAG, which tasks running/passed/failed), progress, or potential steering. The captain answers from the live run state and forwards user direction to running workers via `steer_subagent(agent_id, message)` (two-hop: captain→orchestrator→worker) — it is the relay between the user and the background fleet, never a silent black box. Surface a status summary on request; offer steering options when the user wants to redirect.
 
-Resume / "continue" — resume-ready by design (DAG rework): after a rate limit or any interruption, re-invoking the captain with `resume=true` continues fleet from the LATEST persisted state — never a restart from Plan. Flow: captain tracks the active `runName`; on resume it re-reads `<repo>/plans/fleet/<yyyy-mm-dd>-<epic>/state.json` (RELATIVE to the project repo, committed there — NOT ~/.pi), skips DAGs already `passed`, re-enters `running` DAGs (their orchestrator re-reads L2 `dags/<dagId>.json`, checkout `branch@commitSha`, continues from the last un-passed task), and reloads accumulated `knowledge[]`. Two state levels persist this (both required, because an orchestrator can run for HOURS): **Level 1** captain state (`state.json`) for cross-DAG status (`dagStatus`/`failedDags`), per-DAG `judge` blocks, and `knowledge[]`; **Level 2** per-DAG state (`dags/<dagId>.json`) with the `tasks[]` task-DAG so a multi-hour DAG resumes from its last completed task instead of rebuilding. Hard prerequisite (satisfied by fork-nesting toolkit): the implementer COMMITS partial work incrementally to the DAG branch — a state file pointing at uncommitted edits is useless. Safety ratchet: resume reads EFFECTIVE tiers, never silently downgrades a low-tolerance DAG. NOTE: pause-detection + external wake (cron/watcher/systemd) are OUT of scope — a separate mechanism; fleet only guarantees it is resume-ready when re-invoked. Contract → `~/.pi/agent/docs/design/2026-07-03-fleet-resume-contract.md`; architecture → `2026-07-03-fleet-dag-rework.md`.
+Resume / "continue" — resume-ready by design (DAG rework): after a rate limit or any interruption, re-invoking the captain with `resume=true` continues fleet from the LATEST persisted state — never a restart from Plan. Flow: captain tracks the active `runName`; on resume it re-reads `<repo>/plans/fleet/<yyyy-mm-dd>-<epic>/state.json` (RELATIVE to the project repo, committed there — NOT ~/.pi), skips DAGs already `passed`, re-enters `running` DAGs (their orchestrator re-reads L2 `dags/<dagId>.json`, checkout `branch@commitSha`, continues from the last un-passed task), and reloads accumulated `knowledge[]`. Two state levels persist this (both required, because an orchestrator can run for HOURS): **Level 1** captain state (`state.json`) for cross-DAG status (`dagStatus`/`failedDags`), per-DAG `judge` blocks, and `knowledge[]`; **Level 2** per-DAG state (`dags/<dagId>.json`) with the `tasks[]` task-DAG so a multi-hour DAG resumes from its last completed task instead of rebuilding. Hard prerequisite (satisfied by fork-nesting toolkit): the worker COMMITS partial work incrementally to the DAG branch — a state file pointing at uncommitted edits is useless. Safety ratchet: resume reads EFFECTIVE tiers, never silently downgrades a low-tolerance DAG. NOTE: pause-detection + external wake (cron/watcher/systemd) are OUT of scope — a separate mechanism; fleet only guarantees it is resume-ready when re-invoked. Contract → `~/.pi/agent/docs/design/2026-07-03-fleet-resume-contract.md`; architecture → `2026-07-03-fleet-dag-rework.md`.
 
 ## LSP (pi-diet-lsp) — best-effort reflection + symbol search
 

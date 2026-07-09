@@ -1,6 +1,6 @@
 <!--
   FLEET.template.md — Fleet captain contract.
-  Opus (the planner) fills every <...> placeholder and deletes guidance comments like this one.
+  A frontier-model planner fills every <...> placeholder and deletes guidance comments like this one.
   This file is read by the captain SKILL on every resume — it must stand alone. The captain has
   no other memory except this file, state.json, and the project repo.
   Fleet is NOT Ralph: no iteration loop, no acceptance.command run-until-pass, no waves.
@@ -11,8 +11,8 @@
 
 ## Captain model — check FIRST, before anything else
 
-This contract is authored for a captain running as **`<captain-model>`** (Opus authored this;
-the captain is typically Sonnet unless the entire epic is low-tolerance). Before reading DAGs or
+This contract is authored for a captain running as **`<captain-model>`** (a frontier-model planner authored this;
+the captain is typically a worker-model orchestrator unless the entire epic is low-tolerance). Before reading DAGs or
 spawning anything, confirm your own model matches.
 
 If your model id does **not** match `<captain-model>`, STOP immediately and output:
@@ -51,9 +51,9 @@ Do NOT merge to base branch yourself — that is the human approval gate.
 
 ## Implementation strategy
 
-<2–6 sentences: the architectural approach, key design decisions Opus made during planning,
-the decomposition rationale, why specific DAGs are low-tolerance vs standard, and anything the
-captain must NOT do (out-of-scope, systems not to touch, branches not to push).>
+<2–6 sentences: the architectural approach, key design decisions the frontier-model planner made
+during planning, the decomposition rationale, why specific DAGs are low-tolerance vs standard, and
+anything the captain must NOT do (out-of-scope, systems not to touch, branches not to push).>
 
 **Orchestrator model rationale:**
 <For each DAG, one line: "dagId=<id>: <failureTolerance> → <orchestratorModel> because <reason>">
@@ -77,9 +77,9 @@ captain must NOT do (out-of-scope, systems not to touch, branches not to push).>
 
 | id | description | dependsOn | failureTolerance | orchestratorModel | thinking | judge |
 |----|-------------|-----------|-----------------|-------------------|----------|-------|
-| <d1> | <short description> | — | <low\|standard\|trivial> | <opus\|sonnet> | <high\|medium\|low> | Opus, bounded 2× |
-| <d2> | <short description> | d1 | <low\|standard\|trivial> | <opus\|sonnet> | <high\|medium\|low> | Opus, bounded 2× |
-| <d3> | <short description> | d1 | <standard\|trivial> | sonnet | <medium\|low> | Opus, bounded 2× |
+| <d1> | <short description> | — | <low\|standard\|trivial> | <frontier\|worker> | <high\|medium\|low> | frontier-model judge, bounded 2× |
+| <d2> | <short description> | d1 | <low\|standard\|trivial> | <frontier\|worker> | <high\|medium\|low> | frontier-model judge, bounded 2× |
+| <d3> | <short description> | d1 | <standard\|trivial> | worker | <medium\|low> | frontier-model judge, bounded 2× |
 
 **Dependency rules (captain enforces):**
 - DAG runnable ⟺ all `dependsOn[]` have `status: passed` AND DAG not in `failedDags[]`.
@@ -99,11 +99,11 @@ captain must NOT do (out-of-scope, systems not to touch, branches not to push).>
 - **L2 state:** `dags/<d1>.json`
 - **Branch:** `<integration-branch>/<d1>`
 - **failureTolerance:** `<low|standard|trivial>`
-- **orchestratorModel:** `<opus|sonnet>`
+- **orchestratorModel:** `<frontier|worker>`
 - **thinking:** `<high|medium|low>`
-- **Implementer (planned):** `<implementer-critical|implementer|implementer-lite>`
-- **Reviewer (planned):** `<deep-reviewer|reviewer>` _(only spawned if Sonnet orchestrator)_
-- **Judge:** Opus, state-file-only, authority. Bounded 2× retry.
+- **Worker (planned):** `<vertical>-frontier-worker|<vertical>-worker>`
+- **Reviewer (planned):** `<vertical>-frontier-reviewer|<vertical>-reviewer>` _(only spawned if worker-model orchestrator)_
+- **Judge:** frontier-model, state-file-only, authority. Bounded 2× retry.
 - **Tasks (count):** <N>
 - **Goal:** <one sentence>
 
@@ -113,11 +113,11 @@ captain must NOT do (out-of-scope, systems not to touch, branches not to push).>
 - **L2 state:** `dags/<d2>.json`
 - **Branch:** `<integration-branch>/<d2>`
 - **failureTolerance:** `<low|standard|trivial>`
-- **orchestratorModel:** `<opus|sonnet>`
+- **orchestratorModel:** `<frontier|worker>`
 - **thinking:** `<high|medium|low>`
-- **Implementer (planned):** `<implementer-critical|implementer|implementer-lite>`
-- **Reviewer (planned):** `<deep-reviewer|reviewer>`
-- **Judge:** Opus, state-file-only, authority. Bounded 2× retry.
+- **Worker (planned):** `<vertical>-frontier-worker|<vertical>-worker>`
+- **Reviewer (planned):** `<vertical>-frontier-reviewer|<vertical>-reviewer>`
+- **Judge:** frontier-model, state-file-only, authority. Bounded 2× retry.
 - **Tasks (count):** <N>
 - **Goal:** <one sentence>
 
@@ -151,10 +151,10 @@ Dispatch one `fleet-orchestrator` per runnable DAG (parallel). After dispatch, u
 ### After orchestrator completes a DAG
 
 1. Read L2 state `dags/<dagId>.json` — confirm all tasks `acceptanceResult: pass`.
-2. Spawn judge (Opus, state-file-only): give it L2 state path + DAG goal from this contract.
+2. Spawn judge (frontier-model, state-file-only): give it L2 state path + DAG goal from this contract.
 3. Judge returns verdict `pass | fail | needs-fix`:
    - `pass` → update L1 `dagStatus[d].status = "passed"`, `judge.verdict = "pass"`.
-     Recompute runnable-set. Promote any `knowledgeDelta` from L2 (Opus context, promote
+     Recompute runnable-set. Promote any `knowledgeDelta` from L2 (frontier-model context, promote
      directly per §Knowledge promotion).
    - `fail` / `needs-fix` → increment `dags[d].judge.attempt`. If `attempt < 2` → re-dispatch
      orchestrator with judge feedback. If `attempt == 2` → mark L1 `dagStatus[d].status =
@@ -205,17 +205,17 @@ state files at the time it's made.
 
 ## Knowledge promotion
 
-During fleet execution, Opus agents (judge, Opus orchestrators) may encounter durable conventions
-worth persisting to `.pi/rules` or `.pi/skills`. Promotion rule:
+During fleet execution, frontier-model agents (judge, frontier-model orchestrators) may encounter
+durable conventions worth persisting to `.pi/rules` or `.pi/skills`. Promotion rule:
 
-- **Sonnet agents:** write `knowledgeDelta[]` in L2 state flagged `proposed`. Do not promote
+- **Worker-model agents:** write `knowledgeDelta[]` in L2 state flagged `proposed`. Do not promote
   directly.
-- **Opus agents (judge, Opus orchestrator, captain):** when a proposed item enters Opus context
-  and is judged durable/reusable, promote directly via `writeKnowledge()` without asking —
-  fleet is autonomous, permission is implicit.
+- **Frontier-model agents (judge, frontier-model orchestrator, captain):** when a proposed item
+  enters frontier-model context and is judged durable/reusable, promote directly via
+  `writeKnowledge()` without asking — fleet is autonomous, permission is implicit.
 
-After each DAG judge run, captain checks L2 `knowledgeDelta[]` and promotes Opus-reviewed items.
-Append to L1 `knowledge[]` for cross-DAG awareness.
+After each DAG judge run, captain checks L2 `knowledgeDelta[]` and promotes frontier-reviewed
+items. Append to L1 `knowledge[]` for cross-DAG awareness.
 
 ---
 
