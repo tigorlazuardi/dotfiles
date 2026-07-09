@@ -27,6 +27,7 @@ function git(cwd: string, args: string[]): string | null {
     const out = execFileSync("git", ["-C", cwd, ...args], {
       timeout: 5000,
       encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
     });
     return out.trimEnd();
   } catch {
@@ -125,8 +126,12 @@ export default function (pi: ExtensionAPI) {
 
       const cwd: string = (ctx as any).cwd ?? process.cwd();
       const root = gitRepoRoot(cwd);
-      const head = gitHead(cwd);
-      if (!root || !head) {
+      if (!root) {
+        return;
+      }
+
+      const head = gitHead(root);
+      if (!head) {
         return;
       }
 
