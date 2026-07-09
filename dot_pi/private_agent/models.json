@@ -2,35 +2,12 @@
   "providers": {
     "omniroute": {
       "name": "omniroute",
-      "baseUrl": "https://omniroute.tigor.web.id/v1",
+      "baseUrl": "http://localhost:20128/v1",
       "api": "anthropic-messages",
       "apiKey": "omniroute-no-api-key",
       "models": [
         {
-          "id": "qtSd/personal/claude/claude-fable-5",
-          "name": "Claude Fable 5",
-          "reasoning": true,
-          "contextWindow": 1000000,
-          "maxTokens": 128000,
-          "input": [
-            "text",
-            "image"
-          ]
-        },
-        {
-          "id": "qtSd/personal/claude/claude-sonnet-5",
-          "name": "Claude Sonnet 5",
-          "reasoning": true,
-          "contextWindow": 1000000,
-          "maxTokens": 128000,
-          "input": [
-            "text",
-            "image"
-          ]
-        },
-        {
-          "id": "qtSd/personal/claude/claude-opus-4-8",
-          "name": "Claude Opus 4.8",
+          "id": "cc/claude-fable-5",
           "reasoning": true,
           "contextWindow": 1000000,
           "maxTokens": 64000,
@@ -40,41 +17,7 @@
           ]
         },
         {
-          "id": "qtSd/personal/claude/claude-haiku-4-5-20251001",
-          "name": "Claude Haiku 4.5",
-          "reasoning": true,
-          "contextWindow": 200000,
-          "maxTokens": 64000,
-          "input": [
-            "text",
-            "image"
-          ]
-        },
-        {
-          "id": "qtSd/bareksa/claude/claude-fable-5",
-          "name": "Claude Fable 5 (Kantor)",
-          "reasoning": true,
-          "contextWindow": 1000000,
-          "maxTokens": 128000,
-          "input": [
-            "text",
-            "image"
-          ]
-        },
-        {
-          "id": "qtSd/bareksa/claude/claude-sonnet-5",
-          "name": "Claude Sonnet 5 (Kantor)",
-          "reasoning": true,
-          "contextWindow": 1000000,
-          "maxTokens": 128000,
-          "input": [
-            "text",
-            "image"
-          ]
-        },
-        {
-          "id": "qtSd/bareksa/claude/claude-opus-4-8",
-          "name": "Claude Opus 4.8 (Kantor)",
+          "id": "cc/claude-opus-4-8",
           "reasoning": true,
           "contextWindow": 1000000,
           "maxTokens": 64000,
@@ -84,8 +27,17 @@
           ]
         },
         {
-          "id": "qtSd/bareksa/claude/claude-haiku-4-5-20251001",
-          "name": "Claude Haiku 4.5 (Kantor)",
+          "id": "cc/claude-sonnet-4-6",
+          "reasoning": true,
+          "contextWindow": 256000,
+          "maxTokens": 64000,
+          "input": [
+            "text",
+            "image"
+          ]
+        },
+        {
+          "id": "cc/claude-haiku-4-5-20251001",
           "reasoning": true,
           "contextWindow": 200000,
           "maxTokens": 64000,
