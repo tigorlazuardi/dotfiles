@@ -45,7 +45,7 @@ You do NOT:
 - Write project source code.
 - Implement tasks.
 - Run `checkCommand` or tests.
-- Promote knowledge (Opus-tier promotion is implicit — see §8).
+- Promote knowledge (frontier-model promotion is implicit — see §8).
 
 ---
 
@@ -91,8 +91,8 @@ For each DAG in `runnable`:
 1. Update `dagStatus[d.id].status = "running"`. Persist L1.
 2. Spawn `fleet-orchestrator` in **background** (`run_in_background: true`):
    - `agent: "fleet-orchestrator"`
-   - `model: d.orchestratorModel` — Opus for `failureTolerance: "low"`, Sonnet otherwise.
-     **Pass the explicit model override.** The agent file default is Sonnet; the override wins.
+   - `model: d.orchestratorModel` — frontier model for `failureTolerance: "low"`, worker model otherwise.
+     **Pass the explicit model override.** The agent file default is the worker-model ID; the override wins.
    - `thinking: d.thinking` (per-DAG reasoning effort from state).
    - Task prompt: the DAG's L2 state path + DAG id + L1 state path + runName.
 3. Store the spawned agent's `agent_id` in memory keyed to `d.id`.
@@ -111,7 +111,7 @@ Do not poll or sleep. Background agents notify on completion. While waiting:
 
 When an orchestrator reports its DAG done:
 
-1. Spawn `judge` agent (always Opus, always `thinking: high`, always `tools: read, grep, find, write`):
+1. Spawn `judge` agent (always a frontier model, always `thinking: high`, always `tools: read, grep, find, write`):
    - Pass: L2 state path (`dags/<dagId>.json`), DAG id, run name.
    - `judge` is state-file-only; it reads L2, returns verdict in its report.
 2. Read judge's report. Extract verdict: `pass | fail | needs-fix`.
@@ -188,10 +188,10 @@ When invoked with `resume=true` (same runName):
 4. Reload `knowledge[]` from L1.
 5. Re-enter scheduling loop.
 
-**Safety ratchet on resume:** read `effectiveImplementer` / `effectiveReviewer` from L2 state.
-Never silently downgrade a low-tolerance DAG. A DAG that was `failureTolerance: "low"` with
-`orchestratorModel: "opus"` STAYS Opus on resume — captain re-spawns the orchestrator with
-the same model override from `dags[d].orchestratorModel` in L1 state.
+**Safety ratchet on resume:** read `effectiveWorker` / `effectiveReviewer` from L2 state.
+Never silently downgrade a low-tolerance DAG. A DAG that was `failureTolerance: "low"` with a
+frontier `orchestratorModel` STAYS on that frontier model on resume — captain re-spawns the
+orchestrator with the same model override from `dags[d].orchestratorModel` in L1 state.
 
 **Pause-detection and external-wake are out of scope.** External mechanisms trigger resume by
 re-invoking this skill with `resume=true` and the same `runName`. Captain just needs to be
@@ -227,10 +227,10 @@ Never go silent. If no status change in a while, proactively surface what's happ
 
 ---
 
-## 8. Knowledge promotion (Opus, automatic)
+## 8. Knowledge promotion (frontier model, automatic)
 
-Captain is typically Opus (main session). When `knowledgeDelta[]` items surface in L1 or L2
-state flagged `proposed` or `needsOpusReview`:
+Captain runs as a frontier model (main session). When `knowledgeDelta[]` items surface in L1 or L2
+state flagged `proposed` or `needsFrontierReview`:
 
 - Evaluate: is this DURABLE? A real convention, schema, vendor quirk, gotcha that future
   sessions must honor?
@@ -261,7 +261,7 @@ Approval in one context does NOT carry over. Ask per action.
 | Event | Captain action |
 |---|---|
 | DAG deps satisfied | Compute runnable, spawn `fleet-orchestrator` (background, model override) |
-| Orchestrator done | Spawn `judge` (Opus, state-file-only) |
+| Orchestrator done | Spawn `judge` (frontier model, state-file-only) |
 | Judge: `pass` | Update dagStatus=passed, recompute runnable |
 | Judge: `fail/needs-fix`, attempt<2 | Increment attempt, steer orchestrator with feedback |
 | Judge: `fail/needs-fix`, attempt==2 | Mark DAG failed, add to failedDags, rescan |

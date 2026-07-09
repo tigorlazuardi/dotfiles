@@ -9,28 +9,28 @@ description: >-
   plus cost-aware model routing, or asks how to orchestrate a major feature with multiple
   parallel DAGs and per-DAG judge gates. Also triggers on "fleet run", "captain contract",
   "DAG-of-DAG plan", "multi-DAG epic", "greenfield plan with autonomous agents".
-  This skill is Opus-only by design: a good fleet contract requires deep architectural
-  questioning before any planning begins, which Opus does best. It stops early and hands
-  back to the user if the current model is not Opus.
+  This skill is frontier-model-only by design: a good fleet contract requires deep architectural
+  questioning before any planning begins, which frontier models do best. It stops early and hands
+  back to the user if the current model is not a frontier model.
 ---
 
 # Fleet Plan — author a captain contract for the fleet captain SKILL
 
 This skill produces the artifacts the fleet captain needs to run an XL or greenfield epic
 autonomously as a DAG-of-DAG: one captain contract (FLEET.md), one per-DAG contract per DAG
-orchestrator, and two levels of state files (L1 captain state + L2 per-DAG state). You (Opus)
-are the planner; you do **not** run the fleet. You interview the user, decompose the epic into
+orchestrator, and two levels of state files (L1 captain state + L2 per-DAG state). You (frontier
+model) are the planner; you do **not** run the fleet. You interview the user, decompose the epic into
 DAGs and tasks, assign model routing, wire the dependency graph, and write fully self-contained
 contracts with executable truth signals per task.
 
-## Why Opus plans and cheaper sessions orchestrate
+## Why frontier models plan and worker models orchestrate
 
 A fleet contract fans out into hours of autonomous work across many agents with minimal human
 oversight. Every ambiguity left in the plan gets amplified across DAGs and retries — far more
-expensive than the planning tokens. So we spend Opus once, up front, to interview hard and
-remove ambiguity — then let Sonnet orchestrators drive DAGs and Opus judges gate them. The goal
-is **maximum benefit at chosen cost**: suppress expensive tokens where they don't buy correctness,
-spend them where they prevent expensive mistakes.
+expensive than the planning tokens. So we spend a frontier model once, up front, to interview hard
+and remove ambiguity — then let worker-model orchestrators drive DAGs and frontier-model judges
+gate them. The goal is **maximum benefit at chosen cost**: suppress expensive tokens where they
+don't buy correctness, spend them where they prevent expensive mistakes.
 
 ## Fleet vs Ralph — critical differences (bake into every decision)
 
@@ -48,23 +48,26 @@ Never write "loop until acceptance passes" or reference waves in any fleet artif
 
 ---
 
-## Step 0 — Opus gate (do this first, before anything else)
+## Step 0 — Frontier-model gate (do this first, before anything else)
 
-Look at the model identity in your system context. If the model id does **not** start with
-`claude-opus`, STOP immediately. Do not interview, do not write files. Output exactly this and end:
+Look at the model identity in your system context. Confirm you are a frontier model (Opus, Fable,
+or GPT 5.5). If you are not — e.g. you are on a worker model (Sonnet, GPT 5.4) or scout model
+(Haiku, GPT 5.4-mini) — STOP immediately. Do not interview, do not write files. Output exactly
+this and end:
 
-> ⛔ `/fleet-plan` needs Opus. You're on a different model. Switch to an Opus model (e.g. `Ctrl+P`
-> → Opus) and run `/fleet-plan` again. Opus is required because a good fleet contract comes from
-> asking many hard architectural questions before planning, and that's where Opus earns its keep.
+> ⛔ `/fleet-plan` needs a frontier model. You're on a worker/scout model. Switch to a frontier
+> model (e.g. `Ctrl+P` → Opus / Fable / GPT 5.5) and run `/fleet-plan` again. Frontier models
+> are required because a good fleet contract comes from asking many hard architectural questions
+> before planning, and that's where frontier reasoning earns its keep.
 
-Only continue past this point when you have confirmed you are Opus.
+Only continue past this point when you have confirmed you are on a frontier model.
 
 ---
 
 ## Step 1 — Interview (ask a lot; one question at a time)
 
 Fleet is almost always greenfield — there is no existing code to fall back on, so every gap in
-the interview becomes a design decision made by an unsupervised Sonnet orchestrator under time
+the interview becomes a design decision made by an unsupervised worker-model orchestrator under time
 pressure. Do not rush. Drive a real dialogue, one question per turn, until you could hand the
 contract to a stranger and trust the outcome. Cover at minimum:
 
@@ -84,8 +87,8 @@ contract to a stranger and trust the outcome. Cover at minimum:
   that let low-tolerance work live in small dedicated DAGs (the cost lever).
 - **Task breakdown per DAG.** For each DAG: what tasks does it contain, in what order, with
   what internal dependencies? Can tasks within a DAG run in parallel?
-- **Budget posture.** Rough time/cost ceiling. How aggressively to prefer Sonnet orchestrators
-  vs Opus? (Greenfield usually has more unknowns → more low-tolerance DAGs → more Opus usage.)
+- **Budget posture.** Rough time/cost ceiling. How aggressively to prefer worker-model orchestrators
+  vs frontier? (Greenfield usually has more unknowns → more low-tolerance DAGs → more frontier-model usage.)
 - **Resume / rate-limit expectations.** Is this multi-day? Will sessions be interrupted? State
   files go in the project repo for cross-machine resume.
 - **Verification capability (real reflection).** Does CI config actually RUN tests (not just
@@ -115,8 +118,8 @@ with `dependsOn[]` internal to that DAG. A downstream task is `blocked` until it
 edge-gate is `passed`.
 
 Rules for good decomposition:
-- **Isolate low-tolerance work** into its own small DAG(s). This gives it an Opus orchestrator
-  without Opus-orchestrating the entire epic (the main cost lever).
+- **Isolate low-tolerance work** into its own small DAG(s). This gives it a frontier-model orchestrator
+  without frontier-orchestrating the entire epic (the main cost lever).
 - **DAG boundaries = integration boundaries.** After a DAG passes its judge, its output should
   be self-contained and committable.
 - **Cap task parallelism at 4** within a DAG. Beyond 4, split into sequential groups within
@@ -141,15 +144,14 @@ Assign `failureTolerance` to each DAG based on its risk surface:
   "sonnet"`.
 - **`trivial`** — purely mechanical, scaffolding, config, docs. → `orchestratorModel: "sonnet"`.
 
-**Safety ratchet (upgrade-only):** tier order is `implementer-lite < implementer <
-implementer-critical` and `reviewer < deep-reviewer`. Orchestrator may raise the effective tier
-≥ planned; never lower it. Resume reads the effective tier — no silent-downgrade, no
-re-judgment.
+**Safety ratchet (upgrade-only):** tier order is `<vertical>-worker < <vertical>-frontier-worker`
+and `<vertical>-reviewer < <vertical>-frontier-reviewer`. Orchestrator may raise the effective tier
+≥ planned; never lower it. Resume reads the effective tier — no silent-downgrade, no re-judgment.
 
 **Default assignment mapping** (planner sets `planned*`; write into L1 `dags[].assignment`):
-- `low` → `implementer-critical` + `deep-reviewer`
-- `standard` → `implementer` + `reviewer`
-- `trivial` → `implementer-lite` + `reviewer`
+- `low` → `<vertical>-frontier-worker` + `<vertical>-frontier-reviewer`
+- `standard` → `<vertical>-worker` + `<vertical>-reviewer`
+- `trivial` → `<vertical>-worker` + `<vertical>-reviewer`
 
 ### Axis 2 — thinking level (per task and per DAG)
 
@@ -160,15 +162,15 @@ Set `thinking` per DAG (DAG-wide default) and per task (task override). Map by c
 
 ### Review topology (follows from failureTolerance)
 
-- **Opus orchestrator** (low-tolerance DAG) → orchestrator doubles as reviewer inline. Opus is
-  authoritative for both orchestration and review. The judge post-DAG still runs.
-- **Sonnet orchestrator** (standard/trivial DAG) → separate reviewer per task (Sonnet cannot
-  review its own work for low-tolerance edges). Reviewer is spawned by the orchestrator.
+- **Frontier-model orchestrator** (low-tolerance DAG) → orchestrator doubles as reviewer inline.
+  Frontier models are authoritative for both orchestration and review. The judge post-DAG still runs.
+- **Worker-model orchestrator** (standard/trivial DAG) → separate reviewer per task (worker models
+  cannot review their own work for low-tolerance edges). Reviewer is spawned by the orchestrator.
 
-**Large epic → split by orchestratorModel (the main cost lever).** Don't Opus-orchestrate the
-whole thing. Isolate low-tolerance work into small dedicated DAGs under Opus, let the mechanical
-remainder run as Sonnet-orchestrated DAGs. If you're about to tag a whole large epic as
-`failureTolerance: low`, re-decompose instead.
+**Large epic → split by orchestratorModel (the main cost lever).** Don't frontier-orchestrate the
+whole thing. Isolate low-tolerance work into small dedicated DAGs under a frontier model, let the
+mechanical remainder run as worker-model-orchestrated DAGs. If you're about to tag a whole large
+epic as `failureTolerance: low`, re-decompose instead.
 
 State your routing choices and one-line reasons in FLEET.md's Implementation Strategy section.
 
@@ -193,8 +195,8 @@ Build from `assets/per-DAG-contract.template.md`. One file per DAG. Location:
 `plans/fleet/<yyyy-mm-dd>-<epic>/dags/<dagId>-contract.md`. The orchestrator re-reads its
 contract each time it resumes; it must stand alone without FLEET.md. Covers: DAG goal, task-DAG
 (full task list with id, dependsOn, tier, thinking, checkCommand, done-condition), edge-gate
-rule (review pass requires green `acceptanceResult`), review topology (Sonnet-orch → separate
-reviewer; Opus-orch → inline), NO loop reminder, escalation boundary, judge handoff.
+rule (review pass requires green `acceptanceResult`), review topology (worker-model orch → separate
+reviewer; frontier-model orch → inline), NO loop reminder, escalation boundary, judge handoff.
 
 ### Deliverable (c) — captain state.json (L1)
 
@@ -217,7 +219,7 @@ Instantiate from `templates/fleet-slice.state.template.json`. One file per DAG. 
 `plans/fleet/<yyyy-mm-dd>-<epic>/dags/<dagId>.json`. Fill:
 - `dagId`, `branch` (e.g. `fleet/<epic>/<dagId>`)
 - `assignment` — mirror the DAG's effective* from L1
-- `tasks[]` — every task with `taskId`, `dependsOn`, `implementer`, `reviewer`, `thinking`,
+- `tasks[]` — every task with `taskId`, `dependsOn`, `worker`, `reviewer`, `thinking`,
   and `checkCommand`. Set `edgeGateStatus: "open"`, `acceptanceResult: null`, `reviewVerdict:
   null`, `commitSha: null` for all tasks.
 - Remove `_doc`, `_example`, and `_*` annotation keys before writing the final file.
@@ -247,7 +249,7 @@ this file and instead note "no provisioning required" in FLEET.md.
 
 ## Step 4.5 — Verification readiness preflight (real reflection)
 
-A DAG that only typechecks/lints/unit-tests gives its implementer **fake reflection** — backend
+A DAG that only typechecks/lints/unit-tests gives its worker **fake reflection** — backend
 code never touches a real DB, UI code never renders in a browser, and a green DAG can hide broken
 behavior. Before the Gate, guarantee the run environment can give **real reflection**, and guide
 the user to provision what's missing. Mandatory; do not skip to Step 5 without it.
@@ -294,7 +296,7 @@ SETUP.md and record "no provisioning required" in FLEET.md instead.
 
 Each DAG is gated by a post-DAG judge. Understand this well and bake it into every contract:
 
-- **Judge = Opus, state-file-only, authority.** The judge reads the L2 state file (`dags/<dagId>.json`)
+- **Judge = frontier model, state-file-only, authority.** The judge reads the L2 state file (`dags/<dagId>.json`)
   and evaluates: all tasks' `acceptanceResult` (objective lapis-1) + integration/goal holistically
   (semantic lapis-2). The judge never executes commands; it trusts the `acceptanceResult` values
   recorded by the reviewer/orchestrator.
@@ -367,16 +369,15 @@ full technical substance. Narration is the cheapest token to cut and subagent re
 into the captain's context across many turns. Code, commit messages, state file contents, and
 security notes stay normal.
 
-**Subagents reused.** Fleet reuses existing agent files: `implementer` ×3
-(lite/std/critical), `reviewer` ×2 (std/deep), `scout`, `planner`, `support`. New agent files:
-`fleet-orchestrator` (per-DAG, nested, `tools: Agent`, fresh context), `judge` (Opus,
-state-file-only). The captain skill drives the captain loop. Verify all referenced agent files
-exist before writing the contracts; if missing, tell the user.
+**Subagents reused.** Fleet reuses existing agent files: `<vertical>-worker`, `<vertical>-frontier-worker`,
+`<vertical>-reviewer`, `<vertical>-frontier-reviewer`, `<vertical>-scout`, `planner`, `support`.
+New agent files: `fleet-orchestrator` (per-DAG, nested, `tools: Agent`, fresh context), `judge`
+(frontier model, state-file-only). The captain skill drives the captain loop. Verify all referenced
+agent files exist before writing the contracts; if missing, tell the user.
 
-**Implementers don't compact — they hand over.** An implementer nearing its context limit wraps
-up at a clean point into a handover doc and returns `RESULT: HANDOVER`; the orchestrator spawns
-a fresh implementer to continue. This is not a failed attempt. Write it into each per-DAG
-contract.
+**Workers don't compact — they hand over.** A worker nearing its context limit wraps up at a clean
+point into a handover doc and returns `RESULT: HANDOVER`; the orchestrator spawns a fresh worker to
+continue. This is not a failed attempt. Write it into each per-DAG contract.
 
 ---
 
@@ -397,7 +398,7 @@ Artifacts:
 Next:
 1) Copy this block (/clear erases the chat).
 2) Commit the plans/ directory to the project repo (cross-machine resume).
-3) Switch model to Sonnet for scout/review, or keep Opus for the captain session.
+3) Switch to a worker model for scout/review, or keep a frontier model for the captain session.
 4) Launch the captain skill:
    /captain plans/fleet/<yyyy-mm-dd>-<epic>/state.json
 

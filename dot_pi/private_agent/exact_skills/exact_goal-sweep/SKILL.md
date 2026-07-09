@@ -8,8 +8,8 @@ description: >-
   interactions, a11y/telemetry sweeps. Trigger on "make a goal sweep", "fan out this instrumentation",
   "sweep the codebase for X", "author a workflow script". Produces a JS orchestration script whose
   every agent() prompt bakes the FASE-1 conventions (metric naming, log format, error-feedback
-  standard) and whose workers are CAPPED at safe tiers (implementer-lite/implementer + reviewer,
-  NEVER implementer-critical/deep-reviewer). This skill authors the SCRIPT only; it does NOT run it.
+  standard) and whose workers are CAPPED at safe tiers (`<vertical>-worker` + `<vertical>-reviewer`,
+  NEVER `<vertical>-frontier-worker` / `<vertical>-frontier-reviewer`). This skill authors the SCRIPT only; it does NOT run it.
   NEVER use goal for any low-tolerance surface (auth/secrets/migration/schema/money/data-deletion).
 ---
 
@@ -111,10 +111,10 @@ it (do not guess).`
 ```
 
 ### 3. Worker tier is CAPPED non-critical
-Goal is safe-only, so `agentType` / `tier` is capped: `implementer-lite` (trivial mechanical),
-`implementer` (standard), `reviewer` (review). **NEVER** `implementer-critical` or `deep-reviewer`.
-Goal has no escalate-to-critical path — if a branch turns out low-tolerance, the script must STOP that
-branch and surface it, not upgrade in place.
+Goal is safe-only, so `agentType` / `tier` is capped to worker-model agents: `<vertical>-worker`
+(standard/trivial), `<vertical>-reviewer` (review). **NEVER** `<vertical>-frontier-worker` or
+`<vertical>-frontier-reviewer`. Goal has no escalate-to-frontier path — if a branch turns out
+low-tolerance, the script must STOP that branch and surface it, not upgrade in place.
 
 ### 4. Escape hatch on low-tolerance discovery
 Worker prompts instruct: if a target touches a low-tolerance surface (auth / secrets / migration /

@@ -85,8 +85,8 @@ hand-write code. Append to its instructions:
 > ### Delegate to a worker subagent (fault-tolerance routing)
 > Spawn a worker sized to the task's tier and hand it a tight spec:
 > - LOW tolerance (auth / secrets / DB migration / schema / public API / money / data-deletion /
->   irreversible) → `implementer-critical`.
-> - STANDARD → `implementer`. TRIVIAL (rename/format/<10 LOC) → `implementer-lite`.
+>   irreversible) → `<vertical>-frontier-worker` (frontier model).
+> - STANDARD or TRIVIAL → `<vertical>-worker` (worker model).
 > Spawn with `run_in_background: false` so the hat BLOCKS on the result (its turn needs the outcome
 > before publishing). After the worker returns, persist what changed to the scratchpad, then publish.
 > Safety ratchet: UPGRADE the tier if riskier than planned, never downgrade.
@@ -96,8 +96,9 @@ Append to any review/verify hat's instructions:
 
 > ### Delegate review to a reviewer subagent (fault-tolerance routing)
 > Spawn sized to tier: LOW diff (auth / secrets / migration / schema / public API / money) →
-> `deep-reviewer` (mandatory for these); STANDARD → `reviewer`. Spawn `run_in_background: false` so
-> you block on the verdict. Fold findings into your decision, then publish approved / changes-requested.
+> `<vertical>-frontier-reviewer` (frontier model, mandatory for these); STANDARD → `<vertical>-reviewer`
+> (worker model). Spawn `run_in_background: false` so you block on the verdict. Fold findings into
+> your decision, then publish approved / changes-requested.
 
 ### 4. One task per iteration
 Builder/Implementer hats implement exactly ONE scratchpad task per activation, then publish. This keeps
