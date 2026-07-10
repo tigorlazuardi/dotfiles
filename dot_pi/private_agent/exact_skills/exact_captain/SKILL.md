@@ -1,6 +1,10 @@
 ---
 name: captain
+disable-model-invocation: true
 description: >-
+  DORMANT (2026-07-11) — superseded by pi-taskflow; see
+  docs/design/2026-07-11-taskflow-supersedes-fleet.mdx. Do NOT offer or auto-trigger. Preserved,
+  not deleted; re-enable only by removing disable-model-invocation. Original description follows.
   Use this to drive a fleet run as the L0 main-session captain. Trigger when the user says "run
   the fleet", "start the fleet", "drive the fleet run", "execute the fleet", "resume the fleet",
   "act as captain", "continue the fleet run", or asks to execute a fleet contract produced by the

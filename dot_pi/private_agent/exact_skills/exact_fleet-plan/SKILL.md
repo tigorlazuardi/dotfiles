@@ -1,6 +1,10 @@
 ---
 name: fleet-plan
+disable-model-invocation: true
 description: >-
+  DORMANT (2026-07-11) — superseded by pi-taskflow; see
+  docs/design/2026-07-11-taskflow-supersedes-fleet.mdx. Do NOT offer or auto-trigger. Preserved,
+  not deleted; re-enable only by removing disable-model-invocation. Original description follows.
   Use this to author a Fleet captain contract — the FLEET.md plus per-DAG contracts plus
   instantiated state files (L1 captain + L2 per-DAG) — that a captain SKILL will execute as
   a DAG-of-DAG autonomous build. Trigger this whenever the user wants to "plan a fleet",

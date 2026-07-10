@@ -1,0 +1,125 @@
+---
+title: taskflow supersedes fleet/goal — grill→spec→gate→taskflow→MVP
+date: 2026-07-11
+status: accepted
+---
+
+# taskflow supersedes fleet/goal — one enforced flow
+
+<Callout type="success" title="Status: accepted — fleet DORMANT, taskflow is the L/XL executor">
+`pi-taskflow` becomes the FASE-2 executor for M+/L/XL work. Fleet (`fleet-plan` + `captain` +
+`fleet-orchestrator` + `judge`) goes **dormant** (preserved, disabled, not offered). Goal
+(`@misunders2d/pi-goal`) is superseded too but retired only after taskflow is proven on a real
+0→MVP. This doc is the contract of record.
+</Callout>
+
+## Why
+
+Three plugins accreted to fill the L/XL slot, each a thick opinionated framework:
+
+- **`@misunders2d/pi-goal`** — its security envelope classifies the `Agent` (subagent) tool as
+  a mutating custom tool and **blocks it** (`security.ts classifyToolCall` → `pi.on("tool_call")`
+  → `{block:true}`). A subagent spawns a session outside the per-tool-call envelope, so pi-goal
+  forbids it by design. Result: goal cannot delegate to tiered workers — it breaks the whole
+  tiered-delegation model. (Earlier session concluded delegation was preserved; that was a
+  misread of `security.ts` and is now corrected.)
+- **fleet** — bespoke DAG-of-DAG (captain → per-DAG `fleet-orchestrator` → worker, post-DAG
+  `judge`). ~80% of it (runnable-set, worker spawn, edge-gate, judge gate, bounded retry,
+  isolated context, sub-flows) is redundant with what `pi-taskflow` ships as a maintained,
+  zero-dep, 1140-test, statically-verified engine — and fleet has **no iteration/fix loop**.
+- **dynamic-workflow** — the sweep flow; still valid for wide SAFE-only fan-out, but overlaps
+  taskflow's fan-out.
+
+The user's need is a hard **enforcement layer**: implement → independent review → fix-until-pass.
+Goal blocks the reviewer (subagent); fleet has no loop. `pi-taskflow` has both natively
+(`gate` node with reviewer≠producer + `onBlock:retry`), plus budget ceiling, static verify,
+worktree isolation, cache-aware resume, and saveable `/tf:<name>` flows.
+
+## Decision
+
+<Decision title="pi-taskflow is the FASE-2 executor for M+/L/XL; fleet dormant; goal superseded" status="accepted">
+Adopt `pi-taskflow`. Keep FASE-1 grilling unchanged. FASE-2 becomes: author a taskflow flow from
+the spec, `verify` (zero-token static check), then `run detach:true`. Fleet skills/agents are
+disabled but preserved. Goal is retired after taskflow proves 0→MVP once on a real build.
+</Decision>
+
+## The flow (user-facing)
+
+```txt
+Session → "build X"
+  → GRILL (long interview, ask-matt /grill-with-docs — stateful CONTEXT.md + ADR)   [FASE 1]
+  → /to-spec → DESIGN OUTPUT = spec.md + acceptance criteria
+  ◆ human gate: main agent classifies size, recommends executor, user picks
+      trivial/S → oneshot (skip taskflow)
+      M+/L/XL   → taskflow
+      open-ended autonomy → loop wraps taskflow
+  → main agent AUTHORS taskflow flow from spec (phases = plan; gate = acceptance criteria)   [FASE 2]
+  ◆ verify (0 token static check) + preview → user approves
+  → run detach:true + budget ceiling:
+      scaffold → plan(flow{def}) → build fan-out(cwd:worktree) →
+      gate(reviewer≠producer + eval build/test green) → fix-loop(onBlock:retry) →
+      integrate → [◆ approval milestone optional]
+      rate-limit → rate-limit-wakeup extension fires `resume` → autonomous continue
+  → OUTPUT: MVP   (/tf runs to inspect · resumable · saveable /tf:<name>)
+```
+
+## What taskflow covers (the three big factors)
+
+1. **Enforcement review-loop** — `gate` node, reviewer≠producer (enforced), `onBlock:retry`
+   re-runs upstream = generate→critique→regenerate. `final dependsOn gate` → "done" is locked
+   behind PASS. Hard gate, not a prompt suggestion (graph statically verified before spend).
+2. **0→MVP greenfield** — `flow{def}` dynamic sub-flows + `loop` replan handle discovered work;
+   `map` fans out over discovered lists. Quality ceiling = spec quality × gate quality, so the
+   grill is load-bearing. Dynamic-plan is the least-proven part → prove on one real build first.
+3. **In-progress recovery** — cache-aware `resume` (re-runs only unfinished phases, reuses
+   cached), survives process death (run state in `runs/`). Two-tier: short rate-limit → in-run
+   transient-retry+backoff; long rate-limit → the **rate-limit-wakeup extension** (already built)
+   fires `taskflow resume <runId>` when the window clears. Fleet punts external-wake out of scope
+   too, so this is parity-or-better. Gap: resume is phase-atomic, not commit-atomic → mitigate
+   with small phases + `cwd:"dedicated"` + `idempotent:false` on irreversible phases.
+
+## Orchestration ladder (after)
+
+```txt
+trivial 1-step          → oneshot / main-agent direct
+S/M few-step            → oneshot (worker + tight review)
+M+ review-loop / multi  → taskflow
+open-ended autonomy     → loop (pi-loop), may wrap taskflow units
+XL "plan-then-release"  → giant taskflow (multi-wave, approval gates)
+XL "stay-with-me multi-day, commit-granular, live steer" → captain-shell over taskflow (only if needed)
+```
+
+Neither fleet nor taskflow is a fire-and-forget goal loop — both are DAG-once; taskflow adds the
+loop fleet lacks. loop (temporal autonomy) and taskflow (structural enforcement) are orthogonal
+and compose; pi-goal tried to fuse them + an envelope and broke delegation.
+
+## Migration plan (proof-before-demolish)
+
+1. **Now:** write this ADR; mark fleet dormant (skills `disable-model-invocation` + banner;
+   AGENTS.md dormant note). Nothing deleted.
+2. **Next:** install `pi-taskflow`; prove one real greenfield 0→MVP (exercise `flow{def}`
+   dynamic-plan + `gate` fix-loop + `detach` + rate-limit resume).
+3. **On proof:** rewrite AGENTS.md taxonomy to oneshot + taskflow (+ loop for autonomy); retire
+   goal and dynamic-workflow; retire `fleet-orchestrator` + `judge` agents; decide fleet delete
+   vs keep-dormant. Wire rate-limit-wakeup to carry the active `runId` and fire `resume`.
+4. **Do NOT** verticalize `fleet-orchestrator`/`judge` (claude/codex) — wasted under taskflow;
+   its gate agents are per-phase, vertical-free.
+
+## What retires under taskflow
+
+```txt
+fleet-orchestrator.md   → taskflow gate node + map fan-out + onBlock:retry
+judge.md                → taskflow final gate (reviewer agent)
+@misunders2d/pi-goal    → taskflow (goal blocked subagents; taskflow does not)
+captain (mechanics)     → mostly taskflow; a thin captain-shell survives ONLY for XL multi-day
+                          live-steer + commit-granular + cross-wave knowledge, if ever needed
+```
+
+## What taskflow does NOT give (accepted trade / hand-build)
+
+```txt
+live conversational steering across a multi-day run   → use approval-gate milestones instead
+commit-atomic resume                                  → small phases + cwd:dedicated + idempotent:false
+tier safety-ratchet (live mid-run upgrade)            → declare frontier per-phase up front
+knowledge promotion to .pi/rules/.pi/skills           → add explicit harvest phases
+```
