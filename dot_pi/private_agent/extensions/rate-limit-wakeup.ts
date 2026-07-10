@@ -21,6 +21,17 @@
 // single global wakeup timer. If multiple pi processes hit rate limits
 // concurrently, the state file simply reflects whichever one wrote last —
 // documented caveat, not a bug.
+//
+// Scope tagging: state is still a single global timer (one wakeAt, one
+// in-process setTimeout), but each detection is tagged with a dynamic
+// `scopeGlob` derived from the *current session's* model at detection time
+// (ctx.model.provider + ctx.model.id, with the final "/"-delimited segment
+// replaced by "*" — e.g. `omniroute/cx/gpt-5.4` -> `omniroute/cx/*`,
+// `anthropic/claude-sonnet-5` -> `anthropic/*`). There is no hardcoded
+// model/provider allow-list anywhere in this file. Because there is still
+// only one timer, a rate limit on one scope and a rate limit on an unrelated
+// scope cannot both be tracked precisely at once — see upsertState() for the
+// documented "earliest wakeAt wins" tie-break this implies.
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import * as fs from "node:fs";
@@ -48,6 +59,14 @@ interface WakeState {
   wakeAt: string; // ISO timestamp
   delayMs: number; // total delay from detection to wakeAt (including buffer)
   sourceExcerpt: string; // trimmed excerpt of the error text that triggered this
+  // Dynamic scope info, computed from ctx.model at detection time (see
+  // computeModelRef / computeScopeGlob below). Both are optional and were
+  // added after STATE_VERSION 1 shipped: old on-disk state files (and any
+  // state written by a not-yet-upgraded pi process) simply won't have them,
+  // which is fine since every consumer treats them as optional. No version
+  // bump/migration needed for this.
+  modelRef?: string; // e.g. "omniroute/cx/gpt-5.4"
+  scopeGlob?: string; // e.g. "omniroute/cx/*"
   sessionId?: string;
   sessionFile?: string;
   cwd: string;
@@ -281,7 +300,72 @@ function parseProviderRateLimit(headers: Record<string, string> | undefined | nu
   };
 }
 
-// --- state persistence -------------------------------------------------------
+// --- dynamic rate-limit scope ------------------------------------------------
+
+// Builds a "provider/id" model reference from the session's current model.
+// Deliberately reads ctx.model live at detection time rather than caching it
+// anywhere — there is no hardcoded model or provider name in this file.
+// Returns undefined when no model is selected, or when either half is empty
+// (should not normally happen, but we never want to fabricate a ref).
+function computeModelRef(ctx: ExtensionContext): string | undefined {
+  try {
+    const model = ctx.model;
+    if (!model || typeof model.provider !== "string" || typeof model.id !== "string") {
+      return undefined;
+    }
+    if (model.provider.length === 0 || model.id.length === 0) {
+      return undefined;
+    }
+    return `${model.provider}/${model.id}`;
+  } catch {
+    return undefined;
+  }
+}
+
+// Derives a rate-limit scope glob from a model ref by replacing only the
+// final "/"-delimited segment with "*". This generalizes just far enough to
+// cover "same model family, different specific model id" rate limits without
+// guessing at provider-specific grouping rules:
+//   omniroute/cx/gpt-5.4        -> omniroute/cx/*
+//   openrouter/openai/gpt-5.4   -> openrouter/openai/*
+//   anthropic/claude-sonnet-5   -> anthropic/*
+// Safest-behavior choice for the missing-slash case: a modelRef we build
+// ourselves is always "provider/id" (see computeModelRef above) so it should
+// always contain at least one "/". If it somehow doesn't, we treat the ref
+// as opaque and return undefined rather than fabricating a scope like
+// "unknown/*" that could accidentally overlap with a real provider named
+// "unknown" — callers already handle an undefined scopeGlob (state.scopeGlob
+// is optional; the wakeup still works, it's just untagged).
+function computeScopeGlob(modelRef: string | undefined): string | undefined {
+  if (!modelRef) {
+    return undefined;
+  }
+  const lastSlash = modelRef.lastIndexOf("/");
+  if (lastSlash === -1) {
+    return undefined;
+  }
+  return `${modelRef.slice(0, lastSlash)}/*`;
+}
+
+// Turns a scopeGlob (as produced by computeScopeGlob) into a RegExp, for
+// display/overlap checks only — e.g. telling the user in /rate-limit-wakeup
+// whether the model they're currently on falls inside the scope that's
+// currently rate-limited. Not used for any dedupe/scheduling decision.
+function globToRegExp(glob: string): RegExp {
+  const escaped = glob.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
+  return new RegExp(`^${escaped}$`);
+}
+
+function matchesScope(scopeGlob: string | undefined, modelRef: string | undefined): boolean {
+  if (!scopeGlob || !modelRef) {
+    return false;
+  }
+  try {
+    return globToRegExp(scopeGlob).test(modelRef);
+  } catch {
+    return false;
+  }
+}
 
 function loadState(): WakeState | null {
   try {
@@ -389,6 +473,11 @@ export default function (pi: ExtensionAPI) {
       `Scheduled wake: ${state.wakeAt}`,
       `Working directory: ${state.cwd}`,
     ];
+    if (state.scopeGlob) {
+      lines.push(`Rate-limited scope: ${state.scopeGlob}${state.modelRef ? ` (detected on ${state.modelRef})` : ""}`);
+    } else if (state.modelRef) {
+      lines.push(`Detected on model: ${state.modelRef}`);
+    }
     if (state.sessionFile) {
       lines.push(`Session file: ${state.sessionFile}`);
     } else if (state.sessionId) {
@@ -448,17 +537,33 @@ export default function (pi: ExtensionAPI) {
   function upsertState(ctx: ExtensionContext, parsed: ParsedRateLimit): void {
     const now = new Date();
     const newWakeAt = new Date(now.getTime() + parsed.delayMs).toISOString();
+    const modelRef = computeModelRef(ctx);
+    const scopeGlob = computeScopeGlob(modelRef);
 
     const existing = loadState();
     const existingPending = existing?.status === "pending" ? existing : undefined;
 
+    // Scope-aware dedupe, within the constraint of a single global timer:
+    //
+    //   - Same scopeGlob as the existing pending wake: this is just a repeat
+    //     detection for the same rate limit. Keep the earlier wakeAt (below)
+    //     and refresh bookkeeping/reschedule so the in-process timer stays
+    //     current after e.g. a second concurrent request also 429s.
+    //   - Different scopeGlob than the existing pending wake: we can't run
+    //     two independent timers, so we can't track both precisely. The
+    //     safest choice is to always keep whichever wakeAt is earlier and
+    //     preserve *that* wake's own source/scope — never let a
+    //     later-firing, different-scope detection push the earlier one out
+    //     further. If the new (different-scope) detection actually resolves
+    //     sooner, it replaces the tracked state, including its own scope.
+    //     Either way this can undercount how long a still-limited scope
+    //     needs — e.g. a different-scope wake firing early does not mean the
+    //     original scope's limit has lifted. Documented caveat of the
+    //     single-global-timer design; not attempting a multi-timer rewrite.
     let state: WakeState;
     if (existingPending && new Date(existingPending.wakeAt).getTime() <= new Date(newWakeAt).getTime()) {
       // The existing pending wake already fires at or before this new
       // detection would — keep it as-is instead of pushing the timer later.
-      // Still refresh bookkeeping and re-arm the in-process timer/footer so a
-      // detection from a second concurrent request doesn't leave us with a
-      // stale scheduleWake() call from before a /reload, etc.
       state = { ...existingPending, updatedAt: now.toISOString() };
     } else {
       // No pending wake yet, or this detection resets sooner than the
@@ -470,6 +575,8 @@ export default function (pi: ExtensionAPI) {
         wakeAt: newWakeAt,
         delayMs: parsed.delayMs,
         sourceExcerpt: parsed.excerpt,
+        modelRef,
+        scopeGlob,
         sessionId: safeSessionId(ctx),
         sessionFile: safeSessionFile(ctx),
         cwd: ctx.cwd,
@@ -576,11 +683,24 @@ export default function (pi: ExtensionAPI) {
         return;
       }
       const remaining = new Date(state.wakeAt).getTime() - Date.now();
-      ctx.ui.notify(
+      let message =
         `Rate-limit wakeup pending: fires in ${formatRemaining(remaining)} (at ${state.wakeAt}). ` +
-          `Source: ${state.sourceExcerpt.slice(0, 120)}`,
-        "info",
-      );
+        `Source: ${state.sourceExcerpt.slice(0, 120)}`;
+      if (state.scopeGlob) {
+        message += ` | Scope: ${state.scopeGlob}`;
+        if (state.modelRef) {
+          message += ` (from ${state.modelRef})`;
+        }
+        const currentModelRef = computeModelRef(ctx);
+        if (currentModelRef) {
+          message += matchesScope(state.scopeGlob, currentModelRef)
+            ? " — current model is within this scope"
+            : " — current model is outside this scope";
+        }
+      } else if (state.modelRef) {
+        message += ` | Model: ${state.modelRef}`;
+      }
+      ctx.ui.notify(message, "info");
     },
   });
 
