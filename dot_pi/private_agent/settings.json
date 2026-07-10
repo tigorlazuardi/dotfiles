@@ -17,7 +17,8 @@
     "npm:@kmmuntasir/pi-nested-subagents",
     "npm:pi-diet-lsp",
     "npm:@yandy0725/pi-memory",
-    "npm:pi-observational-memory"
+    "npm:pi-observational-memory",
+    "git:github.com/DietrichGebert/ponytail"
   ],
   "searxng": {
     "url": "http://localhost:8888"
