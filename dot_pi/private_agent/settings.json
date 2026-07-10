@@ -18,7 +18,8 @@
     "npm:@yandy0725/pi-memory",
     "npm:pi-observational-memory",
     "git:github.com/DietrichGebert/ponytail",
-    "npm:@misunders2d/pi-goal"
+    "npm:@misunders2d/pi-goal",
+    "npm:pi-taskflow"
   ],
   "searxng": {
     "url": "http://localhost:8888"

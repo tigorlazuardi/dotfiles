@@ -97,8 +97,9 @@ and compose; pi-goal tried to fuse them + an envelope and broke delegation.
 
 1. **Now:** write this ADR; mark fleet dormant (skills `disable-model-invocation` + banner;
    AGENTS.md dormant note). Nothing deleted.
-2. **Next:** install `pi-taskflow`; prove one real greenfield 0→MVP (exercise `flow{def}`
-   dynamic-plan + `gate` fix-loop + `detach` + rate-limit resume).
+2. **Next:** ~~install `pi-taskflow`~~ **DONE** (v0.1.8, in `settings.json` packages); prove one
+   real greenfield 0→MVP (exercise `flow{def}` dynamic-plan + `gate` fix-loop + `detach` +
+   rate-limit resume). A test project follows this ADR.
 3. **On proof:** rewrite AGENTS.md taxonomy to oneshot + taskflow (+ loop for autonomy); retire
    goal and dynamic-workflow; retire `fleet-orchestrator` + `judge` agents; decide fleet delete
    vs keep-dormant. Wire rate-limit-wakeup to carry the active `runId` and fire `resume`.
