@@ -1,6 +1,15 @@
-// rate-limit-wakeup: detects provider rate-limit/quota errors on agent_end,
-// parses the reset duration from the error text, and schedules a follow-up
-// message that resumes the interrupted task once the cooldown has passed.
+// rate-limit-wakeup: detects provider rate-limit/quota conditions and
+// schedules a follow-up message that resumes the interrupted task once the
+// cooldown has passed. Two independent detection paths feed the same
+// scheduler:
+//
+//   - after_provider_response: fires for every provider HTTP response,
+//     before the stream body is consumed. On a 429 we parse the wake time
+//     directly from known rate-limit response headers (retry-after,
+//     x-ratelimit-reset, etc). This is the primary, most reliable path.
+//   - agent_end: fallback for providers/transports that don't expose
+//     headers (or errors surfaced only as text). Parses "reset after ..."
+//     style phrasing out of the error message.
 //
 // State is persisted to a global JSON file under ~/.pi/agent/.cache so a
 // pending wake survives /reload and full process restarts: session_start
@@ -119,6 +128,156 @@ function parseRateLimitError(errorMessage: string): ParsedRateLimit | null {
   return {
     delayMs: durationMs + SAFETY_BUFFER_MS,
     excerpt: errorMessage.slice(0, 400),
+  };
+}
+
+// --- provider response (429) header parsing --------------------------------
+
+// Known rate-limit response headers, in priority order (most precise/direct
+// first). Only these are ever read or included in the persisted excerpt —
+// we deliberately never dump the full header set, to avoid leaking cookies,
+// auth, or other sensitive response headers into on-disk state.
+const RATE_LIMIT_HEADER_NAMES = [
+  "retry-after-ms",
+  "x-retry-after-ms",
+  "retry-after",
+  "x-ratelimit-reset-after",
+  "x-rate-limit-reset-after",
+  "reset-after",
+  "x-ratelimit-reset",
+  "x-rate-limit-reset",
+];
+
+const NUMERIC_RE = /^\d+(?:\.\d+)?$/;
+
+function getHeaderCaseInsensitive(headers: Record<string, string>, name: string): string | undefined {
+  const lower = name.toLowerCase();
+  for (const key of Object.keys(headers)) {
+    if (key.toLowerCase() === lower) {
+      const value = headers[key];
+      if (typeof value === "string" && value.length > 0) {
+        return value;
+      }
+    }
+  }
+  return undefined;
+}
+
+// Parses a duration out of freeform header text, reusing the same h/m/s
+// scanning logic as the agent_end message parser. Tries the "reset after"
+// style keyword window first (in case a provider echoes message-like text
+// into a header), then falls back to scanning the raw value directly since
+// header values are short and rarely contain unrelated numbers.
+function parseFreeformDurationMs(text: string): number | null {
+  const keywordMatch = text.match(DURATION_KEYWORD);
+  if (keywordMatch && keywordMatch.index !== undefined) {
+    const windowStart = keywordMatch.index + keywordMatch[0].length;
+    const window = text.slice(windowStart, windowStart + DURATION_WINDOW);
+    const fromKeyword = parseDurationMs(window);
+    if (fromKeyword !== null) {
+      return fromKeyword;
+    }
+  }
+  return parseDurationMs(text.slice(0, DURATION_WINDOW));
+}
+
+// Parses a single rate-limit header's value into a millisecond delay from
+// now. Interpretation depends on both the header name (which unit/format a
+// header conventionally uses) and the value's shape (numeric vs date vs
+// freeform text), since providers are inconsistent here.
+function parseHeaderDelayMs(headerName: string, rawValue: string): number | null {
+  const value = rawValue.trim();
+  if (!value) {
+    return null;
+  }
+  const lowerName = headerName.toLowerCase();
+
+  if (NUMERIC_RE.test(value)) {
+    const n = Number.parseFloat(value);
+    if (!Number.isFinite(n) || n < 0) {
+      return null;
+    }
+
+    if (lowerName.includes("-ms")) {
+      // retry-after-ms / x-retry-after-ms: already a millisecond delta.
+      return n;
+    }
+    if (lowerName === "retry-after") {
+      // RFC 7231: retry-after numeric value is a seconds delta.
+      return n * 1_000;
+    }
+    if (lowerName.includes("reset-after")) {
+      // x-ratelimit-reset-after / x-rate-limit-reset-after / reset-after:
+      // seconds delta by convention (GitHub, Discord, etc).
+      return n * 1_000;
+    }
+    if (lowerName.includes("reset")) {
+      // x-ratelimit-reset / x-rate-limit-reset: absolute reset timestamp,
+      // as unix seconds or unix milliseconds depending on magnitude. A
+      // small value (below the unix-seconds range) is ambiguous but most
+      // commonly means "seconds until reset", so treat it as a delta.
+      const nowMs = Date.now();
+      if (n >= 1e12) {
+        return n - nowMs;
+      }
+      if (n >= 1e9) {
+        return n * 1_000 - nowMs;
+      }
+      return n * 1_000;
+    }
+    // Unrecognized numeric convention: default to seconds delta.
+    return n * 1_000;
+  }
+
+  const parsedDate = Date.parse(value);
+  if (!Number.isNaN(parsedDate)) {
+    return parsedDate - Date.now();
+  }
+
+  return parseFreeformDurationMs(value);
+}
+
+/**
+ * Parses a wake delay directly out of a 429 provider response's headers.
+ * Checks known rate-limit headers in priority order and returns the first
+ * one that yields a usable positive delay. Returns null when no known
+ * rate-limit header is present or none parse to a usable delay.
+ */
+function parseProviderRateLimit(headers: Record<string, string> | undefined | null): ParsedRateLimit | null {
+  if (!headers || typeof headers !== "object") {
+    return null;
+  }
+
+  const present: Array<[string, string]> = [];
+  for (const name of RATE_LIMIT_HEADER_NAMES) {
+    const value = getHeaderCaseInsensitive(headers, name);
+    if (value !== undefined) {
+      present.push([name, value]);
+    }
+  }
+  if (present.length === 0) {
+    return null;
+  }
+
+  let delayMs: number | null = null;
+  for (const [name, value] of present) {
+    const parsed = parseHeaderDelayMs(name, value);
+    if (parsed !== null && Number.isFinite(parsed) && parsed > 0) {
+      delayMs = parsed;
+      break;
+    }
+  }
+  if (delayMs === null) {
+    return null;
+  }
+
+  // Only known rate-limit headers are ever included here, never the full
+  // header set (see RATE_LIMIT_HEADER_NAMES comment above).
+  const excerpt = `provider response 429; ${present.map(([name, value]) => `${name}=${value}`).join("; ")}`;
+
+  return {
+    delayMs: delayMs + SAFETY_BUFFER_MS,
+    excerpt: excerpt.slice(0, 400),
   };
 }
 
@@ -288,25 +447,37 @@ export default function (pi: ExtensionAPI) {
 
   function upsertState(ctx: ExtensionContext, parsed: ParsedRateLimit): void {
     const now = new Date();
-    const wakeAt = new Date(now.getTime() + parsed.delayMs).toISOString();
+    const newWakeAt = new Date(now.getTime() + parsed.delayMs).toISOString();
 
     const existing = loadState();
-    const state: WakeState = {
-      version: STATE_VERSION,
-      status: "pending",
-      wakeAt,
-      delayMs: parsed.delayMs,
-      sourceExcerpt: parsed.excerpt,
-      sessionId: safeSessionId(ctx),
-      sessionFile: safeSessionFile(ctx),
-      cwd: ctx.cwd,
-      createdAt: existing?.status === "pending" ? existing.createdAt : now.toISOString(),
-      updatedAt: now.toISOString(),
-    };
+    const existingPending = existing?.status === "pending" ? existing : undefined;
 
-    // Always replace an existing pending timer with the freshest detection
-    // (whichever way the new wakeAt moves) — this keeps exactly one active
-    // timer instead of stacking duplicates.
+    let state: WakeState;
+    if (existingPending && new Date(existingPending.wakeAt).getTime() <= new Date(newWakeAt).getTime()) {
+      // The existing pending wake already fires at or before this new
+      // detection would — keep it as-is instead of pushing the timer later.
+      // Still refresh bookkeeping and re-arm the in-process timer/footer so a
+      // detection from a second concurrent request doesn't leave us with a
+      // stale scheduleWake() call from before a /reload, etc.
+      state = { ...existingPending, updatedAt: now.toISOString() };
+    } else {
+      // No pending wake yet, or this detection resets sooner than the
+      // current one — replace it. This keeps exactly one active timer
+      // instead of stacking duplicates.
+      state = {
+        version: STATE_VERSION,
+        status: "pending",
+        wakeAt: newWakeAt,
+        delayMs: parsed.delayMs,
+        sourceExcerpt: parsed.excerpt,
+        sessionId: safeSessionId(ctx),
+        sessionFile: safeSessionFile(ctx),
+        cwd: ctx.cwd,
+        createdAt: existingPending?.createdAt ?? now.toISOString(),
+        updatedAt: now.toISOString(),
+      };
+    }
+
     saveState(state);
     scheduleWake(state);
   }
@@ -340,6 +511,31 @@ export default function (pi: ExtensionAPI) {
     }
   });
 
+  // Primary detection path: inspect the raw HTTP response as soon as it
+  // arrives, before Pi has even finished consuming/interpreting it. This
+  // doesn't depend on how (or whether) a given provider surfaces a 429 as
+  // agent_end error text, so it catches cases the text parser below misses.
+  pi.on("after_provider_response", (event, ctx) => {
+    try {
+      lastCtx = ctx;
+      if (event.status !== 429) {
+        return;
+      }
+
+      const parsed = parseProviderRateLimit(event.headers);
+      if (!parsed) {
+        return;
+      }
+
+      upsertState(ctx, parsed);
+    } catch {
+      // fail open
+    }
+  });
+
+  // Fallback detection path: providers/transports that don't expose
+  // headers to after_provider_response (or that fail before a response
+  // object exists at all) still surface an error message on agent_end.
   pi.on("agent_end", (event, ctx) => {
     try {
       lastCtx = ctx;
