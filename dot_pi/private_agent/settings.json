@@ -4,7 +4,6 @@
   "defaultThinkingLevel": "high",
   "quietStartup": true,
   "packages": [
-    "npm:pi-ralph",
     "npm:pi-ask-user",
     "npm:pi-mcp-adapter",
     "npm:pi-rules",
@@ -18,7 +17,8 @@
     "npm:pi-diet-lsp",
     "npm:@yandy0725/pi-memory",
     "npm:pi-observational-memory",
-    "git:github.com/DietrichGebert/ponytail"
+    "git:github.com/DietrichGebert/ponytail",
+    "npm:@misunders2d/pi-goal"
   ],
   "searxng": {
     "url": "http://localhost:8888"

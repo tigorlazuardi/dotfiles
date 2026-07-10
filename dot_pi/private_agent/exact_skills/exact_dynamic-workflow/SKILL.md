@@ -1,19 +1,19 @@
 ---
-name: goal-sweep
+name: dynamic-workflow
 description: >-
-  Scaffold a spec-ingesting orchestration script for the GOAL sweep flow
-  (@quintinshaw/pi-dynamic-workflows) in FASE 2, after the user has explicitly picked the "goal"
+  Scaffold a spec-ingesting orchestration script for the DYNAMIC-WORKFLOW sweep flow
+  (@quintinshaw/pi-dynamic-workflows) in FASE 2, after the user has explicitly picked the "dynamic-workflow"
   orchestration level and a spec + design docs already exist. Use for WIDE, REPETITIVE, SAFE-only
   sweep work — OTel traces everywhere, logs to a new standard, failable error-feedback on all UI
-  interactions, a11y/telemetry sweeps. Trigger on "make a goal sweep", "fan out this instrumentation",
+  interactions, a11y/telemetry sweeps. Trigger on "make a dynamic-workflow", "fan out this instrumentation",
   "sweep the codebase for X", "author a workflow script". Produces a JS orchestration script whose
   every agent() prompt bakes the FASE-1 conventions (metric naming, log format, error-feedback
   standard) and whose workers are CAPPED at safe tiers (`<vertical>-worker` + `<vertical>-reviewer`,
   NEVER `<vertical>-frontier-worker` / `<vertical>-frontier-reviewer`). This skill authors the SCRIPT only; it does NOT run it.
-  NEVER use goal for any low-tolerance surface (auth/secrets/migration/schema/money/data-deletion).
+  NEVER use dynamic-workflow for any low-tolerance surface (auth/secrets/migration/schema/money/data-deletion).
 ---
 
-# Goal Sweep — scaffold a `pi-dynamic-workflows` orchestration script
+# Dynamic-workflow — scaffold a `pi-dynamic-workflows` orchestration script
 
 `@quintinshaw/pi-dynamic-workflows` runs **"code mode for subagents"**: the main agent writes a JS
 orchestration script that fans out `agent()` / `parallel()` subagents (≤16 concurrent / 1000 total,
@@ -21,13 +21,13 @@ orchestration script that fans out `agent()` / `parallel()` subagents (≤16 con
 variables so the main chat context stays clean. The run is background by default; a live panel tracks
 it and delivers the synthesized result back when done.
 
-The **orchestration script** IS the goal contract. This skill authors one from the approved spec +
+The **orchestration script** IS the dynamic-workflow contract. This skill authors one from the approved spec +
 design docs. You (main agent) author it PRE-run. You do NOT run it — the user's explicit `/workflows
 run` (FASE 2) starts it.
 
-## When goal is the RIGHT flow (and when it is NOT)
+## When dynamic-workflow is the RIGHT flow (and when it is NOT)
 
-Goal is **breadth-of-SAFE-work**, not depth, not risk. Use it only when BOTH hold:
+Dynamic-workflow is **breadth-of-SAFE-work**, not depth, not risk. Use it only when BOTH hold:
 
 - **Shape:** wide, repetitive, independent, same-pattern tasks (instrument N services, add a log line
   to N handlers, add failable error-feedback to N UI interactions, a11y sweep across N components).
@@ -35,24 +35,24 @@ Goal is **breadth-of-SAFE-work**, not depth, not risk. Use it only when BOTH hol
   schema / public-API / money-payment / data-deletion / irreversible work.
 
 If either fails → this is the WRONG flow:
-- Low-tolerance present → route to **fleet or ralph** (never goal).
+- Low-tolerance present → route to **fleet or goal** (never dynamic-workflow).
 - Heavy inter-dependency between parts → route to **fleet**.
-- Single deep sequential slice → **ralph**.
+- Single deep sequential slice → **goal**.
 
-This safety-first split is the AGENTS.md "Goal vs Fleet disambiguation" rule. Confirm it before you
+This safety-first split is the AGENTS.md "Dynamic-workflow vs Fleet disambiguation" rule. Confirm it before you
 scaffold.
 
 ## Preconditions
 
-1. The user has already chosen the **goal** level (FASE 2) via the hard human gate. If not, stop — the
+1. The user has already chosen the **dynamic-workflow** level (FASE 2) via the hard human gate. If not, stop — the
    level decision is a FASE-1 main-agent recommendation the user must confirm, not this skill's job.
 2. A **spec + design docs** already exist (FASE 1 output). The script's phase-1 discovery ingests them
    and every worker prompt bakes their conventions; the script never authors the spec. No spec → stop
    and route back to FASE-1 planning.
 3. **Safety gate passed** — you have confirmed the scope is free of any low-tolerance surface. If a
-   low-tolerance concern exists, REJECT goal here and offer ralph/fleet.
+   low-tolerance concern exists, REJECT dynamic-workflow here and offer goal/fleet.
 4. Keyword auto-trigger is OFF (`~/.pi/workflows/settings.json` → `keywordTriggerEnabled: false`).
-   Goal runs only via explicit `/workflows run`.
+   Dynamic-workflow runs only via explicit `/workflows run`.
 
 ## Orchestration-script primitives (pi-dynamic-workflows)
 
@@ -64,7 +64,7 @@ export const meta = {
 }
 
 // Vertical is NEVER hardcoded and NEVER defaults silently — it must come from a required
-// script arg (pass it via `/workflows run` args, e.g. { vertical: 'codex' }). Goal is
+// script arg (pass it via `/workflows run` args, e.g. { vertical: 'codex' }). Dynamic-workflow is
 // standard tier only, never frontier, for either vertical.
 if (args.vertical !== 'claude' && args.vertical !== 'codex') {
   throw new Error(`args.vertical must be 'claude' or 'codex', got: ${JSON.stringify(args.vertical)}`)
@@ -97,7 +97,7 @@ return await agent(VERIFY_PROMPT(results), { agentType: reviewerAgentType, tier:
 - Sandbox: runs in a Node `vm` with no `Date.now()`/`Math.random()`/`fs`/network → reproducible +
   reliable resume. Keep scripts deterministic.
 
-## Authoring rules (mandatory for every goal script)
+## Authoring rules (mandatory for every dynamic-workflow script)
 
 ### 1. Discovery/phase-1 INGESTS the spec, never re-plans
 The first agent reads the approved spec + design and enumerates the sweep targets. It must NOT
@@ -105,7 +105,7 @@ reinterpret requirements or invent conventions — the spec is authoritative. Po
 named in the prompt.
 
 ### 2. Every worker prompt BAKES the FASE-1 conventions
-This is the core of goal: parallel branches must NOT each improvise their own convention. Build the
+This is the core of dynamic-workflow: parallel branches must NOT each improvise their own convention. Build the
 worker prompt from the spec so the standard (metric naming, log format, span attributes, label
 dimensions, error-feedback contract) is embedded in EVERY `agent()` call. Define a prompt-builder up
 top and reuse it:
@@ -120,16 +120,16 @@ it (do not guess).`
 ```
 
 ### 3. Worker tier is CAPPED non-critical
-Goal is safe-only, so `agentType` / `tier` is capped to worker-model agents: `<vertical>-worker`
+Dynamic-workflow is safe-only, so `agentType` / `tier` is capped to worker-model agents: `<vertical>-worker`
 (standard/trivial), `<vertical>-reviewer` (review). **NEVER** `<vertical>-frontier-worker` or
-`<vertical>-frontier-reviewer`. Goal has no escalate-to-frontier path — if a branch turns out
+`<vertical>-frontier-reviewer`. Dynamic-workflow has no escalate-to-frontier path — if a branch turns out
 low-tolerance, the script must STOP that branch and surface it, not upgrade in place.
 
 ### 4. Escape hatch on low-tolerance discovery
 Worker prompts instruct: if a target touches a low-tolerance surface (auth / secrets / migration /
 schema / money / data-deletion), STOP that branch, return a flagged result, and do NOT modify it. The
-main agent raises those flags to the user after the run — they get re-routed to ralph/fleet, never
-auto-handled inside goal.
+main agent raises those flags to the user after the run — they get re-routed to goal/fleet, never
+auto-handled inside dynamic-workflow.
 
 ### 5. Isolation for parallel edits
 Any phase where parallel workers edit files uses `isolation: "worktree"` so concurrent branches don't
@@ -142,7 +142,7 @@ Bake the acceptance check into the final `agent()`/`verify()`.
 
 ## Workflow
 
-1. Confirm preconditions (goal level chosen; spec exists; safety gate passed). Read the spec + design.
+1. Confirm preconditions (dynamic-workflow level chosen; spec exists; safety gate passed). Read the spec + design.
 2. Extract the conventions into a `SPEC` constant + prompt-builder(s) (rule 2).
 3. Design phases: Discover (ingest spec, enumerate targets) → Instrument/Apply (parallel, worktree) →
    Verify (assert conventions landed).
@@ -157,5 +157,5 @@ Bake the acceptance check into the final `agent()`/`verify()`.
 
 ## This skill is terminal
 It authors the orchestration script and stops. Starting `/workflows run` is the user's action (or an
-explicit follow-up), mirroring the pre-run / in-run phase boundary — the same boundary ralph-preset
-keeps between authoring a preset and starting `/ralph`.
+explicit follow-up), mirroring the pre-run / in-run phase boundary — the same boundary the goal
+orchestrator keeps between an approved contract and an autonomous run.

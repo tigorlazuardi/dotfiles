@@ -10,6 +10,14 @@ status: accepted
 Adopts `@quintinshaw/pi-dynamic-workflows` as the "goal" execution flow. Trigger disabled, AGENTS.md updated, `goal-sweep` skill authored. This doc is the contract of record.
 </Callout>
 
+<Callout type="note" title="Renamed 2026-07-10 — flow unchanged">
+This flow is now called **dynamic-workflow** (was "goal sweep"); the scaffolding skill is now
+`dynamic-workflow` (was `goal-sweep`). Separately, the L-tier orchestrator is now **goal** (engine
+`@misunders2d/pi-goal`), which is why the sweep gave up the "goal" name. The engine and mechanics in
+this doc are unchanged — only the labels moved. Read "goal"/"goal-sweep" below as "dynamic-workflow",
+and "ralph" as "goal".
+</Callout>
+
 ## Problem
 
 The flow taxonomy had three execution modes — one-shot, ralph, fleet — all oriented at building or fixing a coherent unit of work. None fit **wide, repetitive, safe instrumentation sweeps**: add OTel traces to every handler, migrate every log line to a new standard, add failable error-feedback to every UI interaction, run an a11y pass across every component. That work is breadth, not depth; it benefits UX/DX long-term but carries no business risk.
