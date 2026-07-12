@@ -1,5 +1,6 @@
 ---
 name: support
+class: worker
 description: Docs, research, synthesis
 tools: read, bash, grep, find, write
 model: cc/claude-sonnet-5

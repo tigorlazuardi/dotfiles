@@ -1,5 +1,6 @@
 ---
 name: claude-frontier-worker
+class: frontier
 description: Frontier Claude worker for low-tolerance code
 tools: read, bash, edit, write, grep, find
 model: cc/claude-opus-4-8

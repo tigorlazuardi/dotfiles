@@ -1,5 +1,6 @@
 ---
 name: codex-scout
+class: scout
 description: Read-only Codex code locator
 tools: read, grep, find, bash
 model: cx/gpt-5.4-mini

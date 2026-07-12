@@ -1,5 +1,6 @@
 ---
 name: planner
+class: frontier
 description: Plan and draft SCOPE
 tools: read, grep, find, bash
 model: cc/claude-opus-4-8

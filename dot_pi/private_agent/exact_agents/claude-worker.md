@@ -1,5 +1,6 @@
 ---
 name: claude-worker
+class: worker
 description: Standard Claude implementation worker
 tools: read, bash, edit, write, grep, find
 model: cc/claude-sonnet-5

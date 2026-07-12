@@ -1,5 +1,6 @@
 ---
 name: claude-reviewer
+class: worker
 description: Standard Claude code reviewer
 tools: read, grep, find, bash, Agent
 model: cc/claude-sonnet-5

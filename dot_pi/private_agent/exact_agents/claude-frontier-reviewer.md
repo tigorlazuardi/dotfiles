@@ -1,5 +1,6 @@
 ---
 name: claude-frontier-reviewer
+class: frontier
 description: Frontier Claude review for low-tolerance diffs
 tools: read, grep, find, bash, Agent
 model: cc/claude-opus-4-8

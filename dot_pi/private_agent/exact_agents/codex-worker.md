@@ -1,5 +1,6 @@
 ---
 name: codex-worker
+class: worker
 description: Standard Codex implementation worker
 tools: read, bash, edit, write, grep, find
 model: cx/gpt-5.4

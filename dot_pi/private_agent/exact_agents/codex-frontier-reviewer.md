@@ -1,5 +1,6 @@
 ---
 name: codex-frontier-reviewer
+class: frontier
 description: Frontier Codex review for low-tolerance diffs
 tools: read, grep, find, bash, Agent
 model: cx/gpt-5.5

@@ -1,0 +1,360 @@
+---
+title: Fleet revamp — satu flow (OneShot | Fleet L+), pointer protocol, span audit
+description: Fleet digeneralisasi ke L+ (bisa 1 DAG) dan menggantikan taskflow. Unit DAG = spec, task node = ticket. Pointer protocol anti context-rot, state JSON OTel-span-shaped, git ref ownership per level, dan viewer HTML untuk review manusia.
+status: accepted
+date: 2026-07-12
+---
+
+# Fleet revamp — satu flow: OneShot | Fleet (L+)
+
+<Aside type="note" title="Status: accepted — supersedes taskflow ADR + fleet-dag-rework">
+Doc ini men-supersede `2026-07-11-taskflow-supersedes-fleet.mdx` (taskflow DIHAPUS) dan
+`2026-07-03-fleet-dag-rework.md` (mekanika DAG di-carry-over + di-rework). Fleet un-dormant,
+digeneralisasi ke **L+** — fleet bisa berjalan dengan 1 DAG saja. Goal dan dynamic-workflow
+keluar dari flow-offer. Hasil sesi desain 2026-07-12.
+</Aside>
+
+## Kenapa
+
+Tiga executor menumpuk di slot L/XL (goal, fleet, taskflow) — masing-masing framework tebal.
+Pengamatan yang memicu rework:
+
+1. **Fleet tidak perlu dikunci XL.** Struktur DAG-of-DAG bekerja sama baiknya dengan N=1.
+   L = kasus khusus fleet, bukan sistem terpisah.
+2. **Taskflow redundan begitu FASE 1 solid.** Nilai taskflow (gate + fix-loop, static verify,
+   resume) bisa diserap fleet dengan jauh lebih sedikit mesin. Budget engine, memoization
+   cache, saved flows, dynamic sub-flows = kompleksitas yang tak dibutuhkan kalau spec +
+   tickets bagus.
+3. **Skill chain FASE 1 sudah memproduksi DAG.** `to-tickets` menghasilkan vertical slices
+   dengan blocking edges — itu definisi DAG, tinggal dipetakan.
+4. **Context rot terbukti jadi pembunuh run panjang** → protokol pointer (lihat bawah).
+
+## Flow (user-facing)
+
+```txt
+FASE 1: grill-with-docs / wayfinder → to-spec → to-tickets     (design docs)
+  ◆ HARD HUMAN GATE: main agent rekomendasi + 1 alasan, USER memilih
+      S/M  → OneShot   (delegate ke worker langsung, review tight, tanpa contract)
+      L+   → Fleet     (contract dulu, baru kerja)
+FASE 2 (fleet): derive contract dari spec+tickets → validasi statis (0 token)
+  ◆ human gate #2: graph preview (`<provider>-fleet-draw`) → user approve → dispatch
+RUN:  captain → `<provider>-fleet-orchestrator` per-DAG → implementer/reviewer (pointer protocol)
+      captain → judge post-DAG
+```
+
+Flow-offer taxonomy menyusut jadi **dua**: OneShot | Fleet. Debug tetap fase khusus
+(bukan ukuran). Goal & dynamic-workflow dihapus dari taksonomi.
+
+## Unit DAG
+
+<Decision title="spec = DAG; ticket = task node" status="accepted">
+Artefak FASE 1 dipetakan 1:1 ke struktur fleet. **1 spec (`to-spec`) = 1 DAG.**
+**1 ticket (`to-tickets`) = 1 task node** — vertical slice, sized satu context window,
+blocking edges = `dependsOn[]`. L = 1 spec = 1 DAG. XL = wayfinder map → N spec → N DAG.
+FASE 2 contract = **derivation, bukan invention**: fleet-plan tak interview ulang, hanya
+menambah routing tier, checkCommand, branch, state files.
+</Decision>
+
+Kontrak per-role dari skill chain: `implement` = prompt implementer (tdd, typecheck, test);
+`code-review` two-axis (Standards + Spec) = kontrak edge-gate, dijalankan sebagai **DUA
+reviewer terpisah berurutan** (lihat Topologi); acceptance criteria
+spec = rubric judge. Aturan sizing `to-tickets` (tracer bullet, expand–contract untuk wide
+refactor) = aturan dekomposisi node.
+
+## Topologi
+
+```txt
+captain (= MAIN AGENT AKTIF, model apapun — model-insensitive, tanpa ganti model)
+  ├─ orchestrator per-DAG   (subagent segar; model dari routing state)
+  │    ├─ implementer       (satu-satunya penulis kode; worktree per task)
+  │    ├─ reviewer-standards (axis 1, DULUAN: coding standards + smell baseline;
+  │    │                      statis/murah, TANPA checkCommand — fail cepat)
+  │    └─ reviewer-spec      (axis 2, setelah standards PASS: kesesuaian ticket/spec;
+  │                          WAJIB run checkCommand — verdict butuh hijau)
+  └─ judge post-DAG         (di-spawn CAPTAIN, bukan orchestrator — penilai tak
+                             boleh di-spawn oleh yang dinilai; state-file-READ-only)
+```
+
+- **Captain selalu ada, termasuk L (N=1).** `fleet.json` selalu ada. Peran captain =
+  juru catat + spawner + relay percakapan → model-insensitive; keputusan mahal sudah
+  dipindah ke planner (routing), judge (kualitas), worker (implementasi).
+- Judge FAIL → tulis file → captain spawn **orchestrator SEGAR** dengan pointer file judge
+  (+ `statePath`). `judge.attempt` bounded 2x.
+- Trade L: +1 hop (captain→orchestrator), dibayar keseragaman + main session bersih.
+
+## Pointer protocol (anti context-rot)
+
+<Decision title="File = data plane, verdict = control plane; orchestrator/captain dilarang baca file detail" status="accepted">
+Implementer/reviewer/judge menulis detail ke **file**, mengembalikan hanya **verdict
+terstruktur**. Orchestrator dan captain hidup murni di control plane — context cost
+O(jumlah task), bukan O(detail). Fix-loop memakai **fresh implementer + pointer ke review
+file** (sekaligus menyembuhkan context rot implementer).
+</Decision>
+
+**Verdict contract** (semua data keputusan WAJIB di sini, tak pernah di file):
+
+```txt
+verdict:    PASS | FAIL | HANDOVER | ESCALATE | BLOCKED
+summary:    1–2 kalimat  → disalin jadi audit[].summary
+ref:        path file detail, relative ke root marker (.git; fallback cwd) → reportRef
+attributes: map kecil (commitSha, acceptanceResult, tokens, …)
+```
+
+- `HANDOVER` = kena turn limit; tulis handover file, orchestrator spawn fresh implementer
+  dengan pointer. Bounded `handoverAttempt` ≤ 3.
+- `ESCALATE` = sinyal safety-ratchet (task ternyata low-tolerance) — upgrade-only.
+- Fix-loop bounded `fixAttempt` ≤ 3 (counter SHARED kedua axis review) → task `failed`,
+  naik ke judge/captain.
+- Review = dua reviewer segar berurutan, standards dulu baru spec (ala skill `code-review`,
+  tapi sequential bukan paralel — standards fail = fail murah sebelum test mahal jalan).
+  FAIL dari axis manapun → fresh implementer + pointer review file axis itu. Audit:
+  `role:reviewer` + `attributes.axis=standards|spec` (schema tak berubah).
+- Lokasi file: `.fleet/<run>/notes/<taskId>-<role>-<attempt>.md`.
+- Worker tak membaca state.json; orchestrator inject kebutuhan (ticket ref, checkCommand,
+  branch, standardsRef) ke spawn prompt. **Laporan subagent = API antar-agent, bukan file.**
+
+**Compaction-proof scribe.** State file = transaction log, konteks = disposable:
+
+1. **Write-at-spawn** — audit entry + `agentId` + `status:running` di-commit ke state
+   SEBELUM spawn.
+2. **Record-then-act** — verdict masuk → push branch → tulis state → baru langkah berikut.
+
+Compaction, crash, rate-limit, ganti mesin = SATU recovery path: baca state → recompute
+runnable-set → lanjut. Verdict hilang di jendela sempit → tie-breaker = `checkCommand` di
+branch task (executable truth, bukan ingatan).
+
+## State — fleet.json & state.json
+
+JSON, bukan YAML (ditulis mesin: tanpa indentation ambiguity, tanpa type coercion, `jq`-able,
+atomic write = temp + rename). **Satu file satu writer**; serialisasi gratis dari event loop
+agent tunggal, bukan mutex.
+
+```txt
+Ticket     = WHAT       (deskripsi, acceptance criteria)
+state.json = WHERE/HOW-FAR (edges, routing, runtime, evidence, pointer)
+Mirror     = one-way: state → tracker. TIDAK PERNAH baca balik.
+```
+
+### fleet.json — owner: captain, selalu ada
+
+```txt
+meta        runName, schemaVersion, createdAt, baseBranch, integrationBranch, mapRef,
+            maxConcurrent, budget (ceiling token/biaya)
+git         remote, webTemplate ("…/commit/{sha}" — URL derive, tak disimpan per node)
+dags[]      id, ref (specRef), title, statePath, dependsOn[], status,
+            judge{verdict, attempt}, attributes, audit[]
+stopFlag
+```
+
+`failedDags[]` lama DIBUANG — derivable dari `status`.
+
+### state.json — owner: orchestrator, 1 file = 1 DAG = 1 spec
+
+```txt
+meta        runName, schemaVersion, specRef, standardsRef, baseBranch, integrationBranch
+tracker     type (local-md|github|linear|pi-tasks|…), supportsBlocking
+nodes[]     id
+            ticket{ref, title, contentCache? (hanya external tracker)}
+            dependsOn[]              ← SATU-SATUNYA sumber edge
+            routing{failureTolerance, worker, reviewer, checkCommand}
+                     ↑ worker/reviewer = CLASS (worker|frontier), BUKAN nama agent
+            runtime{status, fixAttempt, handoverAttempt, branch, commitSha,
+                    acceptanceResult, agentId}      ← inline, ketimpa, resume anchor
+            sync{mirrored, pushed}
+            attributes
+            audit[]                  ← append-only, riwayat kejadian
+stopFlag
+```
+
+Status node: `pending | running | review | fixing | passed | failed` (eksplisit — resume
+perlu tahu mati di fase mana). Runnable-set = node yang semua `dependsOn` = `passed`,
+diambil maksimal `maxConcurrent` slot.
+
+### audit[] — OTel-span-shaped
+
+Pinjam shape span OTel, BUKAN stack-nya (tanpa SDK/collector). 1 spawn = 1 entry.
+Array wajib (bukan inline): 1 node ≥ 2 spawn (worker+reviewer), fix-loop menambah;
+bounded ~8 entry by design.
+
+```txt
+role        worker | reviewer | judge | orchestrator | steering
+agentType   pointer tier   ("claude-worker")      — niat
+model       resolved       ("claude-sonnet-5")    — kenyataan; keduanya dicatat
+            untuk verifikasi safety-ratchet. Kontrak menyebut CLASS; audit
+            menyebut agent konkret + model — di sinilah kenyataan mendarat
+agentId
+startedAt / endedAt        (duration DERIVED oleh viewer, tak disimpan)
+status      ok | error
+error       string|null    — VERBATIM, first-class, hanya saat status:error;
+            invariant: error≠null ⟺ status=error; >2KB → potong + reportRef
+summary     1–3 kalimat human-readable (disalin dari verdict)
+attributes  map<string,string>  (tokens, cost, commitSha per attempt, …)
+reportRef   opsional — pointer laporan panjang
+```
+
+Hierarki parent-child implisit dari posisi (fleet→dag→node→entry); `parentSpanId` dan
+span events sengaja di-skip. Struktur 1:1 mappable ke OTLP kalau suatu hari mau export.
+
+<Aside type="danger" title="Redaksi secrets — WAJIB">
+`error` verbatim + `notes/` di-commit ke integration branch + push ke remote, sementara
+worker jalan dengan env direnv/mise berisi secrets. Sebelum menulis file/error apapun:
+scrub nilai env var yang dikenal + pola umum (`AKIA…`, `ghp_…`, JWT, URL berpassword) →
+`[REDACTED:VAR]`. Berlaku untuk penulis file (worker/reviewer/judge) DAN orchestrator saat
+menyalin verdict.
+</Aside>
+
+## Class-based model routing (multi-account failover)
+
+<Decision title="Kontrak menyebut class; resolusi class→agent terjadi saat spawn" status="accepted">
+User menjalankan 2 akun provider (Claude + Codex) dengan 2 capability class: **worker** dan
+**frontier**. `routing.worker`/`routing.reviewer` di state.json bernilai CLASS, bukan nama
+agent — kontrak jadi provider-portable: run yang direncanakan di sesi Claude bisa di-resume
+di Codex saat rate-limit, tanpa re-plan.
+</Decision>
+
+- **Resolusi saat spawn** (orchestrator/captain): class → agent konkret dari subagent
+  listings via frontmatter `class:` (mis. `class: worker` di claude-worker.md dan
+  codex-worker.md). Default = vertical sesi berjalan; provider kena rate-limit → failover ke
+  agent provider lain dengan CLASS SAMA. Class tak pernah turun (safety-ratchet), provider
+  boleh berganti.
+- **Agent listings wajib punya `class:`** — worker|frontier|scout — di semua agent vertical
+  (claude-*/codex-*) + shared (planner=frontier, support=worker, judge=frontier,
+  claude-fleet-draw/codex-fleet-draw=scout).
+- **ESCALATE ratchet = level class**: worker → frontier, upgrade-only, tercatat di attributes.
+- **Validator**: reviewer≠producer versi string-inequality DIGANTI — kedua field boleh sama-sama
+  "worker" (identitas reviewer≠producer sudah dijamin protokol fresh-spawn per axis); check
+  baru = nilai routing harus enum class valid.
+
+## Git model
+
+Fakta kunci: semua worktree share satu object store + refs; `git -C <path>` menghapus
+kebutuhan pindah cwd; push tak menyentuh working tree; ownership per-ref → push ref berbeda
+bebas race.
+
+**Ref naming** — ref tak boleh jadi prefix-path ref lain (`refs/heads/` = file vs direktori):
+
+```txt
+fleet/<run>/int                     integration — CAPTAIN
+fleet/<run>/dag/<dagId>             per-DAG     — ORCHESTRATOR
+fleet/<run>/task/<dagId>/<taskId>   per-task    — commit: IMPLEMENTER, push: ORCHESTRATOR
+```
+
+| Ref | Commit | Push |
+|---|---|---|
+| task | implementer (worktree task; tiap unit kerja = commit; fix baru = commit baru → git history = replay) | orchestrator |
+| dag | orchestrator (merge clean-only via worktree DAG; fast-forward when possible, normal merge commit when parallel task branches diverge) | orchestrator |
+| int | captain (merge DAG pasca-judge-pass + checkpoint control files; normal merge commit is expected because int has captain-owned control commits) | captain |
+| main | manusia (PR `fleet/<run>/int → main`) | manusia |
+
+- **Push = bagian transaksi record verdict** (orchestrator): invariant — state tak boleh
+  menunjuk sha yang belum ada di remote. Push gagal → `sync.pushed:false`, retry loop berikut.
+- **Konflik merge = detail** → orchestrator/captain TIDAK resolve; spawn implementer
+  "resolve merge X→Y" sebagai task biasa.
+- **Larangan keras:** force-push ref fleet apapun (ditolak = ada sentuhan eksternal → stop,
+  lapor); `git clean` di checkout utama (`-x` menembus gitignore → makan worktrees).
+- Control files: orchestrator menulis di working tree int, captain yang commit+push
+  (transport, bukan edit — bukan pelanggaran single-writer).
+- Handover lintas mesin: `git fetch` → checkout `fleet/<run>/int` → baca fleet.json → resume.
+
+## Layout `.fleet/`
+
+```txt
+repo/.fleet/
+  .gitignore            ← milik fleet, dibuat scaffold, tracked: "*/worktrees/"
+  <run>/
+    fleet.json            tracked
+    dags/<id>/state.json  tracked
+    notes/                tracked (redacted)
+    report/               IGNORED (derived — regenerable dari state)
+    worktrees/            IGNORED
+      dag-<id>/           checkout fleet/<run>/dag/<id>
+      task-<dag>-<id>/    checkout task branch
+```
+
+Worktree DI DALAM repo disengaja: direnv/mise walk-up menemukan `.envrc`/`.mise.toml` root
+repo (secrets untracked tetap kebaca). Caveat: config tracked tersalin per worktree → trust
+per-path; langkah setup worktree wajib `direnv allow` / `mise trust`. `.gitignore` repo
+utama tak disentuh — uninstall fleet = hapus `.fleet/`.
+
+## Preflight (FASE 2, sebelum fan-out)
+
+1. **Coding standards** — `CODING_STANDARDS.md` tak ada → STOP, author dulu (skill kecil
+   baru; derive dari spec+stack). Transport = `meta.standardsRef` di-inject ke SETIAP spawn
+   implementer+reviewer; enforcement = reviewer axis Standards + `.pi/rules` path-scoped;
+   pathfinder convention (ticket pertama per area = pembentuk pola, berikutnya refer kode
+   hidup). Standard lahir setelah fan-out = terlambat — sumber "fleet rusuh".
+2. **Env verification** — carry-over: `needsDb`/`needsBrowser`/secrets terpenuhi sebelum
+   dispatch; DAG tanpa reflection nyata dilarang jalan.
+3. **Validasi statis 0-token** — no cycle, semua `dependsOn` resolve, tiap node punya
+   `checkCommand`, reviewer≠producer (lesson taskflow).
+4. **Graph preview gate** — healthy-provider `<provider>-fleet-draw` render contract → user approve gambar → dispatch.
+
+## Guard runtime
+
+- **Budget ceiling** — captain agregasi `audit[].attributes.tokens`; lewat `meta.budget`
+  → `stopFlag`.
+- **maxConcurrent** — default kecil (3–4); runnable-set diambil per slot.
+- **Stall watchdog** — span `startedAt` tanpa `endedAt` melewati wallclock max →
+  kill + respawn (masuk bound handover).
+- **Integration check level-DAG** — carry-over: tiap DAG punya task penutup yang
+  `checkCommand`-nya = integration test lintas-task; judge percaya `acceptanceResult`
+  tanpa eksekusi (validation 2-lapis tetap).
+- **Steering audit** — arahan user yang direlay = audit entry `role:steering` → replay
+  bisa jawab "kenapa task ini belok".
+- **Knowledge harvest** — end-of-run: `knowledgeDelta` durable → promote `.pi/rules`/`.pi/skills`.
+- **Post-run cleanup** — worktrees + `git branch --list 'fleet/<run>/*'` merged → hapus.
+
+## `<provider>-fleet-draw` — status report untuk manusia
+
+Skill + subagent **scout-tier** (kerja mekanis). Input: pointer `.fleet/<run>/`. Output:
+`.fleet/<run>/report/status-<timestamp>.html` — **satu file HTML self-contained** (SVG
+sebagai primitif di dalamnya, bukan deliverable): graph view (warna = status, klik node →
+panel detail) + gantt/waterfall gaya Grafana (segmen per span, merah = error standout dari
+field `error`, klik → summary/error/attributes/reportRef). Return ke captain: pointer +
+2 kalimat. Template + `render.mjs` = asset skill (deterministik; subagent = pembungkus,
+migrasi CLI nanti = pindah script, kontrak tak berubah).
+
+## pi-tasks (todo UI)
+
+`@tintinweb/pi-tasks` session-scoped (`.pi/tasks/tasks-<sessionId>.json`) → **bukan** tracker
+runtime fleet. Konvensi: oneshot / mini-fleet 1-DAG → boleh task-level; multi-DAG → captain
+mirror **level DAG saja**, opsional. state.json tetap otoritas tunggal.
+
+## Yang pensiun / berubah
+
+```txt
+@pi/pi-taskflow               → UNINSTALL. Gate+fix-loop, static verify, resume granular
+                                diserap fleet; budget engine ceiling diserap; sisanya dibuang.
+goal (@misunders2d/pi-goal)   → keluar dari flow-offer (blokir subagent by design).
+dynamic-workflow               → keluar dari flow-offer.
+fleet-plan / captain           → un-dormant, rewrite (lihat rollout).
+claude-fleet-orchestrator / codex-fleet-orchestrator / judge
+                                → rewrite: pointer protocol; judge pindah ke captain.
+plans/fleet/<name>/            → pindah .fleet/<name>/.
+wave (doc 2026-07-01)          → tetap dibuang; DAG murni.
+```
+
+## Risks
+
+| Risk | Mitigasi |
+|---|---|
+| Verdict kehilangan info penting karena orchestrator tak baca file | Verdict contract eksplisit (ESCALATE dsb.); data keputusan WAJIB inline |
+| Secrets bocor via error verbatim / notes yang di-push | Redaksi wajib di semua penulis; review pola scrub saat dogfood |
+| Handover/fix-loop tak konvergen | Bound keras: fixAttempt ≤3, handoverAttempt ≤3, judge 2x → failed, eskalasi manusia |
+| Compaction makan verdict sebelum tercatat | Write-at-spawn + record-then-act; tie-breaker checkCommand |
+| Fleet 1-DAG terasa overhead untuk L kecil | Gate FASE 1 tetap menawarkan OneShot; fleet dipilih user, bukan default |
+
+## Rollout
+
+Task list sesi 2026-07-12 (pi-tasks #1–#10): ADR ini (#1) → schema+template+validator (#2)
+→ fleet-plan (#3), captain (#4), orchestrator+judge (#5), kontrak implementer/reviewer (#6),
+provider-specific fleet-draw variants (#7), skill coding-standards (#8) → AGENTS.md + retire taskflow (#9) → dogfood
+1 run L kecil end-to-end (#10). Scale ke XL hanya setelah #10 hijau.
+
+## Referensi
+
+- Superseded: `2026-07-11-taskflow-supersedes-fleet.mdx`, `2026-07-03-fleet-dag-rework.md`
+- Carry-over konsep: validation 2-lapis, safety-ratchet, knowledge pipeline, resume contract
+  (`2026-07-03-fleet-resume-contract.md`)
+- Skill chain FASE 1: `grill-with-docs` / `wayfinder` → `to-spec` → `to-tickets`;
+  kontrak role: `implement`, `code-review`

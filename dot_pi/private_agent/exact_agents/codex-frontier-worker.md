@@ -1,5 +1,6 @@
 ---
 name: codex-frontier-worker
+class: frontier
 description: Frontier Codex worker for low-tolerance code
 tools: read, bash, edit, write, grep, find
 model: cx/gpt-5.5
