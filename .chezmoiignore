@@ -129,6 +129,6 @@ LICENSE                                # repo license, bukan dotfile target
 # LaunchAgents + guard hanya relevan di macOS. Ignore di OS lain biar
 # `chezmoi apply` gak nyoba bikin ~/Library/... di Linux/NixOS.
 {{ if ne .chezmoi.os "darwin" -}}
-Library/LaunchAgents/com.user.podman-machine-start.plist
+Library
 .local/bin/podman-machine-ensure.sh
 {{ end -}}
