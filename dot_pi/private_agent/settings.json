@@ -1,14 +1,12 @@
 {
   "defaultProvider": "omniroute",
-  "defaultModel": "cx/gpt-5.5",
+  "defaultModel": "cc/claude-opus-4-8",
   "defaultThinkingLevel": "high",
   "quietStartup": true,
   "packages": [
-    "npm:pi-ask-user",
     "npm:pi-mcp-adapter",
     "npm:pi-rules",
     "npm:pi-prompt-template-model",
-    "npm:pi-patty-bg-tasks",
     "npm:@koltmcbride/pi-loop",
     "npm:pi-searxng",
     "npm:pi-playwright",
@@ -17,7 +15,9 @@
     "npm:@yandy0725/pi-memory",
     "npm:pi-observational-memory",
     "git:github.com/DietrichGebert/ponytail",
-    "npm:@tintinweb/pi-tasks"
+    "npm:pi-ask-herdr",
+    "npm:pi-patty-bg-tasks",
+    "npm:@juicesharp/rpiv-todo"
   ],
   "searxng": {
     "url": "http://localhost:8888"
