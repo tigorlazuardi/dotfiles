@@ -210,13 +210,14 @@ The only thing that re-involves the human is a `blocked`/`conflict` DAG, or a DA
 
 ## Phase 3 — Build (scheduling loop, NOT waves — unattended, resumable)
 
-**Mandatory: load `usage-checkpoint` at Build entry.** Build is the long-running unattended phase
-— the captain MUST invoke the `usage-checkpoint` skill on every Build entry (fresh AND resume) and
-run its two-phase guard **before dispatching each runnable batch and after each DAG returns**
-(replaces any wave-barrier wording — there are no waves here, only scheduling-loop checkpoints).
-At 80% schedule the wakeup timer and continue; at 90% stop dispatching new DAGs and write handover
-into `state.json` before exiting. The timer-before-100% invariant is non-negotiable — a
-rate-limited captain with no scheduled wakeup cannot self-resume.
+**Usage guard is automatic — the `usage-limit-wakeup` hook.** Build is the long-running unattended
+phase, but the captain does NOT invoke a usage skill manually. The global `usage-limit-wakeup`
+Stop/UserPromptSubmit hook fires every turn and, when session usage ≥70% or weekly ≥80%, arms a
+one-shot `CronCreate` wakeup at the limit reset (+1 min) that re-injects a resume prompt into this
+session. Because L1 state is persisted immediately (never batched), that post-reset wakeup is all
+that is needed to self-resume after a rate-limit: on fire the captain re-reads `state.json` + git
+and continues. The timer-before-100% invariant is thus satisfied automatically. The captain's only
+obligation is to keep state current (persist L1 immediately) so the wakeup resumes cleanly.
 
 **Trunk-based vs integration-branch mode** (read `branchStrategy.trunkBased` from `state.json`):
 - **Standard mode** (`trunkBased: false`): captain maintains a dedicated `integrationBranch`.
@@ -248,9 +249,9 @@ This is the core loop. Run it on every status change, not on a fixed tick.
 barrier waiting for a whole batch to finish.
 
 **Spawn orchestrators.** For each DAG in the runnable set:
-1. Check `usage-checkpoint` before dispatching this batch (see above).
-2. Update `dagStatus[d.id].status = "running"`. Persist L1 (immediately, not batched).
-3. Spawn `fleet-orchestrator` in **background** (`run_in_background: true`):
+1. Update `dagStatus[d.id].status = "running"`. Persist L1 (immediately, not batched) — this is
+   also what keeps the `usage-limit-wakeup` hook's post-reset resume clean (see Phase 3 intro).
+2. Spawn `fleet-orchestrator` in **background** (`run_in_background: true`):
    - `model: d.orchestratorModel` — Opus for `failureTolerance: "low"`, Sonnet otherwise. Pass
      the explicit model override — the agent file default is Opus but the state-driven override
      always wins.
@@ -259,25 +260,24 @@ barrier waiting for a whole batch to finish.
      `baseBranch`, `integrationBranch` (or `baseBranch` if trunk), `trunkBased`, `repoPath`, the
      **current accumulated `knowledge[]`**, and `writeKnowledgeDirectly: (d.orchestratorModel ===
      'opus')`. Bake in the caveman directive.
-4. Store the spawned agent's id in memory keyed to `d.id`.
+3. Store the spawned agent's id in memory keyed to `d.id`.
 
 Spawn **all** runnable DAGs in the same message (multiple Agent tool uses) — parallel fan-out, do
 not serialize.
 
 **Wait without polling.** Do not poll or sleep. Background agents notify on completion. While
-waiting, stay reachable (user questions, steering — see §Captain conversational) and check
-`usage-checkpoint` again as each DAG returns.
+waiting, stay reachable (user questions, steering — see §Captain conversational). Usage is handled
+automatically by the `usage-limit-wakeup` hook — no manual re-check as each DAG returns.
 
 ### Post-DAG judge gate
 
 When an orchestrator reports its DAG done:
 
-1. Check `usage-checkpoint`.
-2. Spawn `fleet-judge` (always `model: opus`, always `thinking: high`, tools: Read/Grep/Glob
+1. Spawn `fleet-judge` (always `model: opus`, always `thinking: high`, tools: Read/Grep/Glob
    only): pass L2 state path (`dags/<dagId>.json`), the per-DAG contract path (for the DAG goal),
    `dagId`, `runName`, current `attempt`. The judge is state-file-only — it never executes
    commands, it reads L2 and trusts the recorded `acceptanceResult`s.
-3. Read the judge's report. Extract `verdict`: `pass | fail | needs-fix`, `pinpointedTaskId`,
+2. Read the judge's report. Extract `verdict`: `pass | fail | needs-fix`, `pinpointedTaskId`,
    `evidence`.
 
 **Verdict handling:**
@@ -426,10 +426,10 @@ it is not "only the captain" or "only orchestrators"):
   captain may do autonomously. Merge to base branch is otherwise always a human gate.
 - Idempotent resume is sacred: disk state is the source of truth, every task checkpoint-commits,
   re-running a passed DAG is avoided by reading `state.json` + git first.
-- Usage guard is non-negotiable (Phase 3): captain loads `usage-checkpoint` at every Build entry
-  and checks usage before dispatching each runnable batch and after each DAG returns. A scheduled
-  wakeup timer set before 100% is the hard invariant — without it a rate-limited captain cannot
-  self-resume.
+- Usage guard is automatic (Phase 3): the global `usage-limit-wakeup` hook arms a one-shot
+  post-reset `CronCreate` wakeup whenever usage runs high — no manual skill invocation. A scheduled
+  wakeup before 100% is the hard invariant, satisfied by the hook; the captain's job is only to keep
+  L1 state current (persist immediately) so a rate-limited captain self-resumes cleanly when it fires.
 - Real reflection is non-negotiable (Phase 1.5): never dispatch a DAG whose tasks' acceptance
   can't actually exercise them. On every Build entry (fresh AND resume), re-probe the env supplies
   what pending DAGs need (`needsDb` → DB reachable; `needsBrowser` → browser installed; CI monitor
