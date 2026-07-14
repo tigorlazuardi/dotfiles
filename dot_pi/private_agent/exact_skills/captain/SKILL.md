@@ -51,7 +51,8 @@ problem, not something captain patches inline — captain never authors or edits
 Captain is:
 - The DAG-of-DAG tracker and scheduler (runnable-set loop, not waves).
 - The spawner of `<provider>-fleet-orchestrator` (per-DAG, background) and `judge` (post-DAG, spawned by
-  captain — never by the orchestrator being judged).
+  captain — never by the orchestrator being judged). Every `Agent` spawn of `judge` or `planner`
+  sets `model` to a same-vertical frontier model; neither may inherit captain's model.
 - The steering relay: user → captain → `steer_subagent` → orchestrator (which relays further
   to its own workers the same way).
 - The sole writer of `fleet.json` (`dags[].status`, `dags[].judge`, `dags[].audit[]`,
@@ -145,13 +146,16 @@ plus the judge's independent pass over the same file is the whole quality gate. 
 orchestrator's audit entry (`endedAt`, `status`, `summary`, `attributes`) in `fleet.json` first
 — record-then-act.
 
-1. Spawn `judge` (background), passing only the DAG's `statePath` and `specRef` — judge reads
-   `state.json`, `notes/`, and the task branches itself; it is NOT bound by the pointer
-   protocol (fresh, one-shot context), but YOU still never read what it read.
+1. Spawn `judge` (background) with `Agent` `model` set to a same-vertical frontier model,
+   passing only the DAG's `statePath` and `specRef` — judge reads `state.json`, `notes/`, and
+   the task branches itself; it is NOT bound by the pointer protocol (fresh, one-shot context),
+   but YOU still never read what it read.
 2. Judge returns: `verdict: PASS | FAIL`, `summary`, `ref` (notes file, only on FAIL),
-   `attributes`.
+   `attributes`. `ESCALATE` is no verdict: do not count it as FAIL or advance the DAG. Respawn
+   once with the explicit same-vertical frontier `model`; if that also returns `ESCALATE`, block
+   the DAG and escalate a human/configuration error.
 3. **Write-at-spawn / record-then-act applies here too**: append the judge's audit entry
-   (`role: "judge"`) to `fleet.json` before acting on the verdict.
+   (`role: "judge"`) to `fleet.json` before acting on a PASS or FAIL verdict.
 
 ### PASS
 
@@ -287,8 +291,9 @@ The user talks to you at all times, background agents run behind the scenes.
 |---|---|
 | Boot/resume | Read `fleet.json`, validate preconditions, enter scheduling loop |
 | DAG deps satisfied | Write-at-spawn, spawn concrete `<provider>-fleet-orchestrator` (background, inject `statePath`+`maxConcurrent`) |
-| Orchestrator reports | Finalize its audit entry, spawn `judge` (background) |
+| Orchestrator reports | Finalize its audit entry, spawn `judge` with explicit same-vertical frontier `model` |
 | Judge PASS | Merge DAG branch → `int`, push, mark DAG passed, recompute runnable |
+| Judge ESCALATE | No verdict; respawn judge once with explicit frontier `model`, then block/escalate config error |
 | Judge FAIL, attempt<2 | Increment attempt, spawn FRESH orchestrator with judge's notes pointer |
 | Judge FAIL, attempt==2 | Mark DAG failed, report to user, dependents stay unreachable |
 | Merge conflict (any ref) | Spawn implementer "resolve merge X→Y" — never resolve yourself |

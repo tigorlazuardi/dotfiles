@@ -81,9 +81,8 @@ Plugin `pi-patty-bg-tasks` = run a **bash command** in background, wake on compl
 - `codex-scout` (scout model — GPT 5.4-mini, leaf) — read-only `file:line` locator.
 
 **Shared workers (vertical-agnostic):**
-- `planner` (frontier model — Opus) — heavy plan / SCOPE / ADR when main is not a frontier model.
-- `support` (worker model — Sonnet) — docs, research, synthesis (no source edits).
-- `ui-designer` (Kimi K2, leaf) — concept UI, ready HTML.
+- `judge` and `planner` — every `Agent` spawn MUST set `model` to a same-vertical frontier model; never inherit. `ESCALATE` is no verdict/no plan: respawn once with that explicit model, then block and escalate a configuration error if it repeats.
+- `support` — may inherit a worker-or-higher model; a scout caller MUST set `model` to a same-vertical worker model. On `ESCALATE`, do not use the result; respawn once correctly, then block and escalate a configuration error if it repeats.
 
 ### Fault-tolerance routing (implement + review)
 Classify each slice/task: **low** (auth / secrets / DB migration / schema / public-API / money-payment / data-deletion / irreversible), **standard**, or **trivial**. Routing follows the class on BOTH sides. Use the worker and reviewer in the current vertical (see Worker pool above):
@@ -103,7 +102,7 @@ Classify each slice/task: **low** (auth / secrets / DB migration / schema / publ
 Fleet is the single executor for L+ work (fleet generalizes down to a single DAG — no separate lightweight orchestrator needed for L). Full mechanics live in `docs/design/2026-07-12-fleet-revamp.mdx`; this is the always-loaded summary.
 
 - **Captain = the main agent itself**, active for the whole run — model-insensitive (no model switch required). It records, spawns, and relays; it never judges quality or writes code itself.
-- **Topology:** captain → concrete `claude-fleet-orchestrator` / `codex-fleet-orchestrator` per DAG (fresh subagent, chosen by healthy provider) → implementer (sole code writer) + `reviewer-standards` then `reviewer-spec` (two fresh reviewers run in sequence, not parallel — standards axis first, cheap and fails fast; spec axis after, requires a green `checkCommand`). Captain also spawns `judge` after each DAG completes (never spawned by the orchestrator it judges).
+- **Topology:** captain → concrete `claude-fleet-orchestrator` / `codex-fleet-orchestrator` per DAG (fresh subagent, chosen by healthy provider) → implementer (sole code writer) + `reviewer-standards` then `reviewer-spec` (two fresh reviewers run in sequence, not parallel — standards axis first, cheap and fails fast; spec axis after, requires a green `checkCommand`). Captain also spawns `judge` after each DAG completes with `Agent` `model` set to a same-vertical frontier model (never spawned by the orchestrator it judges).
 - **Pointer protocol:** implementer/reviewer/judge write detail to a file and return only a structured verdict (`PASS | FAIL | HANDOVER | ESCALATE | BLOCKED` + summary + file ref). Orchestrator and captain never read the detail files — only verdicts. Keeps control-plane context flat regardless of run size.
 - **State:** `.fleet/<run>/fleet.json` (captain-owned, DAG-level) + `.fleet/<run>/dags/<id>/state.json` (orchestrator-owned, task-node level, one file per DAG/spec).
 - **Skills:** `fleet-plan` (derive contract from spec+tickets — derivation, not invention), `captain` (drive the run), `fleet-draw` (skill that renders run status via concrete `claude-fleet-draw` / `codex-fleet-draw` subagents for human review), `coding-standards` (preflight — author `CODING_STANDARDS.md` before fan-out if missing).
