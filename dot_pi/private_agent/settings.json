@@ -14,10 +14,11 @@
     "npm:pi-diet-lsp",
     "npm:@yandy0725/pi-memory",
     "npm:pi-observational-memory",
-    "git:github.com/DietrichGebert/ponytail",
     "npm:@juicesharp/rpiv-todo",
     "npm:@juicesharp/rpiv-ask-user-question",
-    "npm:@vanillagreen/pi-background-tasks"
+    "npm:@vanillagreen/pi-background-tasks",
+    "npm:@mrclrchtr/supi-context",
+    "npm:@xynogen/pix-optimizer"
   ],
   "searxng": {
     "url": "http://localhost:8888"
