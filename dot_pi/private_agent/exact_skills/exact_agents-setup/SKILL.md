@@ -1,5 +1,6 @@
 ---
 name: agents-setup
+disable-model-invocation: true
 description: 'Scaffold a lazy-load AGENTS.md knowledge system for a new project. Use when user says "setup agents", "init agents", "create AGENTS.md", or wants to set up AI knowledge files for a project. Analyzes the project structure and generates a lean AGENTS.md index + .agents/ knowledge files that AI models load on-demand.'
 license: MIT
 allowed-tools: Read, Write, Bash, Glob

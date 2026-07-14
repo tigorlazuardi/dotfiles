@@ -1,5 +1,6 @@
 ---
 name: astro-docs-setup
+disable-model-invocation: true
 description: Scaffold a per-repo Astro + Starlight design-docs site (once per repo). Trigger when the user asks to "set up docs", "scaffold the docs site", "add astro docs", when a FASE-1 spec produces a design doc but the repo has no docs site yet, or when migrating a repo off Plandeck. Creates docs/ (merge-offer on conflict, fallback docs-site/), a required landing page, the Decision.astro + UiMock.astro + Grid.astro (print-friendly side-by-side) components, a content-only print/Save-as-PDF button, client-side mermaid rendering (astro-mermaid, CI-safe), opt-in code line numbers, starlight-llms-txt config, and CI for GitHub Pages, Cloudflare Pages, or GitLab Pages. For WRITING docs afterwards, use astro-docs-authoring instead.
 ---
 

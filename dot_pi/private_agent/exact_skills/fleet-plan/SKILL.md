@@ -26,7 +26,7 @@ skill and the ADR ever disagree, the ADR wins — re-read it.
 
 **Contract = derivation, not invention.** 1 spec = 1 DAG. 1 ticket = 1 task node. A ticket's
 "Blocked by" list becomes that node's `dependsOn[]`. Fleet is L+ — it runs fine with a single
-DAG; don't hold this back for XL-only epics. Gone for good: wave, Ralph-style
+DAG; don't hold this back for XL-only epics. Gone for good: wave-based execution,
 `acceptance.command` loops, a 10-branch interview, and separate `FLEET.md`/per-DAG contract
 markdown — the state files and the tickets they reference ARE the contract, don't duplicate
 them into prose.
