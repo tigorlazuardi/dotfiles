@@ -3,7 +3,7 @@ name: codex-reviewer
 class: worker
 description: Standard Codex code reviewer
 tools: read, grep, find, bash, Agent
-model: cx/gpt-5.4
+model: cx/gpt-5.6-terra
 thinking: medium
 run_in_background: true
 ---

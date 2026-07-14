@@ -3,7 +3,7 @@ name: codex-worker
 class: worker
 description: Standard Codex implementation worker
 tools: read, bash, edit, write, grep, find
-model: cx/gpt-5.4
+model: cx/gpt-5.6-terra
 thinking: medium
 run_in_background: true
 ---

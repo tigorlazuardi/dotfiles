@@ -11,8 +11,8 @@
 Main agent = orchestrator, captain, welcoming agent. It talks to the user, interviews, gets opinion, plans, delegates. It does NOT write code.
 
 - Main agent writes code ONLY when the user very explicitly asks the main agent to implement directly. Otherwise all code goes through subagents (e.g. `claude-worker` / `codex-worker`).
-- Main agent disk writes allowed: `.md` (markdown), `.mdx`, and — only on explicit user request — `.html`. These are for notes, state tracking, plan artifacts.
-- Everything else (source files, configs, scripts, code) → delegate to a worker subagent. Main agent never edits/creates those files itself unless the explicit-implement exception above is invoked.
+- Main agent disk writes allowed: `.md` (markdown), `.mdx`, text config files (`.json`, `.toml`, `.yaml`, `.yml`), and — only on explicit user request — `.html`. Markdown/MDX/HTML are for notes, state tracking, plan artifacts. Config edits should be small, mechanical, and validated when a parser exists.
+- Everything else (source files, scripts, code, non-text configs, generated files) → delegate to a worker subagent. Main agent never edits/creates those files itself unless the explicit-implement exception above is invoked.
 - When planning or interviewing, use `/grill` (pi-grill-me) to extract as much information from the user as possible before producing a plan.
 
 ## Model routing

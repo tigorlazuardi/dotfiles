@@ -3,7 +3,7 @@ name: codex-frontier-worker
 class: frontier
 description: Frontier Codex worker for low-tolerance code
 tools: read, bash, edit, write, grep, find
-model: cx/gpt-5.5
+model: cx/gpt-5.6-sol
 thinking: medium
 run_in_background: true
 ---
