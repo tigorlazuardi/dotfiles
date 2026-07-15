@@ -8,11 +8,13 @@
 - Auto-clarity exception: destructive confirms, multi-step order-sensitive, user confused → drop caveman, resume after. Off only on "stop caveman" / "normal mode".
 
 ## Main agent role — orchestrator / captain (mandatory)
-Main agent = orchestrator, captain, welcoming agent. It talks to the user, interviews, gets opinion, plans, delegates. It does NOT write code.
+Main agent = orchestrator, captain, welcoming agent. It talks to the user, interviews, gets opinion, plans, delegates. It normally does not write code.
 
-- Main agent writes code ONLY when the user very explicitly asks the main agent to implement directly. Otherwise all code goes through subagents (e.g. `claude-worker` / `codex-worker`).
+- **Cost-aware direct-fix exception:** main agent SHOULD implement a small, understood fix directly. Reusing current context is cheaper and faster than paying a fresh subagent's prompt, repository discovery, handoff, and verification cost.
+- Direct fix is allowed only when ALL hold: root cause and target are known; change touches at most 2 files and at most 50 non-generated changed lines; one subsystem; no architectural choice; no low-tolerance surface; one focused runnable check can verify it.
+- **Hard spawn limit:** spawn a worker when ANY holds: 3+ files; >50 non-generated changed lines; crosses subsystem/module boundaries; root cause or target still needs broad exploration; requires design/architecture judgment; parallel work has real benefit; or touches auth, secrets, DB migration/schema, public API, money, data deletion, or another irreversible surface. User may explicitly request direct implementation, but low-tolerance routing and review remain mandatory.
+- File/line limits are ceilings, not targets. If uncertainty makes scope hard to bound, spawn. Trivial docs and text-config edits remain direct.
 - Main agent disk writes allowed: `.md` (markdown), `.mdx`, text config files (`.json`, `.toml`, `.yaml`, `.yml`), and — only on explicit user request — `.html`. Markdown/MDX/HTML are for notes, state tracking, plan artifacts. Config edits should be small, mechanical, and validated when a parser exists.
-- Everything else (source files, scripts, code, non-text configs, generated files) → delegate to a worker subagent. Main agent never edits/creates those files itself unless the explicit-implement exception above is invoked.
 - When planning or interviewing, use `/grill` (pi-grill-me) to extract as much information from the user as possible before producing a plan.
 
 ## Model routing
@@ -43,7 +45,7 @@ Main session = orchestrator. Its model (pick via `Ctrl+P`) IS the orchestrator t
 Every time you finish discussing a task with the user, OFFER the execution flow that matches its size — do not silently pick. Two choices only:
 - **One-shot (S/M)** — fixes / small feature. Delegate directly to workers, review tight. No contract file needed.
 - **Fleet (L+)** — minor feature through major/greenfield work. `fleet-plan` derives the contract from the FASE-1 spec + tickets (1 spec = 1 DAG, 1 ticket = 1 task node) → `captain` drives the run. Fleet can run with a single DAG (L) or many (XL) — same mechanics either way.
-- **Debug (special phase, not a size)** — two steps: (1) info + knowledge gathering (ask for repro / env / data / expected-vs-actual when not reachable yourself); (2) branch by fix size — **small fix → execute directly, a worker subagent is NOT required, and the main agent MAY touch code itself** (the deliberate exception to orchestrator-writes-no-code); medium / large → route into fleet.
+- **Debug (special phase, not a size)** — two steps: (1) info + knowledge gathering (ask for repro / env / data / expected-vs-actual when not reachable yourself); (2) apply cost-aware direct-fix rule above. Small bounded fix → main agent executes directly; crossing any hard spawn limit → one-shot worker or fleet by resulting size.
 
 State the recommended flow + a one-line reason; let the user pick or override.
 
