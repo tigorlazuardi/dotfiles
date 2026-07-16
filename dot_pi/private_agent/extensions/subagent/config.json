@@ -3,5 +3,6 @@
   "forceTopLevelAsync": true,
   "intercomBridge": {
     "mode": "always"
-  }
+  },
+  "maxSubagentDepth": 2
 }

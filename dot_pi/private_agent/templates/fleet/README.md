@@ -2,9 +2,7 @@
 
 State artefacts for the fleet orchestration redesign. Single source of truth:
 `docs/design/2026-07-12-fleet-revamp.mdx` (§State — fleet.json & state.json,
-§audit[], §Git model, §Layout .fleet/, §Preflight). These are the CURRENT
-generation — `fleet-captain.state.template.json` / `fleet-slice.state.template.json`
-one level up are the superseded wave-based generation, kept for history only.
+§audit[], §Git model, §Layout .fleet/, §Preflight). These are the only active generation. Obsolete root-level fleet/Ralph templates were deleted; historical docs are archival, not runtime contracts.
 
 ## Files
 
@@ -29,14 +27,14 @@ one level up are the superseded wave-based generation, kept for history only.
 `prompts/implementer.md`, `prompts/reviewer-standards.md`, and `prompts/reviewer-spec.md`
 are the spawn-prompt contracts for the worker roles — the orchestrator injects one of
 these (placeholders filled) as the task prompt when spawning
-`claude-worker`/`codex-worker`/frontier via the `Agent` tool. Not a new agent file; the
-existing worker agents stay as-is, the contract arrives through the spawn prompt. The
+`implementer`/`frontier-implementer` via the `subagent` tool. Not a new agent file; the
+consolidated implementation agents stay as-is, the contract arrives through the spawn prompt. The
 orchestrator never opens the ticket, standards doc, or notes files itself — it only
 fills placeholders and reads back the worker's verdict block.
 
 Review is two FRESH reviewer subagents run in sequence, never in parallel:
 `reviewer-standards` (axis 1) first — static/cheap, no check command, fails fast — then,
-only on its PASS, `reviewer-spec` (axis 2) — ticket/spec fit, MUST run the check command.
+only on its PASS, `reviewer-spec` (axis 2) — ticket/spec fit, consumes orchestrator-recorded green check evidence and MUST NOT rerun the check command.
 `fixAttempt` is one counter shared by both axes; a FAIL from either restarts the review
 from `reviewer-standards` on the next attempt.
 
@@ -44,7 +42,7 @@ Shared placeholders: `{{RUN}}`, `{{DAG_ID}}`, `{{TASK_ID}}`, `{{TICKET_REF}}`,
 `{{CHECK_COMMAND}}`, `{{BRANCH}}`, `{{WORKTREE_PATH}}`, `{{STANDARDS_REF}}`,
 `{{POINTER_FILE}}` (optional — prior reviewer/handover file), `{{ATTEMPT}}`.
 Reviewer-only: `{{IMPL_REF}}` (implementer's notes), `{{FIXED_POINT}}` (diff base).
-`{{CHECK_COMMAND}}` is not injected for `reviewer-standards` — that axis never runs it.
+`{{CHECK_COMMAND}}` is injected only into implementer context and held by orchestrator for its single authoritative run. Neither reviewer receives it. Spec review receives `{{CHECK_EVIDENCE_REF}}` and `{{COMMIT_SHA}}`.
 
 All three templates end in the same verdict block
 (`VERDICT`/`SUMMARY`/`REF`/`ATTRIBUTES`) — the worker's entire reply back to the
@@ -72,8 +70,8 @@ time via the matching agent listing's `class:` frontmatter) and, for
 and reviewer identity being different is already guaranteed by the
 fresh-spawn-per-axis protocol, not by this field); every `statePath` file
 exists; audit span invariant `error != null <=> status == "error"`;
-`runtime.branch` matches `fleet/<run>/task/<dagId>/<taskId>` and
-`meta.integrationBranch` matches `fleet/<run>/int`.
+`runtime.branch` matches `fleet/<run>/task/<dagId>/<taskId>`;
+`meta.integrationBranch` matches `fleet/<run>/int`; orchestrator is immutable `cx/gpt-5.6-terra`/`low`; canonical uppercase phases, current-child identity, per-axis reviewer retries, check retry, and evidence pointers exist for exact resume.
 
 Exit 0 = all checks passed. Exit 1 = prints every failing file/path with a
 message.

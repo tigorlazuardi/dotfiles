@@ -10,7 +10,7 @@
     "npm:@koltmcbride/pi-loop",
     "npm:pi-searxng",
     "npm:pi-playwright",
-    "npm:@kmmuntasir/pi-nested-subagents",
+    "npm:pi-subagents",
     "npm:pi-diet-lsp",
     "npm:@yandy0725/pi-memory",
     "npm:pi-observational-memory",
@@ -33,5 +33,8 @@
     },
     "debugLog": false
   },
-  "hideThinkingBlock": true
+  "hideThinkingBlock": true,
+  "subagents": {
+    "disableBuiltins": true
+  }
 }

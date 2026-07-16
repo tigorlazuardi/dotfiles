@@ -36,8 +36,8 @@ improvise a different branch.
 - **Commit discipline**: one unit of work = one commit. A new fix is a new commit, never
   an amend or a rebase. Do NOT push — the orchestrator pushes. Do NOT force-push. Do NOT
   run `git clean`.
-- Run {{CHECK_COMMAND}} before you report anything. Your verdict's `acceptanceResult`
-  attribute must reflect its real exit status.
+- Run focused tests/checks useful while implementing, but never run the exact contract
+  `checkCommand`; the orchestrator owns that single acceptance run after standards PASS.
 
 ## Notes file
 
@@ -72,5 +72,5 @@ after it:
 VERDICT: PASS|FAIL|HANDOVER|ESCALATE|BLOCKED
 SUMMARY: <1-2 kalimat>
 REF: <path file notes/handover relative repo root>
-ATTRIBUTES: commitSha=<sha>; acceptanceResult=<pass|fail|skipped>; <k>=<v>...
+ATTRIBUTES: commitSha=<sha>; focusedChecks=<summary|skipped>; <k>=<v>...
 ```

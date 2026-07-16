@@ -53,12 +53,12 @@
         "title": { "type": "string" },
         "statePath": { "type": "string", "minLength": 1, "description": "relative to run dir, e.g. dags/<id>/state.json" },
         "dependsOn": { "type": "array", "items": { "type": "string" } },
-        "status": { "enum": ["pending", "running", "passed", "failed"] },
+        "status": { "enum": ["PENDING", "IMPLEMENTING", "STANDARDS_REVIEW", "CHECKING", "SPEC_REVIEW", "FIXING", "PASSED", "FAILED", "BLOCKED", "ESCALATED"] },
         "judge": {
           "type": "object",
           "required": ["verdict", "attempt"],
           "properties": {
-            "verdict": { "enum": [null, "pass", "fail", "needs-fix"] },
+            "verdict": { "enum": [null, "PASS", "FAIL", "BLOCKED", "ESCALATE"] },
             "attempt": { "type": "integer", "minimum": 0, "maximum": 2, "description": "bounded 2x per doc" }
           }
         },
@@ -78,12 +78,12 @@
       "required": ["role", "agentType", "model", "agentId", "startedAt", "endedAt", "status", "error", "summary", "attributes"],
       "properties": {
         "role": { "enum": ["worker", "reviewer", "judge", "orchestrator", "steering"] },
-        "agentType": { "type": "string", "description": "pointer tier, e.g. claude-worker (intent)" },
-        "model": { "type": "string", "description": "resolved model, e.g. claude-sonnet-5 (fact)" },
-        "agentId": { "type": "string" },
+        "agentType": { "type": "string", "description": "pointer tier, e.g. implementer (intent)" },
+        "model": { "type": "string", "description": "resolved model, e.g. cx/gpt-5.6-terra (fact)" },
+        "agentId": { "type": ["string", "null"] },
         "startedAt": { "type": "string", "format": "date-time" },
         "endedAt": { "type": ["string", "null"], "format": "date-time" },
-        "status": { "enum": ["ok", "error"] },
+        "status": { "enum": ["pending", "running", "ok", "error"] },
         "error": { "type": ["string", "null"], "description": "verbatim, first-class; invariant: error != null <=> status:error" },
         "summary": { "type": "string" },
         "attributes": { "type": "object", "additionalProperties": { "type": "string" } },
@@ -95,7 +95,7 @@
           "then": { "required": ["error"], "properties": { "error": { "type": "string", "minLength": 1 } } }
         },
         {
-          "if": { "properties": { "status": { "const": "ok" } }, "required": ["status"] },
+          "if": { "properties": { "status": { "enum": ["pending", "running", "ok"] } }, "required": ["status"] },
           "then": { "properties": { "error": { "type": "null" } } }
         }
       ]

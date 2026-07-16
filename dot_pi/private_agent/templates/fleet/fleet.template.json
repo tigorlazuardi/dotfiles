@@ -18,7 +18,7 @@
       "title": "<dag-title>",
       "statePath": "dags/d1/state.json",
       "dependsOn": [],
-      "status": "pending",
+      "status": "PENDING",
       "judge": { "verdict": null, "attempt": 0 },
       "attributes": {},
       "audit": []

@@ -84,12 +84,7 @@ The schema's `routing` object is small on purpose: `failureTolerance`, `worker`,
 `checkCommand`. Nothing else — don't add fields it doesn't have.
 
 `routing.worker`/`routing.reviewer` hold a CLASS (`worker` | `frontier`), not a concrete agent
-name — this is what makes the contract provider-portable: a run planned in a Claude session can
-resume in a Codex session after rate-limit without re-planning. Resolution class → concrete
-agent happens later, at spawn time (orchestrator/captain), from the matching `agents/*.md`
-listing's `class:` frontmatter, defaulting to the vertical of whichever session/provider is
-healthy at that moment — e.g. a `worker`-class node resolves to `claude-worker` OR
-`codex-worker` depending on which provider is running the spawn. Don't hardcode a vertical here.
+name — this is what makes the contract route-stable. Resolution is fixed: `worker` → `implementer` + `reviewer`; `frontier` → `frontier-implementer` + `frontier-reviewer`. No provider choice or failover exists.
 
 **`failureTolerance` per node** — classify the ticket's actual surface, not its size:
 
@@ -100,8 +95,7 @@ healthy at that moment — e.g. a `worker`-class node resolves to `claude-worker
   `reviewer: "worker"`.
 - **`trivial`** — mechanical, scaffolding, config, docs. → same as `standard`.
 
-Class never goes down once written (safety-ratchet) — an `ESCALATE` verdict at runtime may
-bump a node from `worker` to `frontier`, never the reverse. Reviewer identity differing from
+Class is immutable once written. An `ESCALATE` verdict terminates that contract for captain/human action; orchestrator never bumps, downgrades, or reroutes it. Reviewer identity differing from
 the producer is guaranteed by the fresh-spawn-per-axis protocol, not by this field — `worker`
 and `reviewer` may legitimately hold the same class value.
 
@@ -163,7 +157,7 @@ valid classes (with the `low`-tolerance safety floor enforced), every
 `fleet/<run>/task/<dagId>/<taskId>` / `fleet/<run>/int`. Fix and re-run until it passes — do not
 hand off a run directory that fails this.
 
-**(d) Human gate: graph preview.** Only after (c) passes, invoke the `fleet-draw` skill or the concrete healthy-provider `<provider>-fleet-draw` subagent
+**(d) Human gate: graph preview.** Only after (c) passes, invoke the `fleet-draw` skill or the `fleet-draw` subagent
 with a pointer to `.fleet/<run>/` and wait for its HTML report pointer. Show the pointer to the
 user and ask them to open it and approve the graph **before** any captain dispatch. Do not tell
 the user to launch the captain until they've approved.
@@ -209,22 +203,20 @@ XL (wayfinder map path).
 the remote host, e.g. `https://github.com/<org>/<repo>/commit/{sha}`.
 
 **`fleet.json` (`dags[]`):** one entry per DAG from §2 — `id`, `ref` (specRef), `title`,
-`statePath: "dags/<id>/state.json"`, `dependsOn`, `status: "pending"` (even DAGs with no
+`statePath: "dags/<id>/state.json"`, `dependsOn`, `status: "PENDING"` (even DAGs with no
 dependencies — the captain, not this skill, computes the runnable set at dispatch time),
 `judge: { "verdict": null, "attempt": 0 }`, `attributes: {}`, `audit: []`.
 
-**Each `dags/<id>/state.json` (`meta`):** `runName`, `schemaVersion: 1`, `specRef`,
-`standardsRef` (from preflight a), `baseBranch`, `integrationBranch` — same values as the
-parent `fleet.json`.
+**Each `dags/<id>/state.json` (`meta`):** `runName`, `schemaVersion: 2`, `specRef`,
+`standardsRef` (from preflight a), `baseBranch`, `integrationBranch`, immutable
+`orchestrator`, and all four retry caps — same values as the parent contract.
 
 **`tracker`:** `type` = whatever FASE 1's `to-tickets` actually published to (`local-md`,
 `github`, `linear`, ...), `supportsBlocking` = true for a real tracker's native blocking links,
 false for a local markdown file (edges live in prose there).
 
 **`nodes[]`:** one entry per task node from §2 — `id`, `ticket.ref`/`ticket.title`,
-`dependsOn`, `routing` (from §3), `runtime` all-defaults (`status: "pending"`, `fixAttempt: 0`,
-`handoverAttempt: 0`, `branch: "fleet/<run>/task/<dagId>/<taskId>"`, `commitSha: null`,
-`acceptanceResult: null`, `agentId: null`), `sync: { "mirrored": false, "pushed": false }`,
+`dependsOn`, `routing` (from §3), `runtime` all-defaults (`status`/`phase: "PENDING"`, `currentChild: null`, `reviewAxis: null`, all fix/handover/per-axis reviewer/check retry counters zero, `branch: "fleet/<run>/task/<dagId>/<taskId>"`, `commitSha: null`, and all evidence pointers null). `meta.orchestrator` is always `{ "agent": "orchestrator", "model": "cx/gpt-5.6-terra", "thinking": "low" }`; no risk-based orchestrator selection or upgrade exists., `sync: { "mirrored": false, "pushed": false }`,
 `attributes: {}`, `audit: []`.
 
 **`stopFlag`** in both files: `{ "stopped": false, "reason": null, "stoppedAt": null }`.
@@ -241,7 +233,7 @@ and the user has approved the graph preview from (d):
 ```
 ✅ Fleet contract ready: .fleet/<run>/
 
-  fleet.json              — captain index, all DAGs pending
+  fleet.json              — captain index, all DAGs PENDING
   dags/<id>/state.json    — per-DAG state, one per DAG
   report/status-*.html    — graph preview (approved by you above)
 

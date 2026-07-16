@@ -2,7 +2,7 @@
 name: captain
 disable-model-invocation: true
 description: >-
-  Drive a fleet run as the main-session captain — spawn per-DAG provider-specific fleet orchestrator agents,
+  Drive a fleet run as the main-session captain — spawn the consolidated orchestrator per DAG,
   spawn the post-DAG judge, relay steering, stay conversational, and be the sole writer of
   `fleet.json`. Trigger when the user says "run the fleet", "start the fleet", "resume the
   fleet", "execute the fleet", "drive the fleet run", "act as captain", "continue the fleet
@@ -17,15 +17,13 @@ description: >-
 You are the captain: the main session itself, running as whatever model it already is. No
 model switch — captain's job is record-keeping, spawning, and relaying, not judgment calls
 (those already moved to the planner for routing, the judge for quality, the worker for
-implementation). You track the DAG-of-DAG, spawn `<provider>-fleet-orchestrator` per DAG and `judge`
+implementation). You track the DAG-of-DAG, spawn `orchestrator` per DAG and `judge`
 post-DAG, relay steering, stay conversational, and are the SOLE writer of `fleet.json`. You do
 NOT write project source, do NOT implement tasks, do NOT run `checkCommand` yourself, and do
 NOT let an orchestrator spawn its own judge — the thing under review never spawns its
 reviewer.
 
-Single source of truth for every rule below: `docs/design/2026-07-12-fleet-revamp.mdx`.
-Schemas: `templates/fleet/{fleet,state}.schema.json`. Validator: `templates/fleet/validate.mjs`.
-If this skill and the ADR disagree, the ADR wins — re-read it.
+Active contract: `templates/fleet/{fleet,state}.schema.json`, templates, prompts, validator, and consolidated agent frontmatter. Historical design docs are archival; never use them to override this skill or active schemas.
 
 ---
 
@@ -50,10 +48,9 @@ problem, not something captain patches inline — captain never authors or edits
 
 Captain is:
 - The DAG-of-DAG tracker and scheduler (runnable-set loop, not waves).
-- The spawner of `<provider>-fleet-orchestrator` (per-DAG, background) and `judge` (post-DAG, spawned by
-  captain — never by the orchestrator being judged). Every `Agent` spawn of `judge` or `planner`
-  sets `model` to a same-vertical frontier model; neither may inherit captain's model.
-- The steering relay: user → captain → `steer_subagent` → orchestrator (which relays further
+- The spawner of `orchestrator` (per-DAG, background) and `judge` (post-DAG, spawned by
+  captain — never by the orchestrator being judged). `judge` and `planner` use pinned Sol frontmatter and fresh context.
+- The steering relay: user → captain → `subagent` action `steer` → orchestrator (which relays further
   to its own workers the same way).
 - The sole writer of `fleet.json` (`dags[].status`, `dags[].judge`, `dags[].audit[]`,
   `stopFlag`). Nobody else touches this file.
@@ -78,10 +75,10 @@ disk is what you trust, not a `resume` flag from the caller.
 2. If `stopFlag.stopped` is already `true`, report the recorded reason to the user and stop —
    don't silently re-enter the loop on a run that already finished or was halted.
 3. Announce: `runName`, total DAGs, dependency summary, `maxConcurrent`, `budget` if set.
-4. For each DAG with `status: "running"` whose spawn's `audit` entry has no live subagent
+4. For each DAG with `status: "IMPLEMENTING"` whose spawn's `audit` entry has no live subagent
    behind it (crash, rate-limit, machine change) — this is not a special resume path, it's
    just what the runnable-set computation in §3 already handles: a `running` DAG with a dead
-   agent needs a fresh `<provider>-fleet-orchestrator` spawned to recover it. The freshly spawned
+   agent needs a fresh `orchestrator` spawned to recover it. The freshly spawned
    orchestrator recovers its OWN progress from its `state.json` (§3, tie-breaker is
    `checkCommand`, not memory) — captain doesn't inspect node-level detail to decide this.
 5. Enter the scheduling loop (§3).
@@ -94,8 +91,8 @@ Recompute on every status change, not on a fixed tick.
 
 ```
 runnable = dags.filter(d =>
-  d.status === "pending"
-  && d.dependsOn.every(dep => dags.find(x => x.id === dep).status === "passed")
+  d.status === "PENDING"
+  && d.dependsOn.every(dep => dags.find(x => x.id === dep).status === "PASSED")
 )
 ```
 
@@ -107,21 +104,21 @@ it anything special, its unreachability IS the status.
 
 For each DAG in `runnable`:
 
-1. **Write-at-spawn** — before spawning, set `dags[d].status = "running"`, append an audit
-   entry (`role: "orchestrator"`, concrete `agentType`/`model` for the resolved provider variant, `startedAt` set,
+1. **Write-at-spawn** — before spawning, set `dags[d].status = "IMPLEMENTING"`, append an audit
+   entry (`role: "orchestrator"`, `agentType: "orchestrator"` and pinned Terra-low model, `startedAt` set,
    `endedAt` still null, `status` not yet resolved). Persist `fleet.json` (temp + rename).
    Only then spawn.
-2. Resolve the healthy provider for this spawn: default to the current session/provider when healthy; if that provider is rate-limited, fail over to the same role on the other provider. Then spawn the concrete `<provider>-fleet-orchestrator` in the background (`run_in_background: true`), injecting:
+2. Spawn the pinned Terra-low `orchestrator` in the background (`async: true`), injecting:
    - `statePath` — `.fleet/<run>/dags/<id>/state.json` (the ENTIRE handoff; nothing else
      carries over).
    - `maxConcurrent` — from `fleet.json meta.maxConcurrent`. The orchestrator does not own or
      read `fleet.json` itself; you inject what it needs.
    - A pointer file when this is a fresh spawn after a judge FAIL (§4) — the judge's notes
      file, never inlined content.
-3. Record the spawned `agentId` in the same audit entry (finalize it once the verdict returns,
-   not before). When failover happened, also record `attributes.failover` with the provider you switched to.
+3. Record the spawned run id in the same audit entry (finalize it once the verdict returns,
+   not before). No provider failover or route mutation is allowed.
 
-Spawn every runnable DAG in the same turn — parallel fan-out, don't serialize.
+Spawn every runnable DAG in one parallel `subagent` call with `async: true` and `context: "fresh"`; do not serialize.
 
 ### Wait without polling
 
@@ -132,50 +129,46 @@ Background agents notify on completion. Don't poll or sleep. While waiting, stay
 
 ## 4. Post-DAG judge gate
 
-An orchestrator's report is a structured verdict — the same contract as everywhere else in the
-fleet:
-
+Orchestrator terminal reply must be exactly:
 ```
-verdict:    PASS | FAIL
-summary:    1-2 sentences
-attributes: small map (tokens, tasks passed/failed count, ...)
+VERDICT: PASS|FAIL|BLOCKED|ESCALATE
+SUMMARY: <one machine-status sentence>
+STATE_REF: <exact supplied state pointer>
+REPORT_REFS: <comma-separated pointers or none>
+ATTRIBUTES: passed=<n>; failed=<n>; blocked=<n>; escalated=<n>; fixes=<n>; handovers=<n>
 ```
+Validate fields and supplied `STATE_REF` mechanically. Never open report refs or synthesize raw detail. Unknown verdict, malformed/missing field, mismatched state pointer, or unexpected prose → persist captain audit error, mark DAG blocked, set stop reason, report configuration error. Finalize audit before acting.
 
-You do NOT read the orchestrator's `state.json` yourself to double check this — the verdict
-plus the judge's independent pass over the same file is the whole quality gate. Finalize the
-orchestrator's audit entry (`endedAt`, `status`, `summary`, `attributes`) in `fleet.json` first
-— record-then-act.
+- `PASS` → run judge gate below.
+- `FAIL` → mark DAG failed; no judge and no inferred repair.
+- `BLOCKED` → mark DAG blocked, persist stop reason; no judge.
+- `ESCALATE` → mark DAG escalated, persist stop reason, surface pointers to human; never reroute or upgrade orchestrator.
 
-1. Spawn `judge` (background) with `Agent` `model` set to a same-vertical frontier model,
-   passing only the DAG's `statePath` and `specRef` — judge reads `state.json`, `notes/`, and
+1. Spawn fresh `judge` with `subagent`, `async: true`, `context: "fresh"`, using pinned Sol frontmatter,
+   passing only the DAG's `statePath` and `specRef` after an orchestrator `PASS` — judge reads `state.json`, `notes/`, and
    the task branches itself; it is NOT bound by the pointer protocol (fresh, one-shot context),
    but YOU still never read what it read.
-2. Judge returns: `verdict: PASS | FAIL`, `summary`, `ref` (notes file, only on FAIL),
-   `attributes`. `ESCALATE` is no verdict: do not count it as FAIL or advance the DAG. Respawn
-   once with the explicit same-vertical frontier `model`; if that also returns `ESCALATE`, block
-   the DAG and escalate a human/configuration error.
+2. Judge returns only `PASS | FAIL`, summary, optional findings ref, attributes. Any other or malformed result → block DAG and escalate configuration error; do not reinterpret or respawn through another model.
 3. **Write-at-spawn / record-then-act applies here too**: append the judge's audit entry
    (`role: "judge"`) to `fleet.json` before acting on a PASS or FAIL verdict.
 
 ### PASS
 
-- Set `dags[d].judge = { verdict: "pass", attempt: dags[d].judge.attempt }`.
+- Set `dags[d].judge = { verdict: "PASS", attempt: dags[d].judge.attempt }`.
 - Merge the DAG branch into the integration branch (§5), then push.
-- Set `dags[d].status = "passed"`. Persist.
+- Set `dags[d].status = "PASSED"`. Persist.
 - Recompute runnable set (§3) → spawn newly unblocked DAGs.
 
 ### FAIL, `judge.attempt < 2`
 
-- Increment `dags[d].judge.attempt`. Set `dags[d].judge.verdict = "fail"` (interim — may flip
-  to `pass` next attempt). Persist.
-- Spawn a FRESH concrete `<provider>-fleet-orchestrator` (not a steer of the old one — the old one already
-  finished and reported) with a pointer to the judge's notes file plus the same `statePath`.
-  Same write-at-spawn discipline as §3.
+- Increment `dags[d].judge.attempt`. Set `dags[d].judge.verdict = "FAIL"` (interim — may flip
+  to `PASS` next attempt). Persist.
+- Spawn a FRESH immutable Terra-low `orchestrator` (not a steer) with judge notes pointer plus same `statePath`. No provider/model/risk mutation. Same write-at-spawn discipline as §3.
 - On its next report, re-enter this section at attempt+1.
 
 ### FAIL, `judge.attempt` reaches 2 (bounded)
 
-- Set `dags[d].judge = { verdict: "fail", attempt: 2 }`, `dags[d].status = "failed"`. Persist.
+- Set `dags[d].judge = { verdict: "FAIL", attempt: 2 }`, `dags[d].status = "FAILED"`. Persist.
 - Report to the user: DAG id, judge summary, notes file pointer (relay the pointer, don't open
   it yourself).
 - Recompute runnable set — dependents simply stay unreachable per §3's filter.
@@ -189,16 +182,16 @@ review files, or handover files. Every decision is a structured verdict from
 orchestrator/judge, copied into `fleet.json`'s `audit[]`/`judge{}` — never inlined content.
 
 **Write-at-spawn + record-then-act, every transition:**
-1. Audit entry committed to `fleet.json` (`status: running`-equivalent, `agentId` once known)
+1. Audit entry committed to `fleet.json` (`status: running`-equivalent, `run id once known)
    BEFORE spawning anything.
 2. Verdict arrives → push/merge happens → `fleet.json` is written (finalized audit + status)
    → only THEN take the next step (spawn next DAG, report to user, etc).
 
 **Audit span fields** (`fleet.schema.json` `$defs.auditSpan`): `role`
 (`orchestrator|judge|steering` at this level), `agentType` (pointer tier, intent),
-`model` (resolved model — fact; both recorded for safety-ratchet verification), `agentId`,
-`startedAt`/`endedAt`, `status` (`ok|error`, invariant `error != null <=> status:error`),
-`summary`, `attributes`, optional `reportRef`. `agentType` at this level records the concrete spawned variant (`claude-fleet-orchestrator` or `codex-fleet-orchestrator`), and `attributes.failover` records provider switchovers when they happen. Redact secrets (known env values, `AKIA…`,
+`model` (resolved model — fact; both recorded for safety-ratchet verification), `agentId`/run id,
+`startedAt`/`endedAt`, `status` (`pending|running|ok|error`; terminal invariant `error != null <=> status:error`),
+`summary`, `attributes`, optional `reportRef`. `agentType` at this level records the spawned role (`orchestrator`), and provider failover attributes are forbidden. Redact secrets (known env values, `AKIA…`,
 `ghp_…`, JWTs, password-bearing URLs → `[REDACTED:VAR]`) before copying ANYTHING into
 `fleet.json` — verdict summaries, error strings, attributes, all of it.
 
@@ -232,7 +225,7 @@ Per the ref table in the ADR, captain owns exactly one ref: `fleet/<run>/int`.
   `meta.budget`. Over ceiling → set `stopFlag`, report to the user, stop spawning new work
   (let already-running DAGs finish their current spawn, don't kill mid-flight).
 - **Steering relay** — when the user directs a running orchestrator or its workers: call
-  `steer_subagent(orchestratorAgentId, message)`. The orchestrator relays further to its
+  `subagent({ action: "steer", id: orchestratorRunId, message })`. The orchestrator relays further to its
   worker the same way. Record an audit entry `role: "steering"` in `fleet.json` — this is what
   lets a replay answer "why did this DAG turn". Never kill+respawn to redirect; steer.
   Approval from one steering message does NOT carry to the next action — irreversible actions
@@ -250,10 +243,10 @@ Per the ref table in the ADR, captain owns exactly one ref: `fleet/<run>/int`.
 The user talks to you at all times, background agents run behind the scenes.
 
 - **Status queries** — answer from the live `fleet.json` you already have in memory/just read:
-  per-DAG status, judge verdict + attempt, which orchestrator `agentId` is running what.
+  per-DAG status, judge verdict + attempt, which orchestrator run id is running what.
   Re-read `fleet.json` from disk if it's been a while since your last write — don't answer from
   stale memory when the file is the source of truth.
-- **Visual status request** ("show me the graph", "what does it look like") — resolve the healthy provider the same way, then spawn the concrete `<provider>-fleet-draw` subagent (scout-tier, background) with a pointer to `.fleet/<run>/`. Relay
+- **Visual status request** ("show me the graph", "what does it look like") — spawn `fleet-draw` subagent (scout-tier, background) with a pointer to `.fleet/<run>/`. Relay
   back only its HTML path + its own two-sentence summary — do not open or render the HTML
   yourself, do not paste embedded JSON into the conversation.
 - **pi-tasks mirror (optional, lightweight)** — if the `pi-tasks` tool is available, you MAY
@@ -266,7 +259,7 @@ The user talks to you at all times, background agents run behind the scenes.
 
 ## 9. End of run
 
-**Stop condition**: `runnable` (§3) is empty AND no DAG has `status: "running"`.
+**Stop condition**: `runnable` (§3) is empty AND no DAG has `status: "IMPLEMENTING"`.
 
 1. Set `stopFlag = { stopped: true, reason: "all-passed" | "degraded-no-runnable", stoppedAt:
    now }`. Persist `fleet.json`.
@@ -290,18 +283,21 @@ The user talks to you at all times, background agents run behind the scenes.
 | Event | Captain action |
 |---|---|
 | Boot/resume | Read `fleet.json`, validate preconditions, enter scheduling loop |
-| DAG deps satisfied | Write-at-spawn, spawn concrete `<provider>-fleet-orchestrator` (background, inject `statePath`+`maxConcurrent`) |
-| Orchestrator reports | Finalize its audit entry, spawn `judge` with explicit same-vertical frontier `model` |
+| DAG deps satisfied | Write-at-spawn, spawn concrete `orchestrator` (background, inject `statePath`+`maxConcurrent`) |
+| Orchestrator `PASS` | Finalize audit, validate exact pointer block, spawn pinned Sol `judge` |
+| Orchestrator `FAIL` | Finalize audit, mark DAG failed; no judge |
+| Orchestrator `BLOCKED` | Finalize audit, mark blocked + stop reason; no judge |
+| Orchestrator `ESCALATE` | Finalize audit, mark escalated + surface pointers; never reroute |
 | Judge PASS | Merge DAG branch → `int`, push, mark DAG passed, recompute runnable |
-| Judge ESCALATE | No verdict; respawn judge once with explicit frontier `model`, then block/escalate config error |
+| Judge malformed/non-PASS/FAIL | Block DAG and escalate configuration error |
 | Judge FAIL, attempt<2 | Increment attempt, spawn FRESH orchestrator with judge's notes pointer |
 | Judge FAIL, attempt==2 | Mark DAG failed, report to user, dependents stay unreachable |
 | Merge conflict (any ref) | Spawn implementer "resolve merge X→Y" — never resolve yourself |
 | Budget over ceiling | Set `stopFlag`, report, stop new spawns |
 | Stalled spawn | Check alive → finalize `status:error` → respawn fresh |
 | User asks status | Answer from live `fleet.json` |
-| User wants a picture | Spawn concrete `<provider>-fleet-draw` (background), relay pointer + its summary only |
-| User steers | `steer_subagent(orchestratorAgentId, message)`, audit `role:steering` |
+| User wants a picture | Spawn concrete `fleet-draw` (background), relay pointer + its summary only |
+| User steers | `subagent({ action: "steer", id: orchestratorRunId, message })`, audit `role:steering` |
 | No runnable + none running | Set `stopFlag`, knowledge harvest, ask before cleanup, print PR command |
 | Force-push rejected on any fleet ref | STOP, report — external touch happened |
 

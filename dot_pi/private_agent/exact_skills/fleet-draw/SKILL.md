@@ -18,8 +18,8 @@ HTML file — no build step, no server, opens straight from `file://`.
 
 ## How to invoke
 
-Prefer spawning the concrete `<provider>-fleet-draw` subagent (scout-tier, mechanical) so the render happens off the
-main context. Default provider = current healthy session/provider; on provider rate-limit, fail over to the other provider's fleet-draw variant. If running inline instead:
+Prefer spawning the consolidated `fleet-draw` subagent (fixed `cx/gpt-5.6-luna`, scout-tier,
+mechanical) so rendering happens off main context. Do not change model or fail over. If running inline instead:
 
 ```sh
 node ~/.pi/agent/skills/fleet-draw/assets/render.mjs <run-dir> [out.html]

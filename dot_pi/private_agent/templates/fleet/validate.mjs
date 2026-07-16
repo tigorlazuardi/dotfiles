@@ -35,12 +35,16 @@ function req(obj, keys, file, ctx) {
 }
 
 // --- shared audit span (OTel-span-shaped) ---
-function validateAuditSpan(span, file, ctx) {
+function validateAuditSpan(span, file, ctx, stateLevel = false) {
   if (!isObj(span)) { err(file, ctx, 'must be an object'); return; }
   req(span, ['role', 'agentType', 'model', 'agentId', 'startedAt', 'endedAt', 'status', 'error', 'summary', 'attributes'], file, ctx);
-  const roleEnum = ['worker', 'reviewer', 'judge', 'orchestrator', 'steering'];
+  const roleEnum = stateLevel
+    ? ['worker', 'reviewer', 'judge', 'orchestrator', 'check', 'steering']
+    : ['worker', 'reviewer', 'judge', 'orchestrator', 'steering'];
+  const statusEnum = stateLevel ? ['running', 'ok', 'error'] : ['pending', 'running', 'ok', 'error'];
   if ('role' in span && !roleEnum.includes(span.role)) err(file, `${ctx}.role`, `must be one of ${roleEnum.join('|')}, got ${JSON.stringify(span.role)}`);
-  if ('status' in span && !['ok', 'error'].includes(span.status)) err(file, `${ctx}.status`, `must be ok|error, got ${JSON.stringify(span.status)}`);
+  if ('status' in span && !statusEnum.includes(span.status)) err(file, `${ctx}.status`, `must be one of ${statusEnum.join('|')}, got ${JSON.stringify(span.status)}`);
+  if ('agentId' in span && !isNullOr(span.agentId, isStr)) err(file, `${ctx}.agentId`, 'must be string or null');
   if ('endedAt' in span && !isNullOr(span.endedAt, isStr)) err(file, `${ctx}.endedAt`, 'must be string or null');
   if ('attributes' in span && !isObj(span.attributes)) err(file, `${ctx}.attributes`, 'must be an object');
   if ('error' in span && !isNullOr(span.error, isStr)) err(file, `${ctx}.error`, 'must be string or null');
@@ -52,9 +56,9 @@ function validateAuditSpan(span, file, ctx) {
   }
 }
 
-function validateAuditArray(arr, file, ctx) {
+function validateAuditArray(arr, file, ctx, stateLevel = false) {
   if (!Array.isArray(arr)) { err(file, ctx, 'must be an array'); return; }
-  arr.forEach((span, i) => validateAuditSpan(span, file, `${ctx}[${i}]`));
+  arr.forEach((span, i) => validateAuditSpan(span, file, `${ctx}[${i}]`, stateLevel));
 }
 
 // --- generic cycle detection over an id -> dependsOn[] graph ---
@@ -107,8 +111,8 @@ function validateFleet(fleet, file) {
   } else err(file, 'git', 'must be an object');
 
   if (Array.isArray(fleet.dags)) {
-    const statusEnum = ['pending', 'running', 'passed', 'failed'];
-    const verdictEnum = [null, 'pass', 'fail', 'needs-fix'];
+    const statusEnum = ['PENDING', 'IMPLEMENTING', 'STANDARDS_REVIEW', 'CHECKING', 'SPEC_REVIEW', 'FIXING', 'PASSED', 'FAILED', 'BLOCKED', 'ESCALATED'];
+    const verdictEnum = [null, 'PASS', 'FAIL', 'BLOCKED', 'ESCALATE'];
     fleet.dags.forEach((dag, i) => {
       const ctx = `dags[${i}]`;
       if (!isObj(dag)) { err(file, ctx, 'must be an object'); return; }
@@ -117,7 +121,7 @@ function validateFleet(fleet, file) {
       if ('dependsOn' in dag && !Array.isArray(dag.dependsOn)) err(file, `${ctx}.dependsOn`, 'must be an array');
       if (isObj(dag.judge)) {
         req(dag.judge, ['verdict', 'attempt'], file, `${ctx}.judge`);
-        if ('verdict' in dag.judge && !verdictEnum.includes(dag.judge.verdict)) err(file, `${ctx}.judge.verdict`, 'must be one of null|pass|fail|needs-fix');
+        if ('verdict' in dag.judge && !verdictEnum.includes(dag.judge.verdict)) err(file, `${ctx}.judge.verdict`, 'must be one of null|PASS|FAIL|BLOCKED|ESCALATE');
         if ('attempt' in dag.judge && !isInt(dag.judge.attempt)) err(file, `${ctx}.judge.attempt`, 'must be an integer');
       } else err(file, `${ctx}.judge`, 'must be an object');
       if ('attributes' in dag && !isObj(dag.attributes)) err(file, `${ctx}.attributes`, 'must be an object (map<string,string>)');
@@ -137,7 +141,14 @@ function validateState(state, file, dagId, fleetRunName) {
   req(state, ['meta', 'tracker', 'nodes', 'stopFlag'], file, null);
 
   if (isObj(state.meta)) {
-    req(state.meta, ['runName', 'schemaVersion', 'specRef', 'standardsRef', 'baseBranch', 'integrationBranch'], file, 'meta');
+    req(state.meta, ['runName', 'schemaVersion', 'specRef', 'standardsRef', 'baseBranch', 'integrationBranch', 'orchestrator', 'maxFixAttempts', 'maxHandoverAttempts', 'maxReviewerRetries', 'maxCheckRetries'], file, 'meta');
+    if (state.meta.schemaVersion !== 2) err(file, 'meta.schemaVersion', 'must be 2');
+    if (!isObj(state.meta.orchestrator) || state.meta.orchestrator.agent !== 'orchestrator' || state.meta.orchestrator.model !== 'cx/gpt-5.6-terra' || state.meta.orchestrator.thinking !== 'low') {
+      err(file, 'meta.orchestrator', 'must be immutable orchestrator/cx/gpt-5.6-terra/low');
+    }
+    for (const key of ['maxFixAttempts', 'maxHandoverAttempts', 'maxReviewerRetries', 'maxCheckRetries']) {
+      if (!isInt(state.meta[key]) || state.meta[key] < 0 || state.meta[key] > 3) err(file, `meta.${key}`, 'must be an integer from 0 to 3');
+    }
     if (isStr(state.meta.runName) && isStr(fleetRunName) && state.meta.runName !== fleetRunName) {
       err(file, 'meta.runName', `does not match fleet.json meta.runName ("${fleetRunName}")`);
     }
@@ -158,8 +169,7 @@ function validateState(state, file, dagId, fleetRunName) {
 
   if (Array.isArray(state.nodes)) {
     const toleranceEnum = ['low', 'standard', 'trivial'];
-    const nodeStatusEnum = ['pending', 'running', 'review', 'fixing', 'passed', 'failed'];
-    const acceptanceEnum = [null, 'pass', 'fail'];
+    const nodeStatusEnum = ['PENDING', 'IMPLEMENTING', 'STANDARDS_REVIEW', 'CHECKING', 'SPEC_REVIEW', 'FIXING', 'PASSED', 'FAILED', 'BLOCKED', 'ESCALATED'];
 
     state.nodes.forEach((node, i) => {
       const ctx = `nodes[${i}]`;
@@ -197,15 +207,52 @@ function validateState(state, file, dagId, fleetRunName) {
       } else err(file, `${ctx}.routing`, 'must be an object');
 
       if (isObj(node.runtime)) {
-        req(node.runtime, ['status', 'fixAttempt', 'handoverAttempt', 'branch', 'commitSha', 'acceptanceResult', 'agentId'], file, `${ctx}.runtime`);
+        req(node.runtime, ['status', 'phase', 'currentChild', 'reviewAxis', 'fixAttempt', 'handoverAttempt', 'reviewerRetry', 'checkRetry', 'branch', 'commitSha', 'evidence'], file, `${ctx}.runtime`);
         if ('status' in node.runtime && !nodeStatusEnum.includes(node.runtime.status)) {
           err(file, `${ctx}.runtime.status`, `must be one of ${nodeStatusEnum.join('|')}`);
         }
-        if ('acceptanceResult' in node.runtime && !acceptanceEnum.includes(node.runtime.acceptanceResult)) {
-          err(file, `${ctx}.runtime.acceptanceResult`, 'must be null|pass|fail');
+        if ('phase' in node.runtime && !nodeStatusEnum.includes(node.runtime.phase)) {
+          err(file, `${ctx}.runtime.phase`, `must be one of ${nodeStatusEnum.join('|')}`);
+        }
+        if (node.runtime.phase !== node.runtime.status) err(file, `${ctx}.runtime.phase`, 'must equal runtime.status');
+        const child = node.runtime.currentChild;
+        if (!isNullOr(child, isObj)) err(file, `${ctx}.runtime.currentChild`, 'must be object or null');
+        if (isObj(child)) {
+          req(child, ['role', 'axis', 'agent', 'runId', 'reportRef', 'startedAt'], file, `${ctx}.runtime.currentChild`);
+          if (!['implementer', 'reviewer', 'check'].includes(child.role)) err(file, `${ctx}.runtime.currentChild.role`, 'must be implementer|reviewer|check');
+          if (![null, 'standards', 'spec'].includes(child.axis)) err(file, `${ctx}.runtime.currentChild.axis`, 'must be null|standards|spec');
+          if (!isStr(child.agent) || child.agent.length === 0) err(file, `${ctx}.runtime.currentChild.agent`, 'must be a non-empty string');
+          if (!isNullOr(child.runId, isStr)) err(file, `${ctx}.runtime.currentChild.runId`, 'must be string or null');
+          if (!isStr(child.reportRef) || child.reportRef.length === 0) err(file, `${ctx}.runtime.currentChild.reportRef`, 'must be a non-empty string');
+          if (!isStr(child.startedAt)) err(file, `${ctx}.runtime.currentChild.startedAt`, 'must be a string');
+        }
+        if (![null, 'standards', 'spec'].includes(node.runtime.reviewAxis)) err(file, `${ctx}.runtime.reviewAxis`, 'must be null|standards|spec');
+        const expectedChild = {
+          IMPLEMENTING: ['implementer', null], FIXING: ['implementer', null],
+          STANDARDS_REVIEW: ['reviewer', 'standards'], CHECKING: ['check', null],
+          SPEC_REVIEW: ['reviewer', 'spec']
+        }[node.runtime.phase];
+        if (expectedChild && (!isObj(child) || child.role !== expectedChild[0] || child.axis !== expectedChild[1])) err(file, `${ctx}.runtime.currentChild`, `${node.runtime.phase} requires role:${expectedChild[0]} axis:${expectedChild[1]}`);
+        if (!expectedChild && child !== null) err(file, `${ctx}.runtime.currentChild`, `${node.runtime.phase} requires null`);
+        const expectedAxis = node.runtime.phase === 'STANDARDS_REVIEW' ? 'standards' : node.runtime.phase === 'SPEC_REVIEW' ? 'spec' : null;
+        if (node.runtime.reviewAxis !== expectedAxis) err(file, `${ctx}.runtime.reviewAxis`, `${node.runtime.phase} requires ${JSON.stringify(expectedAxis)}`);
+        const bounded = (value, cap, path) => { if (!isInt(value) || value < 0 || !isInt(cap) || value > cap) err(file, path, `must be an integer from 0 to ${cap}`); };
+        bounded(node.runtime.fixAttempt, state.meta?.maxFixAttempts, `${ctx}.runtime.fixAttempt`);
+        bounded(node.runtime.handoverAttempt, state.meta?.maxHandoverAttempts, `${ctx}.runtime.handoverAttempt`);
+        if (!isObj(node.runtime.reviewerRetry)) err(file, `${ctx}.runtime.reviewerRetry`, 'must be an object');
+        else {
+          req(node.runtime.reviewerRetry, ['standards', 'spec'], file, `${ctx}.runtime.reviewerRetry`);
+          bounded(node.runtime.reviewerRetry.standards, state.meta?.maxReviewerRetries, `${ctx}.runtime.reviewerRetry.standards`);
+          bounded(node.runtime.reviewerRetry.spec, state.meta?.maxReviewerRetries, `${ctx}.runtime.reviewerRetry.spec`);
+        }
+        bounded(node.runtime.checkRetry, state.meta?.maxCheckRetries, `${ctx}.runtime.checkRetry`);
+        if (!isObj(node.runtime.evidence)) err(file, `${ctx}.runtime.evidence`, 'must be an object');
+        else {
+          const refs = ['implementationRef', 'standardsReviewRef', 'checkRef', 'specReviewRef'];
+          req(node.runtime.evidence, refs, file, `${ctx}.runtime.evidence`);
+          for (const ref of refs) if (ref in node.runtime.evidence && !isNullOr(node.runtime.evidence[ref], isStr)) err(file, `${ctx}.runtime.evidence.${ref}`, 'must be string or null');
         }
         if ('commitSha' in node.runtime && !isNullOr(node.runtime.commitSha, isStr)) err(file, `${ctx}.runtime.commitSha`, 'must be string or null');
-        if ('agentId' in node.runtime && !isNullOr(node.runtime.agentId, isStr)) err(file, `${ctx}.runtime.agentId`, 'must be string or null');
         if (isStr(node.runtime.branch) && isStr(state.meta?.runName) && isStr(node.id)) {
           const expected = `fleet/${state.meta.runName}/task/${dagId}/${node.id}`;
           if (node.runtime.branch !== expected) {
@@ -219,7 +266,7 @@ function validateState(state, file, dagId, fleetRunName) {
 
       if ('attributes' in node && !isObj(node.attributes)) err(file, `${ctx}.attributes`, 'must be an object');
 
-      validateAuditArray(node.audit, file, `${ctx}.audit`);
+      validateAuditArray(node.audit, file, `${ctx}.audit`, true);
     });
 
     state.nodes.forEach((node, i) => {
