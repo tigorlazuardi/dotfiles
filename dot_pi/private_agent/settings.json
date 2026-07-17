@@ -12,18 +12,21 @@
     "npm:pi-playwright",
     "npm:pi-subagents",
     "npm:pi-diet-lsp",
-    "npm:@yandy0725/pi-memory",
-    "npm:pi-observational-memory",
     "npm:@juicesharp/rpiv-todo",
     "npm:@juicesharp/rpiv-ask-user-question",
     "npm:@vanillagreen/pi-background-tasks",
     "npm:@mrclrchtr/supi-context",
-    "npm:@xynogen/pix-optimizer"
+    "npm:@xynogen/pix-optimizer",
+    "npm:@sting8k/pi-vcc",
+    "npm:pi-hermes-memory",
+    "npm:remote-pi",
+    "npm:@mrclrchtr/supi-extras",
+    "npm:@agnishc/edb-session-manager"
   ],
   "searxng": {
     "url": "http://localhost:8888"
   },
-  "lastChangelogVersion": "0.80.6",
+  "lastChangelogVersion": "0.80.7",
   "theme": "dark",
   "observational-memory": {
     "model": {
@@ -33,7 +36,7 @@
     },
     "debugLog": false
   },
-  "hideThinkingBlock": true,
+  "hideThinkingBlock": false,
   "subagents": {
     "disableBuiltins": true
   }
