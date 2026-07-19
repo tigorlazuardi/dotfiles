@@ -3,7 +3,7 @@ name: frontier-implementer
 description: Sol implementation for low-tolerance code
 tools: read, bash, edit, write, grep, find
 model: cx/gpt-5.6-sol
-thinking: high
+thinking: medium
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: false

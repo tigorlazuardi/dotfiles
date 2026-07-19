@@ -38,7 +38,7 @@ and trades the reset for compaction-proof state.
 <Decision title="Adopt @misunders2d/pi-goal as the L-tier engine" status="accepted">
 Engine `@misunders2d/pi-goal`, **in-process**: the loop drives the SAME session via `pi.sendMessage({
 triggerTurn: true, deliverAs: "followUp" })`. No pi subprocess, no `--no-extensions` — so pi-rules,
-skills, and the `Agent` (subagent) tool stay live in every worker turn. Context is NOT reset per
+skills, and the `Agent` (subagent) tool stay live in every claude-worker/codex-worker turn. Context is NOT reset per
 iteration; context bloat is fought with durable, compaction-proof state instead.
 </Decision>
 
@@ -49,7 +49,7 @@ iteration; context bloat is fought with durable, compaction-proof state instead.
 - **Autonomous** continue → recover → verify until **evidence-backed complete** or genuinely blocked.
 - Bounded recovery, stale-turn protection, doom-loop detection.
 - **Completion gate = constrained verifier + isolated auditor.** The auditor runs in a fresh
-  in-memory pi session with NO extensions / skills / prompt templates / worker transcript / mutation
+  in-memory pi session with NO extensions / skills / prompt templates / claude-worker/codex-worker transcript / mutation
   tools; it re-checks each criterion and runs approved verification checks by ID (no shell). Narrative
   alone never completes a goal.
 - **Interruptions only for** `CREDENTIAL` / `DECISION` / `RISK` / `BLOCKER`. Informational questions
@@ -59,10 +59,10 @@ iteration; context bloat is fought with durable, compaction-proof state instead.
 ### Delegation + fault-tolerance routing
 
 Delegation is NOT lost by moving off pi-ralph. Because pi-goal is in-process, the `Agent` tool is
-live in every worker turn — the driving agent DELEGATES to worker subagents exactly like one-shot.
+live in every claude-worker/codex-worker turn — the driving agent DELEGATES to claude-worker/codex-worker subagents exactly like one-shot.
 The only thing pi-ralph did that pi-goal does not is AUTO-route tiers via hats. That routing now lives
 in the **FASE-2 contract**: the contract states, e.g. "low-tolerance slice (auth / secrets / migration
-/ schema / money / data-deletion) → spawn `<vertical>-frontier-worker`; standard → `<vertical>-worker`".
+/ schema / money / data-deletion) → spawn `claude-frontier-worker`/`codex-frontier-worker`; standard → `claude-worker`/`codex-worker`".
 The authority envelope (typed per-action permission) is the natural home for this — risk is
 first-class, so tier-by-risk and mutate-by-authority sit in one contract.
 

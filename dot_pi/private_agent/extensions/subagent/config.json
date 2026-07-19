@@ -4,5 +4,5 @@
   "intercomBridge": {
     "mode": "always"
   },
-  "maxSubagentDepth": 2
+  "maxSubagentDepth": 5
 }

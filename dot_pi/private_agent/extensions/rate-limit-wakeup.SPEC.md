@@ -199,7 +199,7 @@ GIT (Committer hat runs here):
 Rules for every hat:
 - Builder edits ONLY the chezmoi source path above. Never edit the runtime path directly.
 - After editing, run `chezmoi apply` so runtime + source stay identical.
-- All file paths in worker specs must be absolute.
+- All file paths in claude-worker/codex-worker specs must be absolute.
 
 ### Per-task test strategy
 
@@ -220,8 +220,8 @@ No push inside the loop. No `chezmoi apply` skipped — source and runtime must 
 
 This is now **L-ish** (state v2 migration + command + footer + TUI overlay), not a trivial one-shot.
 
-- Recommend: **ralph loop** (minor feature, long implementation, hat roles) OR a tight **one-shot with worker + frontier review** if we cut TUI to phase 2.
+- Recommend: **ralph loop** (minor feature, long implementation, hat roles) OR a tight **one-shot with claude-worker/codex-worker + frontier review** if we cut TUI to phase 2.
 - Fault tolerance: **standard** (no auth/money/schema). Local disk state only.
-- Vertical: **claude** (locked). Builder → `claude-worker` / `claude-frontier-worker`; Reviewer → `claude-reviewer` / `claude-frontier-reviewer`. This is standard-tolerance work (local disk state), so default tier = `claude-worker` + `claude-reviewer`.
+- Builder → `claude-worker`/`codex-worker` / `claude-frontier-worker`/`codex-frontier-worker`; Reviewer → `claude-reviewer`/`codex-reviewer` / `claude-frontier-reviewer`/`codex-frontier-reviewer`. This is standard-tolerance work (local disk state), so default tier = `claude-worker`/`codex-worker` + `claude-reviewer`/`codex-reviewer`.
 
 Decision gate: user picks orchestration level before FASE 2.

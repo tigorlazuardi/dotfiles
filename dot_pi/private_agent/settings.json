@@ -1,6 +1,6 @@
 {
   "defaultProvider": "omniroute",
-  "defaultModel": "cx/gpt-5.6-sol-medium",
+  "defaultModel": "cx/gpt-5.6-sol",
   "defaultThinkingLevel": "medium",
   "quietStartup": true,
   "packages": [
@@ -13,7 +13,6 @@
     "npm:pi-subagents",
     "npm:pi-diet-lsp",
     "npm:@juicesharp/rpiv-todo",
-    "npm:@juicesharp/rpiv-ask-user-question",
     "npm:@vanillagreen/pi-background-tasks",
     "npm:@mrclrchtr/supi-context",
     "npm:@xynogen/pix-optimizer",
@@ -21,7 +20,9 @@
     "npm:pi-hermes-memory",
     "npm:remote-pi",
     "npm:@mrclrchtr/supi-extras",
-    "npm:@agnishc/edb-session-manager"
+    "npm:@juicesharp/rpiv-ask-user-question",
+    "npm:@tifan/pi-rename",
+    "npm:@ogulcancelik/pi-herdr"
   ],
   "searxng": {
     "url": "http://localhost:8888"

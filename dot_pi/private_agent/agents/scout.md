@@ -3,7 +3,7 @@ name: scout
 description: Fast read-only code locator; Luna leaf
 tools: read, grep, find, bash
 model: cx/gpt-5.6-luna
-thinking: low
+thinking: medium
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: false

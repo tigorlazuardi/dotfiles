@@ -2,8 +2,8 @@
 name: fleet-draw
 description: Render fleet status HTML; Luna leaf
 tools: read, bash, write
-model: cx/gpt-5.6-luna
-thinking: low
+model: cx/gpt-5.6-terra
+thinking: medium
 systemPromptMode: replace
 inheritProjectContext: true
 inheritSkills: false
