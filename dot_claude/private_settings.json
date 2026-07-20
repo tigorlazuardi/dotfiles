@@ -48,6 +48,12 @@
             "command": "node \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/caveman-mode-tracker.js\"",
             "timeout": 5,
             "statusMessage": "Tracking caveman mode..."
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/usage-limit-wakeup.sh\"",
+            "timeout": 15,
+            "statusMessage": "Checking usage limits..."
           }
         ]
       }
@@ -57,7 +63,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/usage-guard.py\"",
+            "command": "bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/usage-limit-wakeup.sh\"",
             "timeout": 15,
             "statusMessage": "Checking usage limits..."
           },
@@ -72,18 +78,6 @@
             "command": "python3 \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/docs-nudge.py\"",
             "timeout": 10,
             "statusMessage": "Design-docs check..."
-          }
-        ]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/usage-guard.py\"",
-            "timeout": 15,
-            "statusMessage": "Checking usage limits..."
           }
         ]
       }
@@ -126,5 +120,6 @@
   "effortLevel": "medium",
   "skipDangerousModePermissionPrompt": true,
   "theme": "auto",
+  "remoteControlAtStartup": true,
   "agentPushNotifEnabled": true
 }

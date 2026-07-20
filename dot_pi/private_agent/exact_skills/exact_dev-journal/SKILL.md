@@ -1,6 +1,16 @@
 ---
 name: dev-journal
-description: Canonical workflow for the dev journal — the private git repo tigorlazuardi/journal cloned at $HOME/journal that logs every notable dev moment (feature, fix, design-decision, incident, learning, milestone) across all of the user's projects. Use in three modes — (1) RECALL at the start of substantive coding/design work in ANY repo: read L0 index.md, surface one line of precedent ("kamu pernah X, hasilnya Y"); (2) WRITE when a notable moment happens (offer "Journal ini?", then author the entry + update indexes + git push); (3) CV/PORTFOLIO mode for "pernah gak saya…" / resume / portfolio questions (read skills-inventory.md first). Also triggers on the journal-nudge Stop-hook's "DEV-JOURNAL CHECK" message.
+description: >-
+  Canonical workflow for the dev journal — the private git repo
+  tigorlazuardi/journal cloned at $HOME/journal that logs every notable dev
+  moment (feature, fix, design-decision, incident, learning, milestone) across
+  all of the user's projects. Use in three modes — (1) RECALL at the start of
+  substantive coding/design work in ANY repo: read L0 index.md, surface one
+  line of precedent ("kamu pernah X, hasilnya Y"); (2) WRITE when a notable
+  moment happens (offer "Journal ini?", then author the entry + update indexes
+  + git push); (3) CV/PORTFOLIO mode for "pernah gak saya…" / resume /
+  portfolio questions (read skills-inventory.md first). Also triggers on the
+  journal-nudge Stop-hook's "DEV-JOURNAL CHECK" message.
 ---
 
 # Dev Journal

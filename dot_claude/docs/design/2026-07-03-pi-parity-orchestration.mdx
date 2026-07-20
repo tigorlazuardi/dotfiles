@@ -46,7 +46,8 @@ buy correctness (scouts, mechanical sweeps); spend them where they prevent expen
 Waves removed. Pure `dependsOn[]`, runnable-set computed dynamically. Separate judge agent gates
 each DAG (bounded 2×). No run-until-pass iteration loop inside fleet — retry exists only as the
 judge's bounded second attempt. Claude-only strengths are KEPT: Phase 1.5 real-reflection
-preflight, usage-checkpoint, trunk-based mode, FLEET-RESUME-HOOK.
+preflight, the usage guard (now the global `usage-limit-wakeup` hook, superseding the retired
+`usage-checkpoint` skill — 2026-07-13), trunk-based mode, FLEET-RESUME-HOOK.
 </Decision>
 
 <Decision title="Sweep flow adopted as a FASE-2 option, named 'Workflow' (not 'Goal')" status="accepted">
@@ -216,8 +217,9 @@ Template masters live at `~/.claude/templates/fleet-captain.state.template.json`
 - **Phase 1.5 real-reflection preflight**: audit DB/browser/CI capability, SETUP.md with
   [REQUIRED] items, Build blocked until green, re-probe on every Build entry. `needsDb` /
   `needsBrowser` tags per DAG.
-- **usage-checkpoint**: invoked on every Build entry; checked before dispatching each runnable
-  batch and after each DAG returns (replaces "wave barrier" wording). Timer-before-100% invariant.
+- **usage guard**: originally the `usage-checkpoint` skill invoked on every Build entry; since
+  2026-07-13 this is automatic via the global `usage-limit-wakeup` hook (arms a post-reset
+  `CronCreate` wakeup when usage runs high — no manual invocation). Timer-before-100% invariant.
 - **Trunk-based mode** (merge target + push cadence) and **FLEET-RESUME-HOOK** in repo CLAUDE.md.
 - **Resume on bare `continue`** — step-0 glob for `status: running` now reads `state.json`.
 - **Knowledge write policy by orchestrator model** (`writeKnowledgeDirectly` ≙ pi's
@@ -291,7 +293,7 @@ Plandeck globs cover `docs/**` and `plans/**` so both render.
 | 8 | Ralph ingest mode + drop 2.7 | `skills/ralph-plan/SKILL.md` | S | 1,7 |
 | 9 | Opus skill: 1.5 → plandeck plan doc | `skills/opus/SKILL.md` | XS | 7 |
 | 10 | Delete visual-plan; strip refs in visual-recap | `skills/visual-plan/`, `skills/visual-recap/` | XS | 1 |
-| 11 | usage-checkpoint wording: wave barrier → scheduling-loop checkpoints | `skills/usage-checkpoint/SKILL.md` | XS | 4 |
+| 11 | usage-checkpoint wording: wave barrier → scheduling-loop checkpoints _(skill later retired 2026-07-13, replaced by the `usage-limit-wakeup` hook)_ | `skills/usage-checkpoint/SKILL.md` (removed) | XS | 4 |
 | 12 | chezmoi add + commit + push all of the above | dotfiles repo | XS | all |
 
 ## Risks

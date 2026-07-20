@@ -1,5 +1,3 @@
 {
-  "tui.editor.cursorLeft": [
-    "left"
-  ]
+  "app.tools.expand": "ctrl+o"
 }

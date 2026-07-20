@@ -19,7 +19,7 @@ Output is captured to `/tmp/pi-bg/<id>.log` — **not** the project. No `.pi/tas
 
 ## One line that matters most
 
-This runs a **bash command** in the background. Work that needs **LLM reasoning** (writing code, reviewing a diff, research) does NOT go here — that goes to a **background worker subagent** (`Agent` tool, `run_in_background: true`, plugin `@tintinweb/pi-subagents`). Don't confuse the two: background bash = shell process; worker subagent = an LLM doing reasoning. (Patty's own `agent_bg` spawns a detached `pi -p` coworker — that's a full pi process, still not the same as a pinned worker subagent.)
+This runs a **bash command** in the background. Work that needs **LLM reasoning** (writing code, reviewing a diff, research) does NOT go here — that goes to a **background worker subagent** (`subagent` tool with `async: true`, plugin `pi-subagents`). Don't confuse the two: background bash = shell process; worker subagent = an LLM doing reasoning. (Patty's own `agent_bg` spawns a detached `pi -p` coworker — that's a full pi process, still not the same as a pinned worker subagent.)
 
 ## Auto-background at 15s (mandatory user convention)
 

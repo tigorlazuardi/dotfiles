@@ -1,35 +1,44 @@
 {
   "defaultProvider": "omniroute",
-  "defaultModel": "cx/gpt-5.5",
-  "defaultThinkingLevel": "high",
+  "defaultModel": "cx/gpt-5.6-sol",
+  "defaultThinkingLevel": "medium",
   "quietStartup": true,
   "packages": [
-    "npm:pi-ralph",
-    "npm:pi-ask-user",
     "npm:pi-mcp-adapter",
     "npm:pi-rules",
     "npm:pi-prompt-template-model",
-    "npm:pi-patty-bg-tasks",
     "npm:@koltmcbride/pi-loop",
-    "npm:@quintinshaw/pi-dynamic-workflows",
     "npm:pi-searxng",
     "npm:pi-playwright",
-    "npm:@kmmuntasir/pi-nested-subagents",
+    "npm:pi-subagents",
     "npm:pi-diet-lsp",
-    "npm:@yandy0725/pi-memory",
-    "npm:pi-observational-memory"
+    "npm:@juicesharp/rpiv-todo",
+    "npm:@vanillagreen/pi-background-tasks",
+    "npm:@mrclrchtr/supi-context",
+    "npm:@xynogen/pix-optimizer",
+    "npm:@sting8k/pi-vcc",
+    "npm:pi-hermes-memory",
+    "npm:remote-pi",
+    "npm:@mrclrchtr/supi-extras",
+    "npm:@juicesharp/rpiv-ask-user-question",
+    "npm:@tifan/pi-rename",
+    "npm:@ogulcancelik/pi-herdr"
   ],
   "searxng": {
     "url": "http://localhost:8888"
   },
-  "lastChangelogVersion": "0.80.3",
+  "lastChangelogVersion": "0.80.7",
   "theme": "dark",
   "observational-memory": {
     "model": {
       "provider": "omniroute",
-      "id": "cx/gpt-5.4-mini",
+      "id": "cx/gpt-5.6-luna-low",
       "thinking": "low"
     },
     "debugLog": false
+  },
+  "hideThinkingBlock": false,
+  "subagents": {
+    "disableBuiltins": true
   }
 }

@@ -1,10 +1,18 @@
 ---
 title: Ralph migration + development-lifecycle flow lock
 date: 2026-07-03
-status: proposed
+status: superseded
 ---
 
 # Ralph migration + development-lifecycle flow lock
+
+<Callout type="danger" title="Superseded 2026-07-10 — retained as historical record">
+The L-tier orchestrator no longer uses the pi-ralph hat-loop. It is now **goal** (engine
+`@misunders2d/pi-goal`): a fire-and-forget single-outcome loop with durable state + isolated auditor,
+not fresh-session hats. The sweep flow this doc calls "goal" is now **dynamic-workflow**. See
+`2026-07-03-goal-orchestrator.mdx` for the current L-tier contract. The pi-ralph decision below is
+kept as a record of what was chosen at the time; do not follow it.
+</Callout>
 
 <Callout type="warn" title="Status: proposed — awaiting execution approval">
 Nothing installed or rewritten yet. This doc is the reviewable contract before execution.

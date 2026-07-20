@@ -1,5 +1,6 @@
 ---
 name: excalidraw-diagram
+disable-model-invocation: true
 description: Create Excalidraw diagram JSON files that make visual arguments. Use when the user wants to visualize workflows, architectures, or concepts.
 ---
 

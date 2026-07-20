@@ -7,89 +7,74 @@
 - Answer asked thing first. No narrate options not used.
 - Auto-clarity exception: destructive confirms, multi-step order-sensitive, user confused → drop caveman, resume after. Off only on "stop caveman" / "normal mode".
 
-## Main agent role — orchestrator / captain (mandatory)
-Main agent = orchestrator, captain, welcoming agent. It talks to the user, interviews, gets opinion, plans, delegates. It does NOT write code.
+## Main agent role — captain (mandatory)
+Main agent talks to user, interviews, plans, gets human decisions, and dispatches. It does not synthesize implementation/reviewer results.
 
-- Main agent writes code ONLY when the user very explicitly asks the main agent to implement directly. Otherwise all code goes through subagents (e.g. `implementer`).
-- Main agent disk writes allowed: `.md` (markdown), `.mdx`, and — only on explicit user request — `.html`. These are for notes, state tracking, plan artifacts.
-- Everything else (source files, configs, scripts, code) → delegate to a worker subagent. Main agent never edits/creates those files itself unless the explicit-implement exception above is invoked.
-- When planning or interviewing, use `/grill` (pi-grill-me) to extract as much information from the user as possible before producing a plan.
+- **Cost-aware direct-fix exception:** main may directly implement only a known, standard-risk fix touching ≤2 files and ≤50 non-generated lines, one subsystem, no architecture choice, with one focused runnable check. Any uncertainty, 3+ files, >50 lines, cross-module work, architecture, parallel benefit, or low-tolerance surface → orchestrator.
+- Main disk writes remain limited to docs/plan/state text and small validated config edits. Low-tolerance work always uses black-box orchestrator plus frontier children.
+- Planning/interview uses `/grill` when needed. Human gates below remain mandatory.
 
 ## Model routing
-- Default: Opus 4.8 — reasoning, architecture, heavy work.
-- Sonnet 4.6 — general exec, multi-file edit, review.
-- Haiku 4.5 — trivial mechanical (rename, format, <10 LOC).
-- Kimi K2 (`moonshotai/kimi-k2.7-code`) — concept UI design, HTML output ready (aesthetic, not logic). Switch manual `Ctrl+P`.
-- Switch down when mechanical; switch up when low-tolerance (auth, migration, money).
 
-## Orchestration workflow
-Main session = orchestrator. Its model (pick via `Ctrl+P`) IS the orchestrator tier — there is no orchestrator agent file.
+| Role | Model | Thinking | Purpose |
+|---|---|---|---|
+| `planner`, `judge` | `cx/gpt-5.6-sol` | high | plans and independent terminal gate |
+| `orchestrator` | `cx/gpt-5.6-terra` | low | pure deterministic state machine only |
+| `implementer`, `reviewer`, `support` | `cx/gpt-5.6-terra` | medium | standard engineering/docs |
+| `frontier-implementer`, `frontier-reviewer` | `cx/gpt-5.6-sol` | high | low-tolerance engineering |
+| `scout`, `fleet-draw` | `cx/gpt-5.6-luna` | low | mechanical read-only/renderer leaves |
 
-1. **Start on Opus** — interview, get opinion, plan. Output a plan / work doc before executing.
+Codex-only. No provider vertical choice or failover. Runtime frontmatter owns exact model and thinking. Low-tolerance means auth/authz, secrets/credentials, DB migration/schema, public API contract, money/payment, data deletion, or irreversible operations. Route both implementation and review to frontier agents. Standard/trivial routes Terra. Route is immutable once captain dispatches; orchestrator cannot choose or change it. New risk from child → terminal `ESCALATE` to captain/human.
 
-**Two-phase planning (mandatory for feature work):** planning is TWO sequential steps, not one.
-- **FASE 1 — spec/design.** When intent is "implement a feature", OFFER planning: interview, and run `/grill` when scope is ambiguous. Output = **spec + design docs** (`.mdx` per astro-docs-authoring rule/skill; design docs publish via per-repo Starlight site + llms.txt, scaffold with `astro-docs-setup`; lesson-learnt reports via `report-authoring`). NO contract/state yet. Then the main agent reads the spec and gives an **explicit orchestration-level recommendation** (one-shot / ralph / fleet / goal) with a one-line reason; the user picks.
-- **🚧 Orchestration-selection = HARD HUMAN GATE (mandatory).** The main agent RECOMMENDS but the USER DECIDES explicitly. The main agent MUST state a recommendation + one-line reason, then STOP — it must NOT auto-pick an orchestrator and start FASE 2 on its own. A recommendation is never a decision; the user may override it. This gate applies to ALL orchestrators (one-shot / ralph / fleet / goal), none skipped. FASE 2 does not begin until the user has explicitly chosen.
-- **FASE 2 — contract/state.** Only AFTER the user explicitly chooses the level, derive the level's artifacts: one-shot → delegate to workers directly (no contract file); ralph → main agent derives the ralph **contract** (a preset `.yml`) from the spec+design, then `/ralph <preset> --path <spec>` (the loop builds its **state** = `.ralph/scratchpad.md` at runtime); fleet → `fleet-plan` → `captain`; goal → main agent writes a spec-ingesting orchestration script (scaffold via the `goal-sweep` skill), then `/workflows run <prompt>`.
-- The orchestration-level decision happens in the main agent PRE-loop; a ralph Planner/ingest hat lives only INSIDE the loop and never makes the level decision — different phases, no collision.
-2. **Pick execution mode** by the task:
-   - **Opus one-shot orchestrator** — keep main on Opus, delegate to workers, review tight. For low / super-low error-tolerance work.
-   - **Sonnet orchestrator** — switch main to Sonnet, delegate to workers. For high error-tolerance, mechanical, easy-to-verify work.
-   - **ralph loop** (`/ralph`, **pi-ralph** by samfp — NOT @lnilluv) — L / minor feature, long autonomous single-slice tasks. **In-process** (no subprocess, no `--no-extensions`): each iteration is a fresh turn in the SAME session via `sendMessage(triggerTurn)`, so subagents + pi-rules + all extensions stay LIVE inside the loop. Execution model = **hat roles**: the agent wears one role per iteration (e.g. Planner/Builder/Reviewer/Committer); a hat publishes an event that selects the next hat. **Fresh session per hat** (`newSession()` each transition) → context resets every iteration, so a 100-iteration loop keeps ~constant context. State carries via the disk scratchpad `.ralph/scratchpad.md`, NOT conversation history. Contract = a **preset `.yml`** (hats + gate + guardrails) chosen/authored by the main agent pre-loop; completion via `completion_promise` string / terminal hat / `max_iterations` / `max_runtime_seconds` / `max_activations` / stale-cycle. Design → `docs/design/2026-07-03-ralph-migration-dev-lifecycle.mdx`.
-   - **fleet** (`fleet-plan` skill → `captain` skill) — XL / major / usually greenfield. DAG-of-DAG: captain spawns per-DAG orchestrators + post-DAG judges (Opus, state-file-only, gate authority). NO iteration loop; judge gates each DAG (bounded 2x). Resume-driven (rate-limit survival). Plan with `fleet-plan` (Opus-only), execute with `captain`. Design → `docs/design/2026-07-03-fleet-dag-rework.md`.
-   - **goal sweep** (`@quintinshaw/pi-dynamic-workflows`, `/workflows run`) — wide, repetitive, SAFE-only sweep work (OTel traces everywhere, logs to a new standard, failable error-feedback on all UI interactions, a11y/telemetry sweeps). **In-process** (`createAgentSession` host SDK, no pi subprocess; `git worktree` is the only child_process). "Code mode for subagents": the main agent writes a JS orchestration script that fans out `agent()`/`parallel()` subagents (≤16 concurrent / 1000 total), intermediate results held in script variables so the main context stays clean. **NEVER low-tolerance** — worker tier is CAPPED at `implementer-lite`/`implementer` + `reviewer`, never `implementer-critical`/`deep-reviewer`. If a slice turns out low-tolerance → wrong flow, escape to ralph/fleet, raise to user. Keyword auto-trigger is OFF (`keywordTriggerEnabled: false`); goal runs ONLY via explicit `/workflows run` the main agent calls in FASE 2. Design → `docs/design/2026-07-03-goal-sweep-flow.mdx`.
-3. **Delegate to workers** (pi-subagents `Agent` tool) — model is pinned per worker, so a Sonnet orchestrator can still spawn an Opus `deep-reviewer` for the low-tolerance bits, and an Opus orchestrator can still spawn a cheap Haiku `scout`.
+All engineering agents use fresh context, inherit project instructions, do not inherit full skill catalog. Caller selects required skills explicitly; child must read/apply each selected skill. `frontend-design` remains mandatory for frontend; `telemetry-planning` remains mandatory for feature/service/job/migration plans.
 
-### Flow-offer taxonomy (mandatory)
-Every time you finish discussing a task with the user, OFFER the execution flow that matches its size — do not silently pick. Classify by size:
-- **One-shot (S/M)** — fixes / small feature. Delegate directly to workers, review tight. No contract file needed.
-- **Ralph (L)** — minor feature with a long implementation. **pi-ralph** hat-loop, in-process (subagents + rules stay live). Contract = a preset `.yml` (default: a fixed `-ingest` preset that READS the FASE-1 spec instead of re-planning; author a custom preset via the `ralph-preset` skill only when none fits). Builder/Reviewer hats DELEGATE to worker subagents per the fault-tolerance tier (same routing as one-shot). Completion via the preset's `completion_promise` gate, not an iteration count.
-- **Fleet (XL)** — major feature, almost always greenfield. `fleet-plan` → `captain` (DAG-of-DAG, judge-gated).
-- **Goal (sweep, not a size)** — wide, repetitive, SAFE-only instrumentation/sweep work (OTel traces, new log standard, failable UI error-feedback, a11y). `@quintinshaw/pi-dynamic-workflows` via `/workflows run`. Main agent writes a spec-ingesting orchestration script (scaffold via `goal-sweep` skill) that bakes FASE-1 conventions (metric naming, log format, error-feedback standard) into every `agent()` prompt — no per-branch improvisation. Worker tier CAPPED non-critical (`implementer-lite`/`implementer` + `reviewer`).
-- **Goal vs Fleet disambiguation (safety-first).** Both fan out in parallel, so decide by SAFETY FIRST: does the scope touch any low-tolerance surface (auth / secrets / DB migration / schema / public-API / money / data-deletion / irreversible)? **Yes → fleet or ralph** (never goal). **No**, and the work is wide + repetitive + independent same-pattern tasks → **goal**. Heavy inter-dependency between parts → **fleet**. Goal is breadth-of-safe-work; fleet is depth-of-interdependent-work.
-- **Debug (special phase, not a size)** — two steps: (1) info + knowledge gathering (ask for repro / env / data / expected-vs-actual when not reachable yourself); (2) branch by fix size — **small fix → execute directly, a worker subagent is NOT required, and the main agent MAY touch code itself** (the deliberate exception to orchestrator-writes-no-code); medium / large → route into a planning flow (ralph or fleet).
+## Planning and human gates
+Feature work remains two phases:
+1. **FASE 1 — spec/design:** `grill-with-docs` (or `wayfinder`) → `to-spec` → `to-tickets`; include telemetry in acceptance.
+2. Main recommends **One-shot (S/M)** or **Fleet (L+)**, gives one-line reason, then STOPS. User explicitly chooses. Recommendation is not approval.
+3. **FASE 2:** one-shot needs no extra contract file; fleet uses `fleet-plan` to derive state from approved spec+tickets, validate, render graph, then requires explicit graph approval before dispatch.
 
-State the recommended flow + a one-line reason; let the user pick or override.
+Debug is a phase, not size: gather repro/env/expected-vs-actual, then apply direct-fix ceiling. Above ceiling → one-shot/fleet recommendation and human choice.
 
-### Background workers + steering (mandatory)
-- Spawn workers in **background** (`run_in_background: true`, already set in every worker frontmatter). Main agent stays free to talk to the user while workers run.
-- Track each spawned worker's `agent_id` so steering can be forwarded.
-- When the user gives mid-run direction for a running worker, forward it via `steer_subagent(agent_id, message)` instead of killing + respawning. Main agent is the steering relay between user and background workers.
-- Do not poll/sleep waiting on a background worker — completion arrives as a notification.
+## Black-box implementation flow
+All delegated implementation, one-shot or fleet, goes through one `orchestrator` subagent. Captain sends immutable pointers plus route/check/state metadata. Captain receives only terminal compact verdict and pointers. Captain MUST NOT read/synthesize internal implementer/reviewer results or detail files.
 
-### Background bash (`pi-patty-bg-tasks`)
-Plugin `pi-patty-bg-tasks` = run a **bash command** in background, wake on completion (success OR error) with status + output path. Output goes to `/tmp/pi-bg/` (NOT the project — no `.pi/tasks/` pollution), auto-swept after 24h. Different from a worker subagent: this = shell process; worker subagent = LLM reasoning. Code/review/research → worker, not background bash.
-- Tools: `bash` (built-in override, auto-backgrounds a slow command), `bash_bg` (start in background up front), `jobs` (list/output/kill/attach/search/cleanup/stats), `job_decide` (keep/kill/check when auto-bg fires), `monitor` (stream each stdout line / WebSocket frame as an event), `agent_bg` (detached `pi -p` coworker). Ctrl+B backgrounds the running foreground command on the spot.
-- **Auto-background at 15s (user convention):** patty's default auto-bg timeout is 120s and is NOT env-configurable, so enforce 15s per-call. Whenever a `bash`/`bash_bg` command could plausibly run >15s (test suite, build, deploy/pipeline, CI wait, dep install, migration, benchmark, big download, or any unknown-duration command), pass `timeout: 15`. Skip only when you deliberately want it foreground and expect it fast.
-- Long-running bash → background, no asking: test suite, build, deploy/pipeline, CI wait, dep install, migration, benchmark, big download.
-- Do NOT background: interactive prompts (stall), command whose output the very next step needs, trivially fast commands. Destructive still needs Safety confirm first.
-- After spawn: do other work, never poll/sleep — wakeup notification brings status. Report honest: check status + `jobs action=output` before claiming pass/fail.
-- Full guidance → `~/.pi/agent/skills/background-tasks/SKILL.md`.
+Topology and authority:
+```
+main/captain depth 0
+├─ orchestrator depth 1
+│  ├─ scout depth 2 (optional leaf)
+│  ├─ implementer | frontier-implementer depth 2
+│  └─ reviewer | frontier-reviewer depth 2
+└─ judge depth 1 (captain-spawned after fleet DAG; outside orchestrator subtree)
+```
 
-### Worker pool (`~/.pi/agent/agents/`)
-- `implementer` (Sonnet) — code writes/edits against a spec. Standard fault-tolerance.
-- `implementer-critical` (Opus) — LOW fault-tolerance implementation: auth / secrets / DB migration / schema / public-API / money-payment / data-deletion / irreversible. Stricter contract: no-assumption at trust/money boundaries (escalate, don't guess), defense-in-depth, idempotency, reversibility, mandatory edge + failure-path tests, telemetry. The IMPLEMENT-side mirror of `deep-reviewer`.
-- `implementer-lite` (Haiku) — trivial mechanical only; stops + reports if scope expands.
-- `reviewer` (Sonnet) — S/M diff review; escalates low-tolerance findings to `deep-reviewer`.
-- `deep-reviewer` (Opus) — auth / secrets / migration / schema / public-API / money review. **Mandatory** review for any worker diff touching those.
-- `scout` (Haiku, leaf) — read-only `file:line` locator; front-load maps before expensive reviews.
-- `planner` (Opus) — heavy plan / SCOPE / ADR when main is not Opus.
-- `support` (Sonnet) — docs, research, synthesis (no source edits).
-- `ui-designer` (Kimi K2, leaf) — concept UI, ready HTML.
+- `maxSubagentDepth` = 2. Only `orchestrator` frontmatter includes `subagent`; all children are leaves and cannot delegate.
+- Invoke through nicobailon `pi-subagents`: `subagent` tool, `async:true` for detached/background invocation, `context:"fresh"`. Never use `Agent`, `run_in_background`, or unsupported supervisor vocabulary.
+- Native control only: `subagent` actions `status`, `steer`, `interrupt`, `stop`, `resume`. Async completion notifications replace polling/sleep.
+- Main may steer running orchestrator with `subagent({action:"steer", id, message})`; orchestrator persists steering and controls its child. Main never contacts depth-2 child directly.
 
-### Fault-tolerance routing (implement + review)
-Classify each slice/task: **low** (auth / secrets / DB migration / schema / public-API / money-payment / data-deletion / irreversible), **standard**, or **trivial**. Routing follows the class on BOTH sides:
-- low → `implementer-critical` (implement) + `deep-reviewer` (review).
-- standard → `implementer` + `reviewer`.
-- trivial → `implementer-lite` + `reviewer`.
-- **Safety ratchet (upgrade-only):** tier order `implementer-lite < implementer < implementer-critical` and `reviewer < deep-reviewer`. The orchestrator may UPGRADE a slice's tier when it turns out riskier than planned, but must NEVER downgrade. A low-tolerance slice must never be silently downgraded — including on resume after a rate-limit/process death. In fleet/ralph, the planner sets the class at Plan time and it persists in state (see pi config `docs/design/2026-07-03-fleet-dag-rework.md` — supersedes the older `2026-07-01-fleet-ralph-state-schema.md` — + `templates/*.state.template.json`); resume reads the effective assignment, no re-judgment.
+Orchestrator is pure state machine: no source writes, quality judgment, reviewer synthesis, scope/risk/tier/check changes, or product/architecture decisions. It reads protocol machine fields only; detail stays in pointed files. Deterministic order: implementer → standards review → green exact `checkCommand` → spec review. Reviewer standards/spec are axes assigned to fresh reviewer instances, not separate agent files. Every transition persists before spawn and after verdict. Unknown/ambiguous/malformed event fails closed. Fix and handover caps ≤3; fresh child each pass; resume uses persisted state plus fresh orchestrator; fleet work commits incrementally.
 
-### Escalation triggers (route to Opus tier)
-- Diff touches auth / secrets / DB migration / schema / public API → `deep-reviewer` (review) AND `implementer-critical` (implement).
-- Worker handover fails 2x on same step, or two workers read a spec differently → `planner` rewrites the spec.
-- Irreversible/destructive action proposed in an autonomous loop → gate via Opus review before exec.
-- Steering: redirect a running worker with `steer_subagent` instead of killing + respawning.
-- **Goal sweep safety gate.** Before OFFERING goal in FASE 2, the main agent must confirm the scope is free of any low-tolerance surface. Any auth / migration / money / schema / secrets / data-deletion slice → REJECT goal, offer ralph/fleet instead. If a low-tolerance concern surfaces mid-sweep → stop that branch, raise to the user, do not auto-handle inside goal. Goal worker tier is capped at `implementer-lite`/`implementer` + `reviewer` (never critical/deep-reviewer).
+Internal verdicts: `PASS | FAIL | BLOCKED | ESCALATE | HANDOVER`. Orchestrator handles permitted transitions internally and returns captain only terminal `PASS | FAIL | BLOCKED | ESCALATE`, state pointer, report pointers, compact counts. `ESCALATE` never means orchestrator changes route; captain/human must issue a new approved immutable contract.
+
+## Agent pool (`~/.pi/agent/agents/`)
+- `planner` — Sol plan/SCOPE/ADR; no source edits.
+- `support` — Terra docs/research/synthesis; no source edits.
+- `scout` — Luna locator leaf.
+- `implementer` / `frontier-implementer` — sole project code writers.
+- `reviewer` / `frontier-reviewer` — fresh read-only reviewers; task gets standards or spec axis.
+- `orchestrator` — Terra-low pure state machine, only nested delegator.
+- `judge` — Sol independent post-DAG gate, captain-spawned only.
+- `fleet-draw` — Luna deterministic renderer leaf.
+- `memory-agent` — memory maintenance; preserve its management status.
+
+## Fleet (L+)
+Fleet state remains `.fleet/<run>/fleet.json` (captain-owned DAG index) plus `.fleet/<run>/dags/<id>/state.json` (orchestrator-owned task state). `fleet-plan` derives contract from approved spec+tickets, preserves coding-standards/env/check preflight, validator, graph preview, and hard human approval gate.
+
+Captain schedules DAGs, persists `fleet.json`, spawns fresh `orchestrator` per runnable DAG with only state pointer and immutable metadata, and receives terminal pointer verdict. On orchestrator `PASS`, captain spawns `judge` outside subtree. Judge may inspect persisted evidence and returns terminal gate. Judge FAIL retry cap remains 2; retry uses fresh orchestrator with immutable judge findings pointer. Captain never judges quality, writes source, or opens internal detail files.
+
+State is source of truth. Persist write-at-spawn and record-then-act. Resume starts fresh orchestrator from latest state, never conversation memory. Safety route cannot be downgraded. Incremental commits/pushes make resume real. Force-push and `git clean` remain forbidden. User can request status from live state and steer via captain. Cleanup and integration remain human-gated.
 
 ## Safety (mandatory)
 - Confirm before destructive: `rm -rf`, `git push --force`, DB drop/migrate, overwrite file not self-made, write `.env`/secrets.
@@ -129,11 +114,11 @@ Trivia filter (both contexts): only persist DURABLE concepts (real conventions, 
 
 Manual capture (normal sessions): `/promote-rules` and `/promote-skills` write to the same dirs with the same frontmatter, so manual + fleet-auto capture converge on one knowledge base. In a normal session this path is gated on explicit user permission (see above); in fleet the automatic path runs without asking.
 
-Testing tools must be clear + usable before Build (captain contract): a slice's pass/fail is its `acceptance` command, so the captain must guarantee the repo's test/build/lint toolchain actually exists and each slice's acceptance command is real and runnable. If the existing repo has NO usable testing tools, the captain must first RECOMMEND a concrete testing toolchain to the user (stack-appropriate, with rationale), get their pick, then BOOTSTRAP it — a dedicated setup DAG (no dependencies, runs first) that installs + configures the chosen runner and lands a smoke test — before any feature DAG runs, and capture the chosen commands as `seedKnowledge`. Never silently pick a framework. Settle this at /grill-me + Plan time, not mid-run. Real reflection required: `needsDb` tasks need a real DB, `needsBrowser` tasks need a browser smoke check — typecheck-only acceptance forbidden for data/UI tasks. Missing provisioning → `SETUP.md` blocks Build until green; captain re-probes readiness every boot + resume. Detail → `~/.pi/rules/fleet-knowledge.md`.
+Testing tools must be clear and usable before Build. Captain must ensure each immutable `checkCommand` exists and exercises required DB/browser/runtime behavior; typecheck-only cannot accept data/UI tasks. If no test tooling exists, recommend options, get user choice, then make an approved setup DAG before feature work. Never silently pick framework or mutate check commands after dispatch.
 
-Captain stays conversational during fleet (mandatory): the main agent / captain must remain reachable while a fleet run is in flight. The user can ask it at any time for status (which DAG, which tasks running/passed/failed), progress, or potential steering. The captain answers from the live run state and forwards user direction to running workers via `steer_subagent(agent_id, message)` (two-hop: captain→orchestrator→worker) — it is the relay between the user and the background fleet, never a silent black box. Surface a status summary on request; offer steering options when the user wants to redirect.
+Captain stays conversational during fleet. Status comes from live persisted state. Steering uses native `subagent({ action: "steer", id, message })` against orchestrator run; orchestrator persists and relays control. Captain never reads or summarizes child detail files.
 
-Resume / "continue" — resume-ready by design (DAG rework): after a rate limit or any interruption, re-invoking the captain with `resume=true` continues fleet from the LATEST persisted state — never a restart from Plan. Flow: captain tracks the active `runName`; on resume it re-reads `<repo>/plans/fleet/<yyyy-mm-dd>-<epic>/state.json` (RELATIVE to the project repo, committed there — NOT ~/.pi), skips DAGs already `passed`, re-enters `running` DAGs (their orchestrator re-reads L2 `dags/<dagId>.json`, checkout `branch@commitSha`, continues from the last un-passed task), and reloads accumulated `knowledge[]`. Two state levels persist this (both required, because an orchestrator can run for HOURS): **Level 1** captain state (`state.json`) for cross-DAG status (`dagStatus`/`failedDags`), per-DAG `judge` blocks, and `knowledge[]`; **Level 2** per-DAG state (`dags/<dagId>.json`) with the `tasks[]` task-DAG so a multi-hour DAG resumes from its last completed task instead of rebuilding. Hard prerequisite (satisfied by fork-nesting toolkit): the implementer COMMITS partial work incrementally to the DAG branch — a state file pointing at uncommitted edits is useless. Safety ratchet: resume reads EFFECTIVE tiers, never silently downgrades a low-tolerance DAG. NOTE: pause-detection + external wake (cron/watcher/systemd) are OUT of scope — a separate mechanism; fleet only guarantees it is resume-ready when re-invoked. Contract → `~/.pi/agent/docs/design/2026-07-03-fleet-resume-contract.md`; architecture → `2026-07-03-fleet-dag-rework.md`.
+Resume is state-driven: fresh `orchestrator` reads `.fleet/<run>/dags/<id>/state.json`; captain reads `.fleet/<run>/fleet.json`. Passed work is skipped, running work is reconciled through native subagent status, and effective routing/check metadata remains immutable. Incremental commits are mandatory. Pause detection/external wake remains out of scope.
 
 ## LSP (pi-diet-lsp) — best-effort reflection + symbol search
 

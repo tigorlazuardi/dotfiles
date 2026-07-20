@@ -1,6 +1,6 @@
 ---
 name: telemetry-planning
-description: Treat observability as part of "done" for every feature plan. Trigger this whenever planning a new feature, service, endpoint, background job, migration, or any program; whenever drafting a SCOPE.md, ADR, a ralph preset/spec, or any implementation plan; whenever auditing an existing feature for observability gaps; or whenever the user mentions tracing, logs, metrics, OpenTelemetry, OTel, observability, monitoring, instrumentation, or telemetry. Enforces OpenTelemetry as the default standard, all three pillars (tracing + logs + metrics) covered, explicit histogram buckets, low-cardinality-by-default with high-value offers, and sensitive-data redaction that keeps the field name visible. Also triggers on "plan with telemetry", "add observability", "what metrics should we emit".
+description: Treat observability as part of "done" for every feature plan. Trigger this whenever planning a new feature, service, endpoint, background job, migration, or any program; whenever drafting a SCOPE.md, ADR, spec, or any implementation plan; whenever auditing an existing feature for observability gaps; or whenever the user mentions tracing, logs, metrics, OpenTelemetry, OTel, observability, monitoring, instrumentation, or telemetry. Enforces OpenTelemetry as the default standard, all three pillars (tracing + logs + metrics) covered, explicit histogram buckets, low-cardinality-by-default with high-value offers, and sensitive-data redaction that keeps the field name visible. Also triggers on "plan with telemetry", "add observability", "what metrics should we emit".
 ---
 
 # Telemetry planning — observability is part of "done"
@@ -9,7 +9,7 @@ Whenever you plan a new feature, service, endpoint, job, migration, or any work 
 
 ## When this skill must run
 
-- Feature plan / SCOPE.md / ADR / ralph preset or spec / PROMPT.md drafting.
+- Feature plan / SCOPE.md / ADR / spec / PROMPT.md drafting.
 - Designing a new service, endpoint, background job, scheduled task, or migration.
 - Refactor that crosses a process boundary, async boundary, or network call.
 - Audit of an existing feature for observability gaps.
