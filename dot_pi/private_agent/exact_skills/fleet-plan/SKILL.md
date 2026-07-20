@@ -6,9 +6,9 @@ description: >-
   no interview: 1 spec = 1 DAG, 1 ticket = 1 task node, ticket blocking edges = dependsOn.
   Writes `.fleet/<run>/fleet.json` + one `dags/<id>/state.json` per DAG instantiated from
   `~/.pi/agent/templates/fleet/`, validates them, and gates on a human-approved graph preview
-  before any dispatch. Trigger this when the user wants to "plan a fleet", "make a fleet
-  contract", "derive a fleet from spec/tickets", "set up a fleet run", "instantiate fleet
-  state", "prepare a DAG for the captain", or turn FASE-1 tickets into an executable multi-agent
+  before any dispatch. Enter through explicit `/fleet`. Trigger this when the user wants to
+  "plan a fleet", "make a fleet contract", "derive a fleet from spec/tickets", "set up a fleet
+  run", "instantiate fleet state", "prepare a DAG for the captain", or turn FASE-1 tickets into an executable multi-agent
   run with worker/reviewer routing and a post-DAG judge gate. Also triggers on "fleet contract",
   "fleet run", "DAG from tickets", "DAG-of-DAG plan". Requires FASE 1 (to-spec + to-tickets)
   already done — this skill does NOT interview the user or invent scope.
@@ -25,15 +25,14 @@ schemas: `~/.pi/agent/templates/fleet/{fleet,state}.schema.json` + `validate.mjs
 skill and the ADR ever disagree, the ADR wins — re-read it.
 
 **Contract = derivation, not invention.** 1 spec = 1 DAG. 1 ticket = 1 task node. A ticket's
-"Blocked by" list becomes that node's `dependsOn[]`. Fleet is L+ — it runs fine with a single
-DAG; don't hold this back for XL-only epics. Gone for good: wave-based execution,
+"Blocked by" list becomes that node's `dependsOn[]`. Fleet is **XL-only**: multiple dependent
+tickets, parallel DAG work, or a DAG-of-DAG. Gone for good: wave-based execution,
 `acceptance.command` loops, a 10-branch interview, and separate `FLEET.md`/per-DAG contract
-markdown — the state files and the tickets they reference ARE the contract, don't duplicate
-them into prose.
+markdown — state files and referenced tickets ARE the contract; don't duplicate them into prose.
 
-Only use this skill for **L+** work (contract first, then run). For S/M, the user should be
-on OneShot (delegate straight to a worker, tight review, no contract) — that decision was
-already made at the FASE-1 human gate, not here.
+Use this skill only after explicit `/fleet`. Derive and preview contract, then stop for human
+approval. Execution or resume requires separate explicit `/captain`. Smaller coherent work
+belongs to `/direct` or `/supervise`; do not convert it into Fleet machinery.
 
 ---
 
@@ -49,6 +48,9 @@ Read, don't ask:
   `setup-matt-pocock-skills` output) — feeds `tracker.type`/`supportsBlocking`.
 - Repo git remote (`git remote get-url origin`) and current branch — feeds `git.remote`,
   `meta.baseBranch`.
+
+If inputs do not describe XL work with multiple dependent tickets, parallel DAG work, or a
+DAG-of-DAG, stop and recommend the appropriate explicit mode; do not stretch Fleet to fit.
 
 If a spec has no tickets yet, or a ticket set looks like raw scope rather than approved
 tracer-bullet slices, stop and point the user at `to-tickets` first. Do not invent tickets here.
@@ -131,7 +133,8 @@ for this is in progress alongside this one — search skill descriptions for "co
 "CODING_STANDARDS.md" before assuming none exists); if truly none exists yet, tell the user to
 write `CODING_STANDARDS.md` by hand first. Do not proceed to §6 without it — a standard born
 after fan-out is the textbook cause of a rusuh fleet. Once found, its path becomes
-`meta.standardsRef` in every DAG's `state.json`.
+`meta.standardsRef` in every DAG's `state.json`. Ask user permission before invoking `coding-standards`; do not
+author standards automatically.
 
 **(b) Env verification (real reflection).** Read the repo (CI config, `docker-compose*`,
 `.env.example`, Playwright/Cypress config, migration tooling) to determine, per ticket, whether
@@ -165,6 +168,12 @@ the user to launch the captain until they've approved.
 ---
 
 ## 6. Write the contract
+
+**Target guard — before writing `.fleet/<run>`:** inspect `.fleet/<run>/`. If it exists or is
+non-empty, STOP and report its state; never silently reuse or overwrite run state. Only after
+fresh explicit user confirmation to overwrite may you continue. Immediately before the first
+write, inspect `.fleet/<run>/` again. If its state changed since confirmation, STOP and report;
+otherwise write only the target the user explicitly confirmed overwriting.
 
 Instantiate from the templates in `~/.pi/agent/templates/fleet/` — copy `fleet.template.json`
 and `state.template.json`, fill every `<placeholder>`, leave none unfilled.
@@ -239,7 +248,7 @@ and the user has approved the graph preview from (d):
 
 Next:
 1) Commit .fleet/<run>/ (state + notes are tracked; worktrees/report are gitignored).
-2) Launch the captain with a pointer: .fleet/<run>/fleet.json
+2) Explicitly invoke `/captain .fleet/<run>/fleet.json` to execute or resume.
 ```
 
 If there are DAG ordering constraints the user must know about (e.g. a migration DAG other
