@@ -22,7 +22,8 @@
     "npm:@mrclrchtr/supi-extras",
     "npm:@juicesharp/rpiv-ask-user-question",
     "npm:@tifan/pi-rename",
-    "npm:@ogulcancelik/pi-herdr"
+    "npm:@ogulcancelik/pi-herdr",
+    "git:github.com/tigorlazuardi/pi-herdr-sudo-task"
   ],
   "searxng": {
     "url": "http://localhost:8888"

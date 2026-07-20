@@ -155,7 +155,7 @@ Validate fields and supplied `STATE_REF` mechanically. Never open report refs or
 ### PASS
 
 - Set `dags[d].judge = { verdict: "PASS", attempt: dags[d].judge.attempt }`.
-- Merge the DAG branch into the integration branch (§5), then push.
+- Merge the DAG branch into the integration branch (§6). Keep merge/checkpoint commits local until the remote-push approval gate passes.
 - Set `dags[d].status = "PASSED"`. Persist.
 - Recompute runnable set (§3) → spawn newly unblocked DAGs.
 
@@ -201,17 +201,25 @@ orchestrator/judge, copied into `fleet.json`'s `audit[]`/`judge{}` — never inl
 
 Per the ref table in the ADR, captain owns exactly one ref: `fleet/<run>/int`.
 
+**Remote-push approval gate:** A remote `git push` is outward-facing. Before the first push
+action in this fleet run, ask for and receive fresh, explicit user approval to push
+`fleet/<run>/int`. Approval of graph preview, captain start, merge, checkpoint, steering, or
+any other action does not transfer. Until confirmed, perform clean local merges and checkpoint
+commits, then report that local progress is awaiting push approval. After that approval, push
+only the accumulated clean local commits; a later push still needs fresh approval when its
+context makes prior approval unclear.
+
 - **Merge on judge PASS**: through the checkout at `.fleet/<run>/worktrees/dag-<id>/` (or the
   main checkout if simpler), merge the DAG branch (`fleet/<run>/dag/<id>`) into
   `fleet/<run>/int` with a normal clean merge commit when needed (fast-forward is often impossible because the integration branch contains captain-owned control-file commits). On CONFLICT: do NOT resolve it yourself — spawn
-  an implementer with the task "resolve merge `<dag>` → `int`", same as any other task. Push
-  `fleet/<run>/int` after a clean merge.
+  an implementer with the task "resolve merge `<dag>` → `int`", same as any other task. Keep
+  the clean merge local until the remote-push approval gate passes.
 - **Checkpoint control files**: every few status transitions (not necessarily every single
-  one — batch lightly to avoid push spam, but never let more than one DAG's worth of progress
-  go unpushed), commit `.fleet/<run>/**` tracked paths (`fleet.json`, `dags/`, `notes/` —
-  `worktrees/` and `report/` are gitignored, never commit those) to `fleet/<run>/int` and push.
-  This IS the cross-machine resume contract: `git fetch` → checkout `fleet/<run>/int` → read
-  `fleet.json` → recompute runnable set → continue.
+  one — batch lightly to avoid commit spam), commit `.fleet/<run>/**` tracked paths
+  (`fleet.json`, `dags/`, `notes/` — `worktrees/` and `report/` are gitignored, never commit
+  those) to `fleet/<run>/int`. Push checkpoints only after the remote-push approval gate
+  passes. This IS the cross-machine resume contract once pushed: `git fetch` → checkout
+  `fleet/<run>/int` → read `fleet.json` → recompute runnable set → continue.
 - **Hard bans**: never force-push any fleet ref — a rejection means an external touch
   happened; stop and report, don't override. Never `git clean` on the main checkout — `-x`
   eats worktrees living inside `.fleet/`.
@@ -265,10 +273,9 @@ The user talks to you at all times, background agents run behind the scenes.
    now }`. Persist `fleet.json`.
 2. **Knowledge harvest** — scan the run's recorded summaries/attributes (from `audit[]` across
    `fleet.json` and, where an orchestrator's own report surfaced it, from its DAG) for anything
-   durable: a real convention, schema quirk, vendor gotcha future runs should honor. Offer to
-   promote it via the `promote-rules`/`promote-skills` skills into `.pi/rules/` or
-   `.pi/skills/`. Frontier-model promotion is implicit fleet policy when the main session
-   itself is already a frontier model — otherwise ask before promoting.
+   durable: a real convention, schema quirk, vendor gotcha future runs should honor. Always
+   offer promotion via the `promote-rules`/`promote-skills` skills into `.pi/rules/` or
+   `.pi/skills/`; write rules or skills only after explicit user approval.
 3. **Post-run cleanup** — ASK the user first, then: `git worktree remove` every worktree under
    `.fleet/<run>/worktrees/`, and delete `fleet/<run>/*` branches that are fully merged into
    `fleet/<run>/int`. Never delete an unmerged branch (a failed DAG's evidence lives there).
@@ -288,7 +295,7 @@ The user talks to you at all times, background agents run behind the scenes.
 | Orchestrator `FAIL` | Finalize audit, mark DAG failed; no judge |
 | Orchestrator `BLOCKED` | Finalize audit, mark blocked + stop reason; no judge |
 | Orchestrator `ESCALATE` | Finalize audit, mark escalated + surface pointers; never reroute |
-| Judge PASS | Merge DAG branch → `int`, push, mark DAG passed, recompute runnable |
+| Judge PASS | Merge DAG branch → `int` locally; ask fresh approval before first push; mark DAG passed, recompute runnable |
 | Judge malformed/non-PASS/FAIL | Block DAG and escalate configuration error |
 | Judge FAIL, attempt<2 | Increment attempt, spawn FRESH orchestrator with judge's notes pointer |
 | Judge FAIL, attempt==2 | Mark DAG failed, report to user, dependents stay unreachable |
@@ -299,6 +306,7 @@ The user talks to you at all times, background agents run behind the scenes.
 | User wants a picture | Spawn concrete `fleet-draw` (background), relay pointer + its summary only |
 | User steers | `subagent({ action: "steer", id: orchestratorRunId, message })`, audit `role:steering` |
 | No runnable + none running | Set `stopFlag`, knowledge harvest, ask before cleanup, print PR command |
+| First remote push | Ask fresh explicit approval; graph/start/merge/checkpoint approval does not transfer |
 | Force-push rejected on any fleet ref | STOP, report — external touch happened |
 
 Style: tight, operational. Report DAG/run status crisply; conversational replies caveman ultra
