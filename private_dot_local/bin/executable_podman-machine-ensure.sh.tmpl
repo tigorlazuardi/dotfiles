@@ -1,15 +1,33 @@
 #!/bin/bash
-# Ensure the podman machine is running. Self-heals after crash/sleep/reboot.
-# Invoked by com.user.podman-machine-start LaunchAgent (RunAtLoad + StartInterval).
+# Login health checker for Podman on macOS.
+# Invoked by com.user.podman-machine-start LaunchAgent (RunAtLoad).
+# Keeps retrying until `podman ps` proves the API socket is usable, then exits.
 export PATH="{{ if eq .chezmoi.arch "arm64" }}/opt/homebrew{{ else }}/usr/local{{ end }}/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
-MACHINE="podman-machine-default"
+MACHINE="${PODMAN_MACHINE:-podman-machine-default}"
+INTERVAL_SECONDS="${PODMAN_HEALTHCHECK_INTERVAL_SECONDS:-5}"
 
-state="$(podman machine inspect "$MACHINE" --format '{{ "{{.State}}" }}' 2>/dev/null)"
+log() {
+    echo "$(date '+%Y-%m-%dT%H:%M:%S') $*"
+}
 
-if [ "$state" = "running" ]; then
-    exit 0
-fi
+attempt=1
 
-echo "$(date '+%Y-%m-%dT%H:%M:%S') machine state='${state:-unknown}', starting..."
-podman machine start "$MACHINE"
+while true; do
+    ps_output="$(podman ps 2>&1)"
+    ps_status=$?
+
+    if [ "$ps_status" -eq 0 ]; then
+        log "podman ps succeeded after ${attempt} attempt(s); exiting"
+        exit 0
+    fi
+
+    state="$(podman machine inspect "$MACHINE" --format '{{ "{{.State}}" }}' 2>/dev/null || true)"
+    log "podman ps failed on attempt ${attempt} (state='${state:-unknown}', exit=${ps_status}); ensuring machine is started"
+    echo "$ps_output" | sed 's/^/  /'
+
+    podman machine start "$MACHINE" || true
+
+    attempt=$((attempt + 1))
+    sleep "$INTERVAL_SECONDS"
+done
