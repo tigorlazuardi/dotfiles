@@ -5,7 +5,7 @@ import { execFile } from "node:child_process";
 import { homedir } from "node:os";
 import { basename, join } from "node:path";
 import { promisify } from "node:util";
-import { details, hasCommitEvidence, initialState, isRecordResult, nudgeState, parseState, projectFrom, recall, record, type JournalState } from "./dev-journal-core.ts";
+import { details, hasCommitEvidence, initialState, isRecordResult, normalizeRecordInput, nudgeState, parseState, projectFrom, recall, record, type JournalState } from "./dev-journal-core.ts";
 
 const ROOT = join(homedir(), "journal"), exec = promisify(execFile);
 async function git(...args: string[]): Promise<string> { return (await exec("git", ["-C", ROOT, ...args], { encoding: "utf8", maxBuffer: 1024 * 1024 })).stdout; }
@@ -48,7 +48,7 @@ export default function (pi: ExtensionAPI) {
       try {
         if (p.action === "recall") return { content: [{ type: "text", text: await recall(ROOT, projectFrom(ctx.cwd, p.project) ?? "", p.query) }], details: {} };
         if (p.action === "details") return { content: [{ type: "text", text: await details(ROOT, p.ref ?? "") }], details: {} };
-        const input = { approved: p.approved === true, project: projectFrom(ctx.cwd, p.project) ?? "", company: p.company ?? "", type: p.type ?? "", title: p.title ?? "", skills: p.skills ?? [], impact: p.impact ?? "", cv_ready: p.cv_ready === true, body: p.body ?? "", date: p.date, related: p.related };
+        const input = normalizeRecordInput({ approved: p.approved === true, project: projectFrom(ctx.cwd, p.project) ?? "", company: p.company ?? "", type: p.type ?? "", title: p.title ?? "", skills: p.skills ?? [], impact: p.impact ?? "", cv_ready: p.cv_ready === true, body: p.body ?? "", date: p.date, related: p.related });
         const run = lock.then(() => syncedRecord(input)); lock = run.catch(() => undefined); const out = await run; state.decided = true; persist(); return { content: [{ type: "text", text: out.ref ? `Recorded and pushed ${out.ref}. ${out.commit}` : out.commit }], details: { ref: out.ref } };
       } catch (error) { if (p.action === "record") { state.decided = true; persist(); } throw error; }
     },

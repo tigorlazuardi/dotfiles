@@ -3,7 +3,7 @@ import { chmod, lstat, mkdtemp, readFile, realpath, rename, stat, symlink, unlin
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import journal from "./dev-journal.ts";
-import { MAX_DETAILS_BYTES, MAX_TOOL_BYTES, confined, details, entryFor, hasCommitEvidence, initialState, isRecordResult, isSuccessfulBashResult, nudgeState, parseState, recall, record, validate } from "./dev-journal-core.ts";
+import { MAX_DETAILS_BYTES, MAX_TOOL_BYTES, confined, details, entryFor, hasCommitEvidence, initialState, isRecordResult, isSuccessfulBashResult, normalizeRecordInput, nudgeState, parseState, recall, record, validate } from "./dev-journal-core.ts";
 
 type Fs = NonNullable<Parameters<typeof record>[2]>;
 const root = await mkdtemp(join(tmpdir(), "dev-journal-"));
@@ -61,7 +61,11 @@ const symlinkRoot = await mkdtemp(join(tmpdir(), "dev-journal-symlink-")), symli
 await symlink(symlinkOutside, join(symlinkRoot, "p"));
 await assert.rejects(() => record(symlinkRoot, input), /Invalid journal write target/);
 assert.deepEqual(await (await import("node:fs/promises")).readdir(symlinkOutside), []);
-for (const bad of [{ title: "ok\nimpact: injected" }, { impact: "ok\r\ntags: [injected]" }, { skills: ["node\u0000tag"] }, { related: "ok\n---" }]) assert.equal(validate({ ...input, cv_ready: false, body: "body", ...bad }), "Invalid record fields.");
+assert.deepEqual(normalizeRecordInput({ ...input, project: "Pi Configuration", company: "Personal Work", skills: ["AI Agent Governance", "Node.js", "C++"] }), { ...input, project: "pi-configuration", company: "personal-work", skills: ["ai-agent-governance", "node.js", "c++"] });
+assert.match(validate({ ...input, title: "ok\nimpact: injected" }) ?? "", /field 'title'.*Retry dev_journal/);
+assert.match(validate({ ...input, impact: "ok\r\ntags: \[injected\]" }) ?? "", /field 'impact'.*Retry dev_journal/);
+assert.match(validate({ ...input, skills: ["node\u0000tag"] }) ?? "", /field 'skills'.*Retry dev_journal/);
+assert.match(validate({ ...input, related: "ok\n---" }) ?? "", /field 'related'.*Retry dev_journal/);
 assert.deepEqual(parseState({ commit: true, decided: false, nudged: true }), { commit: true, decided: false, nudged: true });
 assert.deepEqual(parseState({ commit: "true", decided: false, nudged: false }), initialState());
 assert.deepEqual(parseState(null), initialState());

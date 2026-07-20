@@ -7,6 +7,7 @@ export const MAX_DETAILS_BYTES = 8192; // ponytail: bounded detail; raise only w
 const TYPES = new Set(["feature", "design-decision", "fix", "incident", "learning", "milestone"]);
 const MARKER = ".dev-journal-recovery.json", VERSION = 1, PRIVATE = 0o600, DIR_PRIVATE = 0o700;
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const skillify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9.+]+/g, "-").replace(/^-|-$/g, "");
 const text = (s: string, max = MAX_TOOL_BYTES) => Buffer.byteLength(s) <= max ? s : Buffer.from(s).subarray(0, Math.max(0, max - 16)).toString("utf8") + "\n[truncated]";
 const safe = (s: unknown, max: number) => typeof s === "string" && s.trim().length > 0 && s.length <= max ? s.trim() : null;
 const inline = (s: unknown, max: number) => { const value = safe(s, max); return value && !/[\p{Cc}]/u.test(value) ? value : null; };
@@ -25,8 +26,21 @@ export function parseState(data: unknown): JournalState { if (!data || typeof da
 export function isRecordResult(event: unknown): boolean { if (!event || typeof event !== "object") return false; const value = event as { toolName?: unknown; input?: unknown }; return value.toolName === "dev_journal" && !!value.input && typeof value.input === "object" && (value.input as { action?: unknown }).action === "record"; }
 export function nudgeState(state: JournalState): JournalState | null { return state.commit && !state.decided && !state.nudged ? { ...state, nudged: true } : null; }
 export function projectFrom(cwd: string, explicit?: string): string | null { return explicit ? slugify(explicit) || null : slugify(basename(cwd)) || null; }
+export function normalizeRecordInput(input: RecordInput): RecordInput { return { ...input, project: slugify(input.project), company: slugify(input.company), skills: input.skills.map(skillify) }; }
 export function confined(root: string, ref: string): string | null { if (!ref || ref.includes("\0") || isAbsolute(ref) || ref.includes("\\") || ref === "index.md" || ref === "skills-inventory.md") return null; const out = resolve(root, ref), rel = relative(root, out); return rel.startsWith("..") || rel === "" || !/^[-a-z0-9]+\/\d{4}-\d{2}-\d{2}-[-a-z0-9]+\.md$/.test(ref) ? null : out; }
-export function validate(input: RecordInput): string | null { if (!input.approved) return "Record rejected: explicit approved:true required after user says Journal ini?"; if (!TYPES.has(input.type) || !inline(input.project, 80) || !/^[a-z0-9-]+$/.test(input.project) || !inline(input.company, 80) || !/^[a-z0-9-]+$/.test(input.company)) return "Invalid taxonomy, project, or company."; if (!inline(input.title, 180) || !inline(input.impact, 500) || !safe(input.body, 12000) || !Array.isArray(input.skills) || input.skills.length > 16 || input.skills.some((x) => !inline(x, 80) || !/^[a-z0-9.+-]+$/.test(x)) || (input.related !== undefined && (!inline(input.related, 240) || !/^[a-z0-9/_-]+$/.test(input.related)))) return "Invalid record fields."; return null; }
+export function validate(input: RecordInput): string | null {
+  const retry = (field: string, requirement: string) => `Invalid dev_journal record field '${field}': ${requirement}. Retry dev_journal with corrected '${field}' and the same approved record.`;
+  if (!input.approved) return "Dev-journal record requires approved:true after user approves `Journal ini?`. Ask first, then retry the same record.";
+  if (!TYPES.has(input.type)) return retry("type", `use one of: ${[...TYPES].join(", ")}`);
+  if (!inline(input.project, 80) || !/^[a-z0-9-]+$/.test(input.project)) return retry("project", "provide a non-empty name up to 80 characters; names are normalized to lowercase kebab-case");
+  if (!inline(input.company, 80) || !/^[a-z0-9-]+$/.test(input.company)) return retry("company", "provide a non-empty name up to 80 characters; names are normalized to lowercase kebab-case");
+  if (!inline(input.title, 180)) return retry("title", "provide one non-empty line up to 180 characters");
+  if (!inline(input.impact, 500)) return retry("impact", "provide one non-empty line up to 500 characters");
+  if (!safe(input.body, 12000)) return retry("body", "provide non-empty text up to 12000 characters");
+  if (!Array.isArray(input.skills) || input.skills.length > 16 || input.skills.some((x) => !inline(x, 80) || !/^[a-z0-9.+-]+$/.test(x))) return retry("skills", "provide at most 16 non-empty names up to 80 characters each; names are normalized to lowercase kebab-case while preserving '.' and '+'");
+  if (input.related !== undefined && (!inline(input.related, 240) || !/^[a-z0-9/_-]+$/.test(input.related))) return retry("related", "use a lowercase journal reference containing only letters, digits, '/', '_', or '-'");
+  return null;
+}
 export function entryFor(input: RecordInput): { ref: string; l2: string; l1: string } { const date = input.date && /^\d{4}-\d{2}-\d{2}$/.test(input.date) ? input.date : new Date().toISOString().slice(0, 10); const slug = slugify(input.title); if (!slug) throw new Error("Invalid title."); const ref = `${input.project}/${date}-${slug}.md`, tags = ["journal/entry", `type/${input.type}`, `project/${input.project}`, `company/${input.company}`, ...input.skills.map((x) => `skill/${x}`), ...(input.cv_ready ? ["cv-ready"] : [])]; const l2 = `---\ntype: ${input.type}\nproject: ${input.project}\ncompany: ${input.company}\ndate: ${date}\ntitle: ${yaml(input.title)}\nskills: [${input.skills.map(yaml).join(", ")}]\nimpact: ${yaml(input.impact)}\ncv_ready: ${input.cv_ready}\ntags: [${tags.map(yaml).join(", ")}]\n---\n\n${input.body}${input.related ? `\n\nRelated: [[${input.related}]]` : ""}\n`; return { ref, l2, l1: `${date} ${input.type} ${slug} {${input.skills.join(", ")}} — ${input.impact}` }; }
 function enoent(error: unknown): boolean { return !!error && typeof error === "object" && (error as { code?: unknown }).code === "ENOENT"; }
 function under(root: string, path: string): boolean { const rel = relative(root, path); return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel)); }
