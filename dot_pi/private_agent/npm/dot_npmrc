@@ -1,0 +1,6 @@
+# Pi extensions are reviewed package sources. Allow only pinned native builds here.
+# Global ~/.npmrc remains ignore-scripts=true for every other npm project.
+ignore-scripts=false
+strict-allow-scripts=true
+# Reviewed current install-script set. Exact pins force re-review after upgrades.
+allow-scripts=better-sqlite3@12.11.1,@google/genai@1.52.0,protobufjs@7.6.4,protobufjs@7.6.5,@vanillagreen/pi-background-tasks@1.6.1,koffi@2.16.2,fsevents@2.3.2

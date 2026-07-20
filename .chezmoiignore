@@ -77,7 +77,8 @@ LICENSE                                # repo license, bukan dotfile target
 # skills/, prompts/.
 # Exclude semua yang dinamis / machine-specific / regenerated.
 .pi/agent/auth.json                    # per-device credential, tiap device punya sendiri
-.pi/agent/npm/**                       # installed packages, regen dari settings.packages
+.pi/agent/npm/*                        # installed packages, regen dari settings.packages
+!.pi/agent/npm/.npmrc                  # project-scoped trusted native build allowlist
 .pi/agent/sessions/**                  # session history, dinamis
 .pi/.pi/**                             # stray project dir kalau pi dijalanin dari ~/.pi
 .pi/agent/subagent-schedules/**        # schedule storage (udah di-disable juga)
