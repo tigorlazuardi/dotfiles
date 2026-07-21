@@ -7,20 +7,21 @@
 - Use full clarity for destructive confirmation, order-sensitive work, or user confusion. Resume caveman afterward. Only `stop caveman` or `normal mode` disables it.
 
 ## Execution kernel
-Agents execute safe-small work directly when scope is clear, reversible, standard-risk, and a local coherent diff. Safe-small excludes new dependencies, schema or public-contract changes, new architecture, destructive or outward-facing actions, and low-tolerance work. Everything else remains read-only until an execution mode is explicitly invoked; after FASE 1 or debug diagnosis, recommend one mode with one-line reason, give concise alternatives, then stop. Approval prose such as “approve”, “gas”, or “continue” grants no permission for mode-gated work.
+Agents execute small–medium work directly when scope is clear and reversible. Large and XL work remains read-only until its required execution mode is explicitly invoked; recommend that mode with one-line reason, give concise alternatives, then stop. Approval prose such as “approve”, “gas”, or “continue” grants no permission for mode-gated work. Safety confirmations and low-tolerance routing still apply regardless of size.
 
 Mode router:
-- Small–medium coherent scope → `/direct`.
-- Large coherent scope needing independent delivery and review → `/supervise`.
-- XL dependent tickets or parallel DAGs → `/fleet`, then `/captain` after graph approval.
+- Small–medium coherent scope → main executes autonomously; no mode invocation required.
+- Large coherent scope → require `/supervise` for independent delivery and review.
+- XL dependent tickets or parallel DAGs → require `/fleet`, then `/captain` after graph approval.
 
 Mode authority:
-- `/direct`: main is sole project-source writer for accepted scope; no size ceiling.
-- `/supervise`: main remains source-read-only; exactly one implementer is writer.
-- `/fleet`: main derives state and graph, then stops for approval.
+- `/direct`: optional explicit workflow for small–medium scope only; main is sole project-source writer.
+- `/supervise`: required for Large scope; main remains source-read-only; exactly one implementer is writer.
+- `/fleet`: required for XL scope; main derives state and graph, then stops for approval.
 - `/captain`: main executes or resumes an approved Fleet contract.
+- Size is an authority boundary: `/direct` cannot authorize Large or XL scope.
 
-Mesh relay preserves authority. An agent may transfer its active mode through `agent_send` by naming the mode and exact remaining scope; recipient assumes the sender's role, workflow, and safety constraints, and sender ceases writing that scope until control returns. Plain messages carry only safe-small authority.
+Mesh relay preserves authority. An agent may transfer its active mode through `agent_send` by naming the mode and exact remaining scope; recipient assumes the sender's role, workflow, and safety constraints, and sender ceases writing that scope until control returns. Plain relay messages may authorize small–medium work; Large and XL relay messages require the matching active mode and exact remaining scope.
 
 Invoked prompt body is sole source for its ordered workflow. During ordinary planning/execution, read it only after matching slash-command invocation. Prompt authoring or explicit prompt review may inspect bodies without granting execution permission. Scope growth or a new product/architecture decision ends current mode and returns to recommendation.
 
@@ -29,9 +30,9 @@ Low-tolerance work means auth/authz, secrets/credentials, DB migration/schema, p
 ## Planning gates
 Feature work has two phases:
 1. FASE 1: `grill-with-docs` or `wayfinder` → `to-spec` → `to-tickets`; feature/service/job/migration plans invoke `telemetry-planning` and include telemetry acceptance.
-2. Safe-small work enters FASE 2 directly; other work requires an explicit mode invocation.
+2. Small–medium work enters FASE 2 directly; Large and XL work requires its routed mode invocation.
 
-Debug reproduces, isolates, and verifies root cause before execution. Apply a safe-small fix directly; otherwise return to mode recommendation. Diagnosis alone grants no authority beyond safe-small.
+Debug reproduces, isolates, and verifies root cause before execution. Apply a small–medium fix directly; Large and XL fixes return to their routed mode recommendation. Diagnosis alone grants no authority for Large or XL implementation.
 
 ## Safety
 - Confirm before destructive actions: `rm -rf`, force-push, DB drop/migrate, overwriting files not created in current work, or writing secrets/`.env`.
