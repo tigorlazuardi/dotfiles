@@ -17,27 +17,17 @@
     "npm:@mrclrchtr/supi-context",
     "npm:@xynogen/pix-optimizer",
     "npm:@sting8k/pi-vcc",
-    "npm:pi-hermes-memory",
-    "npm:remote-pi",
     "npm:@mrclrchtr/supi-extras",
-    "npm:@juicesharp/rpiv-ask-user-question",
     "npm:@tifan/pi-rename",
     "npm:@ogulcancelik/pi-herdr",
-    "git:github.com/tigorlazuardi/pi-herdr-sudo-task"
+    "git:github.com/tigorlazuardi/pi-herdr-sudo-task",
+    "npm:pi-ask-herdr"
   ],
   "searxng": {
     "url": "http://localhost:8888"
   },
-  "lastChangelogVersion": "0.80.7",
+  "lastChangelogVersion": "0.80.10",
   "theme": "dark",
-  "observational-memory": {
-    "model": {
-      "provider": "omniroute",
-      "id": "cx/gpt-5.6-luna-low",
-      "thinking": "low"
-    },
-    "debugLog": false
-  },
   "hideThinkingBlock": false,
   "subagents": {
     "disableBuiltins": true
